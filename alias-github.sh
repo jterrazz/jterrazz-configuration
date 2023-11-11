@@ -23,3 +23,6 @@ alias.changelog=!f() { git log --topo-order --no-merges --pretty=format:"%s (%an
 alias.feat=!f(){ git add . && git commit -m "[FEATURE] $1"; };f
 alias.chore=!f(){ git add . && git commit -m "[CHORE] $1"; };f
 alias.fix=!f(){ git add . && git commit -m "[BUGFIX] $1"; };f
+
+docker rm -vf $(docker ps -aq)
+docker rmi -f $(docker images -aq)
