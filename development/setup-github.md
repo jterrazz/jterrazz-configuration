@@ -1,4 +1,4 @@
-# GitHub Security
+# GitHub Setup
 
 ## Create the SSH key
 
