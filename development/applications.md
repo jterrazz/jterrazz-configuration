@@ -24,3 +24,10 @@ brew install nvm
 ## Docker
 
 https://www.docker.com/products/docker-desktop/
+
+## Rust
+
+```shell
+curl https://sh.rustup.rs -sSf | sh
+cargo install medium-to-markdown
+```
