@@ -2,11 +2,11 @@
 
 ## BetterDisplay
 
-- [x] Control brightness of external screens.
+> Control brightness of external screens.
 
 ## Klack
 
-- [x] Keyboard sounds.
+> Keyboard sounds.
 
 ## Docker Desktop
 

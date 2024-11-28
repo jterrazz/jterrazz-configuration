@@ -39,6 +39,15 @@ brew install nvm
 
 ## Git
 
+### Link the Git config
+
+```shell
+# vim ~/.gitconfig
+
+[include]
+    path = ~/Developer/jterrazz-configuration/configurations/github/.gitconfig
+```
+
 ### Create the SSH key
 
 ```shell
