@@ -25,7 +25,3 @@ https://www.docker.com/products/docker-desktop/
 ## Hyper
 
 > A terminal app.
-
-## IA Writer
-
-> For writing articles.
