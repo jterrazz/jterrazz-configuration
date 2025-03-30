@@ -19,6 +19,7 @@
 1. Access Coolify interface at `VPS_IP:8000`
 2. Initial configuration:
    - Setup servers
+   - Activate 2FA
    - Configure DNS with Cloudflare proxy
 
 ## 3. Maintenance

@@ -14,7 +14,7 @@ And use these settings
 
 ```shell
 # Add to ~/.zshrc
-source ~/Developer/jterrazz-configuration/scripts/main.sh
+source ~/Developer/jterrazz-configuration/scripts/zshrc.sh
 ```
 
 ## Brew
@@ -35,6 +35,7 @@ https://github.com/nvm-sh/nvm
 
 ```shell
 brew install nvm
+nvm alias default stable
 ```
 
 ## Git
@@ -51,7 +52,7 @@ brew install nvm
 ### Create the SSH key
 
 ```shell
-ssh-keygen -t ed25519 -C "j2aa@proton.me"
+ssh-keygen -t ed25519 -C "contact@jterrazz.com"
 eval "$(ssh-agent -s)"
 ```
 
@@ -63,11 +64,11 @@ Link this key to the GitHub host.
 Host github.com
   AddKeysToAgent yes
   UseKeychain yes
-  IdentityFile ~/.ssh/id_ed25519
+  IdentityFile ~/.ssh/id_github
 ```
 
 ### Use the SSH key
 
 ```shell
-ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+ssh-add --apple-use-keychain ~/.ssh/id_github
 ```

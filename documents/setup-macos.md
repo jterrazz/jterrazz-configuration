@@ -22,7 +22,7 @@ defaults write com.apple.dock persistent-apps -array-add '{"tile-type"="small-sp
 
 ### Fonts
 
-- [Fira Code](https://github.com/tonsky/FiraCode/releases)
+- [Geist & Geist Mono](https://vercel.com/font)
 
 ## Applications
 
