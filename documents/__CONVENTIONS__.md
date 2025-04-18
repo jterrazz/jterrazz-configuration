@@ -3,4 +3,4 @@
 ## My Socials
 
 > @jterrazz
-> mailto:jterrazzoni@gmail.com
+> mailto:contact@jterrazz.com

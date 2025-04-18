@@ -10,6 +10,10 @@
 
 - [Klack](https://www.reggi.co.kr/klack/)
 
+### Network
+
+- DNSecure: DNS over TLS
+
 ## System
 
 ### Dock
@@ -32,6 +36,5 @@ defaults write com.apple.dock persistent-apps -array-add '{"tile-type"="small-sp
 - API: [RapidAPI](https://rapidapi.com/)
 - Chat: [Slack](https://slack.com/)
 - Browser: [Arc](https://www.macenhance.com/arc)
-- Models: [Ollama](https://ollama.com/)
 - Task manager: [Linear](https://linear.app/)
 - Notes: [Obsidian](https://obsidian.md/)
