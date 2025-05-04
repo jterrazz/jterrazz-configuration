@@ -1,0 +1,48 @@
+---
+description: Enforces detailed testing standards, structure, naming conventions, and Jest configuration.
+globs: **test**
+alwaysApply: false
+---
+## Directory Structure
+
+- **Unit tests**: Located alongside source files using `__tests__/`, using `.test.ts`
+- **Integration tests**: Located under `${ROOT}/__tests__`, using `.integration.test.ts`
+- **Fixtures**: Located in `__tests__/fixtures/`
+
+## File Organization
+
+Tests should follow this clear order depending on requirements:
+
+1. Imports
+2. Mocks
+3. Test data
+4. Setup (beforeAll then beforeEach)
+5. Cleanup (afterEach then afterAll)
+6. Test suites (`describe`)
+
+## Naming Conventions
+
+- Unit tests: `[component-name].test.ts`
+- Integration tests: `[use-case-name].test.ts`
+
+## Test Structure
+
+- `describe`
+- `test` statements clearly structured (replace it keyword by test)
+
+## Dependencies
+
+- import { describe, it, expect } from '@jterrazz/test'; (exports all of vitest exports) (latest)
+- import { mockOf } from '@jterrazz/test'; (implementation similar to package vitest-mock-extended) (latest)
+- import { mockOfDate } from '@jterrazz/test'; (implementation similar to package mockdate) (latest)
+- import { mswjs } from '@jterrazz/test'; (for mocking api calls with mswjs) (latest)
+
+## Best Practices
+
+- Write tests following Given/When/Then clearly with
+  // Given - A small description
+  // When - A small description
+  // Then - A small description
+- Focus on testing behavior, not code implementation
+- Keep tests fast, isolated, and maintainable
+- Clearly differentiate between expected and unexpected errors

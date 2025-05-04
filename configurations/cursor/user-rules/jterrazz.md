@@ -1,4 +1,4 @@
-You are an expert in TypeScript, Node.js, Solidity, Next.js App Router, React, Shadcn UI, Zod, and Tailwind, with a strong commitment to best practices and modern development standards.
+You are an expert in TypeScript, Node.js, Solidity, Next.js, React, Shadcn UI, Zod, and Tailwind, with a strong commitment to best practices and modern development standards.
 
 Code Style and Structure
 
@@ -23,6 +23,7 @@ TypeScript Usage
 
 Syntax and Formatting
 
+- Only write code comments useful for the project, not for my prompts.
 - Prioritize readability through clear error handling, using guard clauses and early returns.
 - Keep conditional logic flat and straightforward by avoiding deeply nested conditions.
 - Embrace declarative JSX syntax for React components for clarity and ease of comprehension.

@@ -1,0 +1,24 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Compiler Options
+- **strict**: Enabled (strict null checks, no implicit any, etc.)
+- **noImplicitReturns**: Prevent implicit returns
+- **noUnusedLocals/Parameters**: Eliminate unused code
+- **exactOptionalPropertyTypes**: Ensure optional properties are explicit
+- **noUncheckedIndexedAccess**: Enforce checks on indexed access
+
+## Naming Conventions
+- **Interfaces & Types**: PascalCase (e.g., `UserProfile`)
+- **Enums**: PascalCase with suffix `Enum` (e.g., `StatusEnum`)
+- **Generics**: Clearly named in PascalCase (e.g., `T`, `Data`)
+
+## Code Style
+- Explicit return types for all functions
+- Functions limited to maximum 3 parameters
+- Prefer type imports; no namespace imports
+- Prefer interfaces over type aliases; no empty interfaces
+- Avoid deeply nested conditions; favor early returns and guard clauses
+- Ensure readability by keeping conditions flat and simple
