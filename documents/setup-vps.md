@@ -21,6 +21,7 @@
    - Setup servers
    - Activate 2FA
    - Configure DNS with Cloudflare proxy
+3. Install Tailscale
 
 ## 3. Maintenance
 
