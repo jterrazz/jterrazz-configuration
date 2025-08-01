@@ -1,0 +1,130 @@
+---
+description: Unified testing guidelines – structure, naming, skeleton & helpers for unit/integration/e2e tests
+globs: **/*.mock.*,**/*.test.*
+alwaysApply: false
+---
+
+# 🧪 Testing Standards – Unit & Integration
+
+These rules ensure every repository shares the **same testing ergonomics** so that suites are easy to read, maintain and extend.
+
+---
+
+## 1. Directory Layout
+
+```
+<repo>
+  src/
+    components/
+      button/
+        button.tsx
+        __tests__/button.test.tsx      # ← colocated unit test
+
+  __tests__/                           # ← root for cross-cutting tests/artifacts
+    server-articles-route.integration.test.ts
+    fixtures/
+      valid-user.fixture.ts
+    mocks/
+      payment-gateway.mock.ts
+    providers/
+      ai.openrouter/
+        open-router-universal.resolver.ts
+```
+
+- **Unit tests** live next to the source file inside a `__tests__/` folder.
+- **Integration / E2E** tests live in the root `__tests__/` folder.
+- Shared **fixtures**, **mocks** & **resolvers** are grouped under their dedicated sub-folders.
+
+---
+
+## 2. Naming Conventions
+
+| Kind             | Suffix                 | Example                                     |
+| ---------------- | ---------------------- | ------------------------------------------- |
+| Unit test        | `.test.ts[x]`          | `button.test.tsx`                           |
+| Integration test | `.integration.test.ts` | `server-articles-route.integration.test.ts` |
+| Fixture          | `.fixture.ts`          | `valid-user.fixture.ts`                     |
+| Mock             | `.mock.ts`             | `payment-gateway.mock.ts`                   |
+| Test resolver    | `.resolver.ts`         | `open-router-universal.resolver.ts`         |
+
+---
+
+## 3. Test File Skeleton
+
+Every test file **MUST** follow this order:
+
+1. Imports (always use `.js` extension when importing compiled TS).
+2. Mocks / stubs.
+3. Test data (fixtures).
+4. Hooks in order: `beforeAll` → `beforeEach` → `afterEach` → `afterAll`.
+5. Test suites (`describe`) & scenarios (`it`).
+
+Example hook ordering for integration context:
+
+```ts
+beforeAll(async () => {
+  integrationCtx = await createIntegrationContext();
+});
+
+beforeEach(async () => {
+  await startIntegrationContext(integrationCtx);
+});
+
+afterEach(async () => {
+  await stopIntegrationContext(integrationCtx);
+});
+```
+
+---
+
+## 4. Writing Tests
+
+• Prefer `it` over `test` for clarity.
+• Structure each block with **Given / When / Then** comments – use en dashes (–) for prose descriptions.
+
+```ts
+it("returns full JSON response for mixed US articles", async () => {
+  // Given – a mixed set of US articles
+  await ArticleScenarios.createMixedArticles(prisma);
+
+  // When – requesting articles
+  const res = await executeRequest("/articles?limit=10");
+
+  // Then – status OK & expected payload
+  expect(res.status).toBe(200);
+  expect(res.body.items).toHaveLength(10);
+});
+```
+
+• Group related scenarios with nested `describe` blocks (`success – happy path`, `error handling`).
+• Use `it.each` for table-driven tests.
+• Focus on **observable behaviour**, not implementation details.
+
+---
+
+## 5. Recommended Toolkit
+
+Always import from the internal toolkit first:
+
+```ts
+import { describe, it, expect, mockOf, mockOfDate, msw } from "@jterrazz/test";
+```
+
+Key helpers:
+
+- `mockOfDate` – deterministic Date mocking (`mockOfDate.set() / reset()`).
+- `msw` – API mocking with dynamic responses.
+- Integration helpers: `createIntegrationContext`, `startIntegrationContext`, `stopIntegrationContext`, `executeRequest`, `executeTask`, `normaliseSnapshot`.
+
+---
+
+## 6. Best Practices Checklist
+
+- [ ] Behaviour-driven titles (what not how).
+- [ ] One logical assertion group per `it` (multiple `expect` allowed).
+- [ ] Reset state in hooks to keep tests independent.
+- [ ] Keep unit tests fast (≤ 200 ms); integration reasonable.
+- [ ] Document expected vs unexpected errors explicitly.
+- [ ] Enum values in fixtures are **UPPERCASE**.
+- [ ] ≥ 90 % meaningful branch coverage.
+- [ ] Treat test code with same lint & formatting rules.

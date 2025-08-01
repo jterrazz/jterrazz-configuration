@@ -1,0 +1,141 @@
+---
+description: Authoritative clean-architecture rules for Node.js / TypeScript server projects (DDD, Ports & Adapters, FP-first, test-driven).
+globs:
+alwaysApply: true
+---
+
+# 🏗️ Clean Architecture – Server Side
+
+These rules codify how every backend repository should be structured so that code remains **testable, maintainable, and boring-to-change**. They assume:
+• TypeScript with `strict` on  
+• Functional & declarative style  
+• Dependency Injection via factories  
+• Hexagonal / Ports-and-Adapters layering  
+• Domain-Driven Design terminology
+
+> "Business logic never **knows** nor **cares** how it is called or where data is stored." – Rule #0
+
+---
+
+## 1. Directory Layout (with file-naming rules)
+
+```
+src/
+  domain/                               # Pure business logic (NO imports from other layers)
+    ├─ entities/                        # *.entity.ts   → article.entity.ts
+    ├─ value-objects/                   # *.vo.ts       → slug.vo.ts
+  application/                          # Orchestration + use cases
+    ├─ use-cases/                       # *.use-case.ts → publish-article.use-case.ts
+    ├─ ports/
+    │   ├─ inbound/                     # *.port.ts     → create-article.port.ts
+    │   └─ outbound/                    # *.port.ts     → article-repository.port.ts
+  infrastructure/                       # Concrete adapters & frameworks
+    ├─ inbound/                         # External entry points
+    │   ├─ controllers/                 # *.controller.ts → create-article.controller.ts
+    │   ├─ routes/                      # *.routes.ts     → article.routes.ts
+    │   ├─ schedulers/                  # *.scheduler.ts  → daily-digest.scheduler.ts
+    │   └─ jobs/                        # *.job.ts        → regenerate-preview.job.ts
+    └─ outbound/
+        ├─ repositories/                # *.repository.ts → prisma-article.repository.ts
+        ├─ providers/                   # *.provider.ts   → medium.provider.ts
+        └─ agents/                      # *.agent.ts      → headline.agent.ts
+  di/                                    # Dependency wiring – factories: *.factory.ts, container.ts
+  shared/                                # Cross-cutting pure utils: *.ts → date.util.ts
+  tests/                                 # Mirrors src hierarchy: *.spec.ts / *.test.ts
+```
+
+---
+
+## 2. Naming Conventions
+
+• Files & folders: **kebab-case**  
+• TypeScript types: **PascalCase**  
+• Ports: `SomethingPort`  
+• Use cases: `VerbNounUseCase` (file `verb-noun.use-case.ts`)  
+• Factories: `somethingFactory` returning concrete port implementations  
+• Controller: `verb-noun.controller.ts`  
+• Value Object: `*.vo.ts`, expose `create()` static factory returning `Result<T>` (never `new`).
+
+---
+
+## 3. Dependency Rules
+
+```
+ domain        →   ✖  nothing
+ application   →   domain
+ infrastructure→   application + domain
+ di            →   infrastructure + application + domain
+ shared        →   ✖  nothing
+```
+
+---
+
+## 4. Implementation Guidelines
+
+1. **Pure Functions first** – Prefer simple functions; introduce classes only when stateful or polymorphic behaviour is mandatory.
+2. **Early returns & guard clauses** – flat control-flow, no deep nesting.
+3. **Zod everywhere** –
+   a. All external data (HTTP, DB, env) validated asap.  
+   b. Schemas live alongside the receiving port.
+4. **Error strategy**  
+   • Expected errors = typed `Result<E, T>` return values.  
+   • Unexpected = thrown & captured by a framework-level error boundary.
+5. **No side effects in domain** – Domain cannot `console.log`, reach DB, or import `process.env`.
+6. **Immutability** – Entities/VOs expose mutation as `with*` copy methods.
+7. **File size** – ≤ 300 lines; split otherwise.
+
+---
+
+## 5. DI Container (di/)
+
+• Single `container.ts` exposing `makeApp()` factory.  
+• No decorators – use explicit factory functions for tree-shakability.  
+• Factories named `<token>Factory` returning concrete impl.
+
+---
+
+## 6. Testing Strategy 🧪
+
+| Layer          | Test type       | Location (by convention)                              |
+| -------------- | --------------- | ----------------------------------------------------- |
+| Domain         | Pure unit       | alongside file → `src/domain/**/__tests__/**`         |
+| Application    | Use-case unit   | alongside file → `src/application/**/__tests__/**`    |
+| Infrastructure | Contract tests  | alongside file → `src/infrastructure/**/__tests__/**` |
+| DI + Framework | E2E/integration | root → `__tests__/e2e/**`                             |
+
+Guidelines:
+• Integration tests MUST assert against fixtures not mocks (e.g. spin up a test DB).
+
+---
+
+## 7. Patterns Catalogue
+
+• **Agent Pattern** – outbound port for AI / LLM calls (`AskHeadlineAgentPort`).  
+• **Task / Job Pattern** – orchestrate long-running workflows; lives in `infrastructure/inbound/jobs`.  
+• **Configuration Port** – validated env & feature flags; injected, never imported.  
+• **Event Bus Port** – decouple async domain events; injected implementation (e.g. Kafka, in-memory).
+
+---
+
+## 8. Documentation ✅
+
+Minimum viable comments:
+
+1. Complex domain rules – explain **why** it exists.
+2. Ports – 1-liner describing the boundary.
+3. Public use-case `execute` – parameters, result, possible errors.  
+   Prefer Zod `.describe()` and `/** @description */` jsdoc tags over inline comments.
+
+---
+
+---
+
+## 9. Checklists
+
+Use these before every PR:
+
+- [ ] Domain unchanged by infrastructure/framework refactor.
+- [ ] All new external data has a Zod schema.
+- [ ] Each file respects layer dependencies.
+- [ ] Tests written or updated.
+- [ ] Logs carry operation context (request id, correlation id).

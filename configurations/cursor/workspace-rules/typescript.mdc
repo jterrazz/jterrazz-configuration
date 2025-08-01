@@ -1,24 +1,151 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+description: Type-safe, readable and maintainable TypeScript – import order, naming, compiler flags, error-handling & Zod patterns.
+globs: **/*.ts,**/*.tsx
+alwaysApply: false
 ---
-## Compiler Options
-- **strict**: Enabled (strict null checks, no implicit any, etc.)
-- **noImplicitReturns**: Prevent implicit returns
-- **noUnusedLocals/Parameters**: Eliminate unused code
-- **exactOptionalPropertyTypes**: Ensure optional properties are explicit
-- **noUncheckedIndexedAccess**: Enforce checks on indexed access
 
-## Naming Conventions
-- **Interfaces & Types**: PascalCase (e.g., `UserProfile`)
-- **Enums**: PascalCase with suffix `Enum` (e.g., `StatusEnum`)
-- **Generics**: Clearly named in PascalCase (e.g., `T`, `Data`)
+# 🏷️ TypeScript Standards
 
-## Code Style
-- Explicit return types for all functions
-- Functions limited to maximum 3 parameters
-- Prefer type imports; no namespace imports
-- Prefer interfaces over type aliases; no empty interfaces
-- Avoid deeply nested conditions; favor early returns and guard clauses
-- Ensure readability by keeping conditions flat and simple
+Shared rules that keep every codebase strictly typed, predictable and easy to refactor.
+
+---
+
+## 1. Import Order & Syntax
+
+1. **External packages** → blank line → **`@/*` aliases** → blank line → **relative imports**.
+2. Use **type-only** imports: `import type { X } from "…"`.
+3. Relative imports **always** end with `.js` extension (ESM output friendly).
+4. ⚠️ **Auto-fix warning** – our linter deletes **unused** imports on save. If you add imports _before_ the code that uses them, they will be wiped. → Write the code first, then add the import to avoid churn.
+
+```ts
+import { z } from "zod";
+import type { Context } from "hono";
+
+import { type ArticleRepositoryPort } from "@/application/ports/outbound/persistence/article-repository.port.js";
+
+import { Category } from "./category.vo.js";
+```
+
+---
+
+## 2. Compiler Flags
+
+| Flag                          | Value |
+| ----------------------------- | :---: |
+| `strict`                      |  ✅   |
+| `noImplicitReturns`           |  ✅   |
+| `noUnusedLocals / Parameters` |  ✅   |
+| `exactOptionalPropertyTypes`  |  ✅   |
+| `noUncheckedIndexedAccess`    |  ✅   |
+
+Keep `tsconfig.json` minimal – extend from a shared base and override **only when justified**.
+
+---
+
+## 3. Naming Conventions
+
+| Kind             | Example                                  |
+| ---------------- | ---------------------------------------- |
+| Interface / Type | `UserProfile`                            |
+| Class            | `WorldNewsAdapter`, `GetArticlesUseCase` |
+| Enum             | `StatusEnum`                             |
+| Constant         | `API_BASE_URL`, `RATE_LIMIT_DELAY`       |
+| Zod schema var   | `categorySchema`                         |
+| Port interface   | `ArticleRepositoryPort`                  |
+
+---
+
+## 4. Code Style Guidelines
+
+• **Explicit return types** for every exported function / method.<br>
+• Max **3 parameters** – otherwise use an options object.<br>
+• Prefer **arrow functions** for class properties.<br>
+• Always mark injected deps `private readonly`.<br>
+• Early returns + guard clauses; avoid deep nesting.<br>
+• Class member order: public props → private props → constructor → public methods → private methods.
+
+---
+
+## 5. Error Handling Pattern
+
+```ts
+export const createErrorHandlerMiddleware = (logger: Logger) => {
+  return async (c: Context, next: Next) => {
+    try {
+      await next();
+    } catch (error) {
+      logger.error("Request failed", { error });
+      return c.json({ error: "Internal server error" }, 500);
+    }
+  };
+};
+```
+
+- Distinguish **expected** vs **unexpected** errors with dedicated classes.
+- Value objects use `schema.safeParse` and throw descriptive errors.
+
+---
+
+## 6. Domain Modelling with Zod
+
+### Value Object Example
+
+```ts
+export const categorySchema = z
+  .enum(["TECH", "BUSINESS", "POLITICS"])
+  .describe("Article category");
+export type CategoryEnum = z.infer<typeof categorySchema>;
+
+export class Category {
+  constructor(private readonly value: CategoryEnum) {}
+  toString() {
+    return this.value;
+  }
+  static create(raw: string): Category {
+    const res = categorySchema.safeParse(raw);
+    if (!res.success) throw new Error(`Invalid category: ${raw}`);
+    return new Category(res.data);
+  }
+}
+```
+
+- Schemas live **above** classes/types and are exported with `as const`.
+- Always export the inferred type: `export type X = z.infer<typeof xSchema>`.
+
+---
+
+## 7. Async Patterns
+
+- Prefer `async/await`; never chain `.then()`.
+- Use `Promise.all([...])` for parallel I/O.
+- Async functions have explicit return types: `Promise<T>`.
+- Fail fast: validate input early, short-circuit when possible.
+
+---
+
+## 8. Configuration Objects
+
+- Use explicit interfaces (`WorldNewsAdapterConfig`).
+- Validate at bootstrap with Zod.
+- Keep config separate from business logic.
+
+---
+
+## 9. Documentation
+
+- JSDoc on public APIs explaining **why**, not **how**.
+- Ports & adapters receive `@description` block for clarity.
+- Inline comments only where code is non-obvious.
+
+---
+
+## ✅ Checklist
+
+- [ ] Import order respected & uses `.js` extension.
+- [ ] Strict compiler flags enabled.
+- [ ] Naming follows table conventions.
+- [ ] No more than 3 function parameters.
+- [ ] Early returns over nested `if`s.
+- [ ] Zod schemas validated at boundaries.
+- [ ] Descriptive error messages & separation expected/unexpected.
+- [ ] Public APIs fully typed & documented.

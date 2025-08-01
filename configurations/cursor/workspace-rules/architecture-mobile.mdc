@@ -1,0 +1,180 @@
+---
+description: Clean-architecture & atomic-design rules for React Native / Expo projects (TypeScript-strict, functional, modular, test-first).
+globs:
+alwaysApply: true
+---
+
+# 📱 Clean Architecture – Mobile (React Native / Expo)
+
+These rules describe how every mobile repository should be organised so that code is **predictable, portable, and a joy to iterate on**.
+Assumptions:
+• React Native with Expo  
+• TypeScript strict mode  
+• Functional components & hooks  
+• Dependency Injection via factories/contexts  
+• Atomic Design for UI  
+• Ports & Adapters for business logic / side-effects
+
+> "UI is just a function of state – keep state clean and the UI will follow." – Rule #0
+
+---
+
+## 1. Directory Layout (with file-naming examples)
+
+```
+src/
+  domain/                                   # Pure business concepts
+    ├─ entities/                            # *.entity.ts      → article.entity.ts
+    ├─ value-objects/                       # *.vo.ts          → slug.vo.ts
+    └─ services/                            # *.service.ts     → markdown-to-html.service.ts
+
+  application/                              # Use-cases & ports
+    ├─ use-cases/                           # *.use-case.ts    → toggle-bookmark.use-case.ts
+    └─ ports/
+        ├─ inbound/                         # *.port.ts        → toggle-bookmark.port.ts
+        └─ outbound/                        # *.port.ts        → bookmark-repository.port.ts
+
+  infrastructure/                           # Platform & side-effects
+    ├─ providers/                           # *.provider.ts    → article.provider.ts (REST/GraphQL)
+    ├─ persistence/                         # *.adapter.ts     → async-storage.adapter.ts
+    ├─ repositories/                        # *.repository.ts  → zustand-bookmark.repository.ts
+    ├─ i18n/                                # locales/*.json, i18n.ts
+    └─ navigation/                          # types.ts, navigation.container.tsx
+
+  presentation/                             # UI layer
+    ├─ features/
+    │    └─ bookmarks/                      # Bounded UI feature module
+    │        ├─ components/                 # *.tsx           → bookmark-card.tsx
+    │        ├─ hooks/                      # use-*.ts        → use-bookmarks.ts
+    │        └─ __tests__/                  # Component / hook tests
+    ├─ shared/
+    │    ├─ components/
+    │    │    ├─ atoms/                     # button.tsx, headline-text.tsx
+    │    │    ├─ molecules/                 # card.tsx
+    │    │    └─ organisms/                 # header.tsx
+    │    ├─ hooks/                          # use-toggle.ts
+    │    └─ utils/                          # theme.ts, spacing.util.ts
+    ├─ navigation/                          # stack.tsx, tab.tsx
+    └─ screens/                             # settings-screen.tsx
+
+  di/                                       # container.ts, factories/*.factory.ts
+  types/                                    # global types & React Navigation param lists
+  shared/                                   # Cross-cutting pure utils (date, uuid)
+  __tests__/e2e/                            # Detox / Playwright mobile flows
+```
+
+### Module-By-Feature (optional)
+
+For large apps, wrap the above folders inside `modules/<feature>/` to isolate bounded contexts.
+
+---
+
+## 2. Naming Conventions
+
+• Folders & files: **kebab-case**  
+• React components: **PascalCase** (named exports)  
+• Hooks: `useSomething.ts`  
+• Ports: `SomethingPort`  
+• Use cases: `verb-noun.use-case.ts` exposing `execute()`  
+• Store: `entity.store.ts`  
+• Provider: `*.provider.ts`  
+• Test file: `*.test.ts[x]` or `*.spec.ts[x]` colocated under `__tests__`.
+
+---
+
+## 3. Dependency Rules
+
+```
+ domain           →   ✖  nothing
+ application      →   domain
+ infrastructure   →   application + domain
+ presentation     →   application (never directly infrastructure)
+ di               →   all layers
+ shared           →   ✖  nothing
+```
+
+Any violation should fail CI via `@typescript-eslint/no-restricted-imports`.
+
+---
+
+## 4. Implementation Guidelines
+
+1. **Functional & declarative** – Components are pure functions; prefer hooks over class components.
+2. **Early returns & guard clauses** – keep render and logic flat.
+3. **State strategy**  
+   • Local component state with `useState` when truly local.  
+   • Global cross-screen state via **Zustand** stores behind repositories.
+4. **Zod validation** – All external data (API, storage, env) validated at boundaries.
+5. **Error handling**  
+   • Expected errors returned as `Result`.  
+   • Unexpected errors caught by an ErrorBoundary (presentation) or global handler (native log).
+6. **No side-effects in domain & application** – All I/O lives in providers/persistence.
+7. **Platform code** – Use file suffixes `.ios`, `.android`, `.native` when diverging.
+8. **File size** – ≤ 250 lines for UI, ≤ 300 elsewhere; split if larger.
+
+---
+
+## 5. DI Container (di/)
+
+• One `container.ts` exporting `createContainer()` that wires concrete implementations.  
+• Use React Context (`ContainerProvider`) to expose container to hooks.  
+• Factories named `<token>Factory`.  
+• Never import container directly in production code – always via `useContainer()`.
+
+---
+
+## 6. Testing Strategy 🧪
+
+| Layer          | Test type          | Location (by convention)                              |
+| -------------- | ------------------ | ----------------------------------------------------- |
+| Domain         | Pure unit          | alongside file → `src/domain/**/__tests__/**`         |
+| Application    | Use-case unit      | alongside file → `src/application/**/__tests__/**`    |
+| Infrastructure | Contract / adapter | alongside file → `src/infrastructure/**/__tests__/**` |
+| Presentation   | Component / hook   | alongside file → `src/presentation/**/__tests__/**`   |
+| E2E            | Detox / Playwright | root → `__tests__/e2e/**`                             |
+
+Guidelines:
+• Avoid mocks in domain tests.  
+• Contract tests spin up fixtures (e.g., mock server) rather than unit stubs.  
+• Use React Native Testing Library for UI; isolate navigation with `renderWithNavigation` helper.
+
+---
+
+## 7. Patterns Catalogue
+
+• **Atomic Design** – atoms/molecules/organisms for shared components.  
+• **Repository Pattern** – bridges store ↔︎ application use cases.  
+• **Provider Pattern** – wraps remote APIs / SDKs / sensors.  
+• **Hook Facade** – each feature exposes a single hook (`useBookmarks`) that glues UI ↔︎ use cases.  
+• **Navigation Container** – own folder under `infrastructure/navigation` with typed params.  
+• **Theme / Design-System** – colocated in `presentation/shared` and provided via Context.
+
+---
+
+## 8. Performance Checklist ⚡️
+
+- Memoize heavy list items (`React.memo`).
+- Derive arrays with `useMemo`.
+- Use `FlashList` or `FlatList` with `getItemLayout`.
+- Avoid anonymous functions in JSX.
+- Lazy-load screens with `React.lazy` & Suspense + fallback.
+
+---
+
+## 9. Security & Accessibility
+
+• Secure storage with `expo-secure-store`, never plain AsyncStorage for secrets.  
+• HTTPS only; certificate pinning where required.  
+• Every touchable has `accessibilityLabel`, `accessibilityRole`, proper state.  
+• Support dynamic font sizes via `allowFontScaling` and `StyleSheet.minScaleFactor`.
+
+---
+
+## 10. PR Checklist
+
+- [ ] New external data parsed & validated with Zod.
+- [ ] Layer import rules respected.
+- [ ] All public types exported from `index.ts`.
+- [ ] Tests added/updated (unit or e2e).
+- [ ] Screens/components support dark mode & RTL.
+- [ ] No `console.log` committed.
