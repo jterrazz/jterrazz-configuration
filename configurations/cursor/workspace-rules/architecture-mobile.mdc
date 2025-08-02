@@ -1,10 +1,10 @@
 ---
-description: Clean-architecture & atomic-design rules for React Native / Expo projects (TypeScript-strict, functional, modular, test-first).
+description: Clean-architecture & atomic-design rules for Mobile projects (TypeScript-strict, functional, modular, test-first).
 globs:
 alwaysApply: true
 ---
 
-# 📱 Clean Architecture – Mobile (React Native / Expo)
+# 📱 Clean Architecture – Mobile
 
 These rules describe how every mobile repository should be organised so that code is **predictable, portable, and a joy to iterate on**.
 Assumptions:
@@ -22,6 +22,30 @@ Assumptions:
 ## 1. Directory Layout (with file-naming examples)
 
 ```
+__tests__/                                  # Integration and e2e tests
+  ├─ integration/                           # Cross-layer integration tests
+  │   ├─ use-cases/                         # *.integration.test.ts → toggle-bookmark.integration.test.ts
+  │   ├─ repositories/                      # *.integration.test.ts → bookmark-repository.integration.test.ts
+  │   ├─ providers/                         # *.integration.test.ts → article-provider.integration.test.ts
+  │   └─ fixtures/                          # Test data & mock services
+  │       ├─ data/                          # *.fixture.ts → article.fixture.ts
+  │       ├─ storage/                       # Mock AsyncStorage data
+  │       └─ api/                           # Mock API responses
+  └─ e2e/                                   # End-to-end mobile flows
+      ├─ features/                          # Feature-based e2e tests
+      │   ├─ authentication/                # *.e2e.test.ts → login-flow.e2e.test.ts
+      │   ├─ bookmarks/                     # *.e2e.test.ts → bookmark-crud.e2e.test.ts
+      │   └─ navigation/                    # *.e2e.test.ts → deep-linking.e2e.test.ts
+      ├─ screens/                           # Screen-specific e2e tests
+      │   └─ *.e2e.test.ts                  # → settings-screen.e2e.test.ts
+      ├─ fixtures/                          # E2E test data & scenarios
+      │   ├─ scenarios/                     # Complete user journeys
+      │   └─ mock-servers/                  # External service mocks
+      └─ helpers/                           # Test utilities & setup
+          ├─ detox-helper.ts                # Detox configuration & utilities
+          ├─ mock-provider.ts               # Mock DI container for tests
+          └─ test-navigation.ts             # Navigation test helpers
+
 src/
   domain/                                   # Pure business concepts
     ├─ entities/                            # *.entity.ts      → article.entity.ts
@@ -60,7 +84,6 @@ src/
   di/                                       # container.ts, factories/*.factory.ts
   types/                                    # global types & React Navigation param lists
   shared/                                   # Cross-cutting pure utils (date, uuid)
-  __tests__/e2e/                            # Detox / Playwright mobile flows
 ```
 
 ### Module-By-Feature (optional)
@@ -78,7 +101,7 @@ For large apps, wrap the above folders inside `modules/<feature>/` to isolate bo
 • Use cases: `verb-noun.use-case.ts` exposing `execute()`  
 • Store: `entity.store.ts`  
 • Provider: `*.provider.ts`  
-• Test file: `*.test.ts[x]` or `*.spec.ts[x]` colocated under `__tests__`.
+• Test file: `*.test.ts[x]` colocated under `__tests__`.
 
 ---
 
@@ -123,24 +146,7 @@ Any violation should fail CI via `@typescript-eslint/no-restricted-imports`.
 
 ---
 
-## 6. Testing Strategy 🧪
-
-| Layer          | Test type          | Location (by convention)                              |
-| -------------- | ------------------ | ----------------------------------------------------- |
-| Domain         | Pure unit          | alongside file → `src/domain/**/__tests__/**`         |
-| Application    | Use-case unit      | alongside file → `src/application/**/__tests__/**`    |
-| Infrastructure | Contract / adapter | alongside file → `src/infrastructure/**/__tests__/**` |
-| Presentation   | Component / hook   | alongside file → `src/presentation/**/__tests__/**`   |
-| E2E            | Detox / Playwright | root → `__tests__/e2e/**`                             |
-
-Guidelines:
-• Avoid mocks in domain tests.  
-• Contract tests spin up fixtures (e.g., mock server) rather than unit stubs.  
-• Use React Native Testing Library for UI; isolate navigation with `renderWithNavigation` helper.
-
----
-
-## 7. Patterns Catalogue
+## 6. Patterns Catalogue
 
 • **Atomic Design** – atoms/molecules/organisms for shared components.  
 • **Repository Pattern** – bridges store ↔︎ application use cases.  
@@ -151,7 +157,7 @@ Guidelines:
 
 ---
 
-## 8. Performance Checklist ⚡️
+## 7. Performance Checklist ⚡️
 
 - Memoize heavy list items (`React.memo`).
 - Derive arrays with `useMemo`.
@@ -161,7 +167,7 @@ Guidelines:
 
 ---
 
-## 9. Security & Accessibility
+## 8. Security & Accessibility
 
 • Secure storage with `expo-secure-store`, never plain AsyncStorage for secrets.  
 • HTTPS only; certificate pinning where required.  
@@ -170,7 +176,7 @@ Guidelines:
 
 ---
 
-## 10. PR Checklist
+## 9. PR Checklist
 
 - [ ] New external data parsed & validated with Zod.
 - [ ] Layer import rules respected.

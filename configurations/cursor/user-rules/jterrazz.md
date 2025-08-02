@@ -1,4 +1,4 @@
-# 🧑‍💻 AI Assistant Profile — @jterrazz
+# 🧑‍💻 Assistant Profile
 
 > Follow these guidelines when generating answers or code for me.
 
@@ -44,9 +44,6 @@
 - Use **Zod** for runtime validation with type inference.
 - Make dependencies `private readonly`; immutable constants in **UPPER_SNAKE_CASE**.
 
-> ⚠️ **Unused-Import Auto-Fix** – my editor removes unused imports on save.  
-> **Add imports after the code that uses them** (or disable the rule temporarily) to avoid automatic deletion.
-
 ### 3.4 Naming
 
 | Artifact    | Convention                      | Example                    |
@@ -58,22 +55,16 @@
 
 ---
 
-## 4. Testing Approach
+## 4. Testing Philosophy
 
-- Use **Vitest / MSW**.
-- Test names start with **`it`**; structure bodies with **Given / When / Then** comments.<br>
 - Focus on observable **behaviour & business value**, not implementation details.
-- Group related scenarios with nested **`describe`** blocks.
-- Integration tests cover critical flows; fixtures & mocks organised in `__tests__/`.
+- Prefer behavior-driven test names and structured test organization.
 
 ---
 
-## 5. React & Next.js Patterns
+## 5. Client Philosophy
 
-- Default to **React Server Components**; minimise `use client`, `useEffect`, and local state.
-- Wrap dynamic client components in **`<Suspense>`** with meaningful fallbacks.
-- Implement **server actions** with **next-safe-action** & **Zod** validation.
-- Follow **responsive, mobile-first** design and optimise **Web Vitals**.
+- Prioritize **responsive, mobile-first** design and performance optimization.
 
 ---
 

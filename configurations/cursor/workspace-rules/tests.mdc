@@ -128,3 +128,37 @@ Key helpers:
 - [ ] Enum values in fixtures are **UPPERCASE**.
 - [ ] ≥ 90 % meaningful branch coverage.
 - [ ] Treat test code with same lint & formatting rules.
+
+---
+
+## 7. Testing Strategy by Layer
+
+### Mobile (React Native / Expo)
+
+| Layer          | Test type          | Location (by convention)                              |
+| -------------- | ------------------ | ----------------------------------------------------- |
+| Domain         | Pure unit          | alongside file → `src/domain/**/__tests__/**`         |
+| Application    | Use-case unit      | alongside file → `src/application/**/__tests__/**`    |
+| Infrastructure | Contract / adapter | alongside file → `src/infrastructure/**/__tests__/**` |
+| Presentation   | Component / hook   | alongside file → `src/presentation/**/__tests__/**`   |
+| Integration    | Cross-layer        | root → `__tests__/integration/**`                     |
+| E2E            | Detox / Playwright | root → `__tests__/e2e/**`                             |
+
+Guidelines:
+• Avoid mocks in domain tests.  
+• Contract tests spin up fixtures (e.g., mock server) rather than unit stubs.  
+• Use React Native Testing Library for UI; isolate navigation with `renderWithNavigation` helper.
+• Fixtures & mocks organised in `__tests__/`.
+
+### Server
+
+| Layer          | Test type       | Location (by convention)                              |
+| -------------- | --------------- | ----------------------------------------------------- |
+| Domain         | Pure unit       | alongside file → `src/domain/**/__tests__/**`         |
+| Application    | Use-case unit   | alongside file → `src/application/**/__tests__/**`    |
+| Infrastructure | Contract tests  | alongside file → `src/infrastructure/**/__tests__/**` |
+| DI + Framework | E2E/integration | root → `__tests__/e2e/**`                             |
+
+Guidelines:
+• Integration tests MUST assert against fixtures not mocks (e.g. spin up a test DB).
+• Critical flows covered by integration tests.

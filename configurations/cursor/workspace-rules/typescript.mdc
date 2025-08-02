@@ -68,21 +68,10 @@ Keep `tsconfig.json` minimal – extend from a shared base and override **only w
 
 ## 5. Error Handling Pattern
 
-```ts
-export const createErrorHandlerMiddleware = (logger: Logger) => {
-  return async (c: Context, next: Next) => {
-    try {
-      await next();
-    } catch (error) {
-      logger.error("Request failed", { error });
-      return c.json({ error: "Internal server error" }, 500);
-    }
-  };
-};
-```
-
 - Distinguish **expected** vs **unexpected** errors with dedicated classes.
 - Value objects use `schema.safeParse` and throw descriptive errors.
+- Use typed `Result<E, T>` return values for expected errors.
+- Unexpected errors should be thrown and captured by framework-level error boundaries.
 
 ---
 

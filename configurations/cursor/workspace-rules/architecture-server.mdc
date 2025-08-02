@@ -20,6 +20,27 @@ These rules codify how every backend repository should be structured so that cod
 ## 1. Directory Layout (with file-naming rules)
 
 ```
+__tests__/                              # Integration and e2e tests
+  ├─ integration/                       # Cross-layer integration tests
+  │   ├─ use-cases/                     # *.integration.test.ts → publish-article.integration.test.ts
+  │   ├─ repositories/                  # *.integration.test.ts → article-repository.integration.test.ts
+  │   └─ fixtures/                      # Test data & database seeds
+  │       ├─ data/                      # *.fixture.ts → article.fixture.ts
+  │       └─ database/                  # Migration scripts for test DB
+  └─ e2e/                               # End-to-end application tests
+      ├─ api/                           # API endpoint tests
+      │   ├─ articles/                  # *.e2e.test.ts → create-article.e2e.test.ts
+      │   └─ health/                    # *.e2e.test.ts → health-check.e2e.test.ts
+      ├─ jobs/                          # Background job tests
+      │   └─ *.e2e.test.ts              # → daily-digest.e2e.test.ts
+      ├─ fixtures/                      # E2E test data & mocks
+      │   ├─ servers/                   # Mock external services
+      │   └─ scenarios/                 # Complete test scenarios
+      └─ helpers/                       # Test utilities & setup
+          ├─ test-server.ts             # Test app factory
+          ├─ database-helper.ts         # DB setup/teardown
+          └─ request-helper.ts          # HTTP client utilities
+
 src/
   domain/                               # Pure business logic (NO imports from other layers)
     ├─ entities/                        # *.entity.ts   → article.entity.ts
@@ -39,9 +60,8 @@ src/
         ├─ repositories/                # *.repository.ts → prisma-article.repository.ts
         ├─ providers/                   # *.provider.ts   → medium.provider.ts
         └─ agents/                      # *.agent.ts      → headline.agent.ts
-  di/                                    # Dependency wiring – factories: *.factory.ts, container.ts
-  shared/                                # Cross-cutting pure utils: *.ts → date.util.ts
-  tests/                                 # Mirrors src hierarchy: *.spec.ts / *.test.ts
+  di/                                   # Dependency wiring – factories: *.factory.ts, container.ts
+  shared/                               # Cross-cutting pure utils: *.ts → date.util.ts
 ```
 
 ---
@@ -94,21 +114,7 @@ src/
 
 ---
 
-## 6. Testing Strategy 🧪
-
-| Layer          | Test type       | Location (by convention)                              |
-| -------------- | --------------- | ----------------------------------------------------- |
-| Domain         | Pure unit       | alongside file → `src/domain/**/__tests__/**`         |
-| Application    | Use-case unit   | alongside file → `src/application/**/__tests__/**`    |
-| Infrastructure | Contract tests  | alongside file → `src/infrastructure/**/__tests__/**` |
-| DI + Framework | E2E/integration | root → `__tests__/e2e/**`                             |
-
-Guidelines:
-• Integration tests MUST assert against fixtures not mocks (e.g. spin up a test DB).
-
----
-
-## 7. Patterns Catalogue
+## 6. Patterns Catalogue
 
 • **Agent Pattern** – outbound port for AI / LLM calls (`AskHeadlineAgentPort`).  
 • **Task / Job Pattern** – orchestrate long-running workflows; lives in `infrastructure/inbound/jobs`.  
@@ -117,7 +123,7 @@ Guidelines:
 
 ---
 
-## 8. Documentation ✅
+## 7. Documentation ✅
 
 Minimum viable comments:
 
@@ -130,7 +136,7 @@ Minimum viable comments:
 
 ---
 
-## 9. Checklists
+## 8. Checklists
 
 Use these before every PR:
 
