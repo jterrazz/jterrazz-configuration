@@ -1,4 +1,4 @@
-# Setup of MacOS
+# Setup of Applications
 
 ## Hardware
 

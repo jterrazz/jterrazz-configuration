@@ -1,4 +1,4 @@
-# Setup of Packages
+# Setup of Binaries
 
 ## Oh My Zsh
 
