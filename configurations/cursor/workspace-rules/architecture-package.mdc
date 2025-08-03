@@ -1,12 +1,12 @@
 ---
-description: Clean Architecture rules for TypeScript packages using ports/adapters pattern with domain-driven structure
+description: Clean Architecture rules for TypeScript package projects
 globs:
 alwaysApply: true
 ---
 
-# 🏗️ Clean Architecture Rules
+# 🏗️ Clean Architecture – Package
 
-These rules codify how every TypeScript package should be structured so that code remains **reusable, discoverable, and effortless to integrate**.
+These rules codify how every package project should be structured so that code remains **reusable, discoverable, and effortless to integrate**.
 
 > "Ports define contracts, adapters implement behaviour – keep the boundaries clear." – Rule #0
 
@@ -22,89 +22,40 @@ This package follows **Clean Architecture** with **Hexagonal Architecture** prin
 
 ---
 
-## 2. File & Directory Structure
+## 2. Directory Structure
 
 ### 2.1 Directory Organization
 
 ```
-src/
-├── ports/           # Interface definitions
-├── adapters/        # Implementations
-│   ├── domain-a/    # Feature domain implementations
-│   ├── domain-b/    # Feature domain implementations
-│   └── utils/       # Utility classes
-└── index.ts         # Main export file
+<repo>
+  src/
+  ├── ports/           # Interface definitions
+  ├── adapters/        # Implementations
+  │   ├── {domain-a}/  # Feature domain implementations
+  │   ├── {domain-b}/  # Feature domain implementations
+  │   └── utils/       # Utility classes
+  └── index.ts         # Main export file
 ```
 
 ### 2.2 File Naming Conventions
 
-| Type                 | Filename Pattern             | Class Name Pattern             | Example                                       |
-| -------------------- | ---------------------------- | ------------------------------ | --------------------------------------------- |
-| **Port**             | `{domain}.port.ts`           | `{Domain}Port`                 | `processor.port.ts` → `ProcessorPort`         |
-| **Adapter**          | `{name}.adapter.ts`          | `{Name}` (no "Adapter" suffix) | `data-processor.adapter.ts` → `DataProcessor` |
-| **Utility**          | `{name}.ts`                  | `{Name}`                       | `data-validator.ts` → `DataValidator`         |
-| **Test**             | `{name}.test.ts`             | N/A                            | `data-processor.test.ts`                      |
-| **Integration Test** | `{name}.integration.test.ts` | N/A                            | `data-processor.integration.test.ts`          |
+| Type                 | Filename Pattern             | Class Name Pattern             | Example                                             |
+| -------------------- | ---------------------------- | ------------------------------ | --------------------------------------------------- |
+| **Port**             | `{domain}.port.ts`           | `{Domain}Port`                 | `{entity}.port.ts` → `{Entity}Port`                 |
+| **Adapter**          | `{name}.adapter.ts`          | `{Name}` (no "Adapter" suffix) | `{entity}-{action}.adapter.ts` → `{Entity}{Action}` |
+| **Utility**          | `{name}.ts`                  | `{Name}`                       | `{utility}.ts` → `{Utility}`                        |
+| **Test**             | `{name}.test.ts`             | N/A                            | `{entity}-{action}.test.ts`                         |
+| **Integration Test** | `{name}.integration.test.ts` | N/A                            | `{entity}-{action}.integration.test.ts`             |
 
 ---
 
-## 3. Import/Export Conventions
+## 3. Code Patterns
 
-### 3.1 Import Order & Style
-
-```typescript
-// 1. External dependencies
-import { generateText } from "ai";
-import { z } from "zod/v4";
-
-// 2. Internal ports (interfaces)
-import type { ProcessorPort } from "../../ports/processor.port.js";
-import type { ValidatorPort } from "../../ports/validator.port.js";
-
-// 3. Internal adapters (relative imports)
-import { DataProcessor } from "../adapters/data-processor.adapter.js";
-```
-
-**Requirements:**
-
-- Always use **`.js` extension** for imports (for ES module compatibility)
-- Use **`type`** imports for type-only imports
-- Use relative paths for internal modules
-
-### 3.2 Main Index Structure
-
-The main `src/index.ts` must follow this structure:
+### 3.1 Port Definitions
 
 ```typescript
-// =============================================================================
-// DOMAIN FEATURES
-// =============================================================================
-
-export { BusinessLogic } from "./adapters/domain-a/business-logic.adapter.js";
-export { DataProcessor } from "./adapters/domain-b/data-processor.adapter.js";
-
-// =============================================================================
-// PORTS (Interfaces)
-// =============================================================================
-
-export * from "./ports/processor.port.js";
-export * from "./ports/validator.port.js";
-```
-
-**Section Requirements:**
-
-- Include both classes and their option types where applicable
-- Use `export *` for ports to expose all interfaces
-
----
-
-## 4. Code Patterns
-
-### 4.1 Port Definitions
-
-```typescript
-// ports/example.port.ts
-export interface ExamplePort {
+// ports/{entity}.port.ts
+export interface {Entity}Port {
   /**
    * Clear JSDoc description
    */
@@ -117,23 +68,23 @@ export interface ExamplePort {
 }
 ```
 
-### 4.2 Adapter Implementations
+### 3.2 Adapter Implementations
 
 ```typescript
-// adapters/domain-a/example.adapter.ts
-import type { ExamplePort } from "../../ports/example.port.js";
+// adapters/{domain-a}/{entity}.adapter.ts
+import type { {Entity}Port } from "../../ports/{entity}.port.js";
 
-export interface ExampleOptions {
+export interface {Entity}Options {
   // Configuration options
 }
 
 /**
- * Implementation of ExamplePort with specific behavior
+ * Implementation of {Entity}Port with specific behavior
  */
-export class Example implements ExamplePort {
+export class {Entity} implements {Entity}Port {
   constructor(
     public readonly name: string,
-    private readonly options: ExampleOptions
+    private readonly options: {Entity}Options
   ) {}
 
   async execute(input: string): Promise<string> {
@@ -142,68 +93,26 @@ export class Example implements ExamplePort {
 }
 ```
 
-### 4.3 Dependency Injection Pattern
+### 3.3 Hexagonal Architecture Requirements
 
-- Use constructor injection for dependencies
-- Make dependencies `private readonly`
-- Accept configuration through options interfaces
 - Always implement the corresponding port interface
+- Adapters must be swappable without affecting ports
+- Keep port definitions pure (no implementation details)
+- One adapter per concrete implementation
+- Use dependency injection for loose coupling
 
 ---
 
-## 5. TypeScript Standards
+## 4. Implementation Guidelines
 
-### 5.1 Type Definitions
-
-- Use **interfaces** for object shapes and contracts
-- Use **type aliases** for unions, primitives, and computed types
-- Always export option interfaces alongside classes
-- Use generic types for reusable components
-
-### 5.2 Class Design
-
-- Implement port interfaces
-- Use readonly properties for configuration
-- Private methods for internal logic
-- Clear, descriptive method and property names
-
----
-
-## 6. Documentation Requirements
-
-### 6.1 JSDoc Standards
-
-- All public classes and interfaces must have JSDoc
-- Include `@template` for generic types
-- Document parameters and return types
-- Include usage examples for complex APIs
-
-### 6.2 README Structure
-
-- Keep focused on usage and API documentation
-- Include clear examples for each major component
-- Document configuration options and requirements
-
----
-
-## 7. Maintenance Guidelines
-
-### 7.1 Adding New Features
+### 4.1 Adding New Features
 
 1. **Define the port** (interface) first
 2. **Implement the adapter** with clear naming
 3. **Add comprehensive tests** (unit + integration)
 4. **Update main index** with proper section placement
-5. **Document public APIs** with JSDoc
 
-### 7.2 File Operations
-
-- **NEVER** create documentation files unless explicitly requested
-- **PREFER** editing existing files over creating new ones
-- **MAINTAIN** existing patterns and conventions
-- **ENSURE** all imports use `.js` extensions
-
-### 7.3 Quality Gates
+### 4.2 Quality Gates
 
 - All code must pass TypeScript strict checks
 - Tests must pass before committing
@@ -212,16 +121,12 @@ export class Example implements ExamplePort {
 
 ---
 
-## 8. Best Practices
+## 5. Best Practices
 
 - ✅ **DO** follow the exact naming conventions for ports vs adapters
-- ✅ **DO** use `.js` extensions in all imports
 - ✅ **DO** maintain the structured index.ts format
 - ✅ **DO** implement port interfaces in adapter classes
-- ✅ **DO** use constructor dependency injection
 
 - ❌ **DON'T** include "Adapter" in class names (only in filenames)
 - ❌ **DON'T** create new files without following the established patterns
-- ❌ **DON'T** skip JSDoc documentation for public APIs
 - ❌ **DON'T** break the clean architecture boundaries
-- ❌ **DON'T** create documentation files unless explicitly requested

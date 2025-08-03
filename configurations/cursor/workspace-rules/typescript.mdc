@@ -1,6 +1,6 @@
 ---
-description: Type-safe, readable and maintainable TypeScript – import order, naming, compiler flags, error-handling & Zod patterns.
-globs: **/*.ts,**/*.tsx
+description: TypeScript standards for type-safe, readable, and maintainable code
+globs:
 alwaysApply: false
 ---
 
@@ -23,9 +23,9 @@ These rules codify how every TypeScript codebase should be structured so that co
 import { z } from "zod";
 import type { Context } from "hono";
 
-import { type ArticleRepositoryPort } from "@/application/ports/outbound/persistence/article-repository.port.js";
+import { type {Entity}RepositoryPort } from "@/application/ports/outbound/persistence/{entity}-repository.port.js";
 
-import { Category } from "./category.vo.js";
+import { {Value} } from "./{value}.vo.js";
 ```
 
 ---
@@ -39,8 +39,6 @@ import { Category } from "./category.vo.js";
 | `noUnusedLocals / Parameters` |  ✅   |
 | `exactOptionalPropertyTypes`  |  ✅   |
 | `noUncheckedIndexedAccess`    |  ✅   |
-
-Keep `tsconfig.json` minimal – extend from a shared base and override **only when justified**.
 
 ---
 
@@ -57,7 +55,118 @@ Keep `tsconfig.json` minimal – extend from a shared base and override **only w
 
 ---
 
-## 4. Code Style Guidelines
+## 4. Import/Export Conventions
+
+### 4.1 Import Order & Style
+
+```typescript
+// 1. External dependencies
+import { z } from "zod";
+import type { Context } from "hono";
+
+// 2. Internal ports/interfaces (type-only)
+import type { {Entity}RepositoryPort } from "@/application/ports/outbound/persistence/{entity}-repository.port.js";
+
+// 3. Internal implementations (relative imports)
+import { {Entity}Processor } from "../adapters/{entity}-processor.adapter.js";
+```
+
+**Requirements:**
+
+- Always use **`.js` extension** for imports (for ES module compatibility)
+- Use **`type`** imports for type-only imports
+- Use relative paths for internal modules
+
+### 4.2 Index File Structure
+
+```typescript
+// =============================================================================
+// DOMAIN FEATURES
+// =============================================================================
+
+export { {EntityLogic} } from "./adapters/{domain-a}/{entity}-logic.adapter.js";
+export { {DataProcessor} } from "./adapters/{domain-b}/{data}-processor.adapter.js";
+
+// =============================================================================
+// PORTS (Interfaces)
+// =============================================================================
+
+export * from "./ports/{entity}.port.js";
+export * from "./ports/{validator}.port.js";
+```
+
+**Requirements:**
+
+- Include both classes and their option types where applicable
+- Use `export *` for interfaces to expose all types
+
+---
+
+## 5. Type Definitions
+
+### 5.1 Interface vs Type Usage
+
+- Use **interfaces** for object shapes and contracts
+- Use **type aliases** for unions, primitives, and computed types
+- Always export option interfaces alongside classes
+- Use generic types for reusable components
+
+```typescript
+// ✅ Use interfaces for object shapes
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// ✅ Use type aliases for unions
+type Status = "pending" | "completed" | "failed";
+
+// ✅ Export options alongside classes
+export interface {Entity}ServiceOptions {
+  timeout: number;
+  retryCount: number;
+}
+
+export class {Entity}Service {
+  constructor(private readonly options: {Entity}ServiceOptions) {}
+}
+```
+
+### 5.2 Class Design Standards
+
+- Use readonly properties for configuration
+- Private methods for internal logic
+- Clear, descriptive method and property names
+- Explicit access modifiers
+
+```typescript
+export class {Entity}Processor {
+  constructor(
+    private readonly config: ProcessorConfig,
+    private readonly logger: Logger
+  ) {}
+
+  // Public API - clear intention
+  async processEntity(entity: Entity): Promise<ProcessedEntity> {
+    this.validateInput(entity);
+    return this.executeProcessing(entity);
+  }
+
+  // Private implementation details
+  private validateInput(entity: Entity): void {
+    // Validation logic
+  }
+
+  private async executeProcessing(entity: Entity): Promise<ProcessedEntity> {
+    // Processing logic
+  }
+}
+```
+
+---
+
+## 6. Code Style Guidelines
 
 • **Explicit return types** for every exported function / method.
 • Max **3 parameters** – otherwise use an options object.
@@ -68,7 +177,7 @@ Keep `tsconfig.json` minimal – extend from a shared base and override **only w
 
 ---
 
-## 5. Error Handling Pattern
+## 7. Error Handling Pattern
 
 - Distinguish **expected** vs **unexpected** errors with dedicated classes.
 - Value objects use `schema.safeParse` and throw descriptive errors.
@@ -77,25 +186,25 @@ Keep `tsconfig.json` minimal – extend from a shared base and override **only w
 
 ---
 
-## 6. Domain Modelling with Zod
+## 8. Domain Modeling with Zod
 
 ### Value Object Example
 
 ```ts
-export const categorySchema = z
-  .enum(["TECH", "BUSINESS", "POLITICS"])
-  .describe("Article category");
-export type CategoryEnum = z.infer<typeof categorySchema>;
+export const {value}Schema = z
+  .enum(["{VALUE_A}", "{VALUE_B}", "{VALUE_C}"])
+  .describe("{Entity} {value}");
+export type {Value}Enum = z.infer<typeof {value}Schema>;
 
-export class Category {
-  constructor(private readonly value: CategoryEnum) {}
+export class {Value} {
+  constructor(private readonly value: {Value}Enum) {}
   toString() {
     return this.value;
   }
-  static create(raw: string): Category {
-    const res = categorySchema.safeParse(raw);
-    if (!res.success) throw new Error(`Invalid category: ${raw}`);
-    return new Category(res.data);
+  static create(raw: string): {Value} {
+    const res = {value}Schema.safeParse(raw);
+    if (!res.success) throw new Error(`Invalid {value}: ${raw}`);
+    return new {Value}(res.data);
   }
 }
 ```
@@ -105,7 +214,7 @@ export class Category {
 
 ---
 
-## 7. Async Patterns
+## 9. Async Patterns
 
 - Prefer `async/await`; never chain `.then()`.
 - Use `Promise.all([...])` for parallel I/O.
@@ -114,23 +223,77 @@ export class Category {
 
 ---
 
-## 8. Configuration Objects
+## 10. Dependency Injection Pattern
 
-- Use explicit interfaces (`WorldNewsAdapterConfig`).
+### 10.1 Constructor Injection
+
+```typescript
+export interface {Entity}Options {
+  // Configuration options
+}
+
+/**
+ * Implementation with dependency injection
+ */
+export class {Entity}Service {
+  constructor(
+    public readonly name: string,
+    private readonly options: {Entity}Options,
+    private readonly repository: {Entity}RepositoryPort
+  ) {}
+
+  async execute(input: string): Promise<string> {
+    // Implementation
+  }
+}
+```
+
+**Requirements:**
+
+- Use constructor injection for dependencies
+- Make dependencies `private readonly`
+- Accept configuration through options interfaces
+
+---
+
+## 11. Configuration Objects
+
+- Use explicit interfaces (`{Service}Config`).
 - Validate at bootstrap with Zod.
 - Keep config separate from business logic.
 
 ---
 
-## 9. Documentation
+## 12. Documentation
 
-- JSDoc on public APIs explaining **why**, not **how**.
-- Ports & adapters receive `@description` block for clarity.
-- Inline comments only where code is non-obvious.
+### 12.1 JSDoc Standards
+
+```typescript
+/**
+ * Port definition for {entity} operations
+ * @description Handles {entity} business logic operations
+ */
+export interface {Entity}Port {
+  /**
+   * Executes the main {entity} operation
+   * @param input - The input data to process
+   * @returns Promise resolving to processed result
+   * @throws {ValidationError} When input is invalid
+   */
+  execute(input: string): Promise<string>;
+}
+```
+
+**Requirements:**
+
+- All public classes and interfaces must have JSDoc
+- Include `@description` for interfaces and major classes
+- Document parameters, return types, and thrown errors
+- Explain **why**, not **how**
 
 ---
 
-## 10. Best Practices
+## 13. Best Practices
 
 - ✅ **DO** respect import order & use `.js` extensions
 - ✅ **DO** enable strict compiler flags

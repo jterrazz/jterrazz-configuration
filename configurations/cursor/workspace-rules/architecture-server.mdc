@@ -1,79 +1,80 @@
 ---
-description: Authoritative clean-architecture rules for TypeScript server projects
+description: Clean Architecture rules for TypeScript server projects
 globs:
 alwaysApply: true
 ---
 
-# 🏗️ Clean Architecture – Server Side
+# 🏗️ Clean Architecture – Server
 
-These rules codify how every backend repository should be structured so that code remains **testable, maintainable, and boring-to-change**.
+These rules codify how every server project should be structured so that code remains **testable, maintainable, and boring-to-change**.
 
 > "Business logic never **knows** nor **cares** how it is called or where data is stored." – Rule #0
 
 ---
 
-## 1. Directory Layout (with file-naming rules)
+## 1. Architecture Overview
+
+### 1.1 Directory Organization
 
 ```
-__tests__/                              # Integration and e2e tests
-  ├─ integration/                       # Cross-layer integration tests
-  │   ├─ use-cases/                     # *.integration.test.ts → publish-article.integration.test.ts
-  │   ├─ repositories/                  # *.integration.test.ts → article-repository.integration.test.ts
-  │   └─ fixtures/                      # Test data & database seeds
-  │       ├─ data/                      # *.fixture.ts → article.fixture.ts
-  │       └─ database/                  # Migration scripts for test DB
-  └─ e2e/                               # End-to-end application tests
-      ├─ api/                           # API endpoint tests
-      │   ├─ articles/                  # *.e2e.test.ts → create-article.e2e.test.ts
-      │   └─ health/                    # *.e2e.test.ts → health-check.e2e.test.ts
-      ├─ jobs/                          # Background job tests
-      │   └─ *.e2e.test.ts              # → daily-digest.e2e.test.ts
-      ├─ fixtures/                      # E2E test data & mocks
-      │   ├─ servers/                   # Mock external services
-      │   └─ scenarios/                 # Complete test scenarios
-      └─ helpers/                       # Test utilities & setup
-          ├─ test-server.ts             # Test app factory
-          ├─ database-helper.ts         # DB setup/teardown
-          └─ request-helper.ts          # HTTP client utilities
-
-src/
-  domain/                               # Pure business logic (NO imports from other layers)
-    ├─ entities/                        # *.entity.ts   → article.entity.ts
-    ├─ value-objects/                   # *.vo.ts       → slug.vo.ts
-  application/                          # Orchestration + use cases
-    ├─ use-cases/                       # *.use-case.ts → publish-article.use-case.ts
-    ├─ ports/
-    │   ├─ inbound/                     # *.port.ts     → create-article.port.ts
-    │   └─ outbound/                    # *.port.ts     → article-repository.port.ts
-  infrastructure/                       # Concrete adapters & frameworks
-    ├─ inbound/                         # External entry points
-    │   ├─ controllers/                 # *.controller.ts → create-article.controller.ts
-    │   ├─ routes/                      # *.routes.ts     → article.routes.ts
-    │   ├─ schedulers/                  # *.scheduler.ts  → daily-digest.scheduler.ts
-    │   └─ jobs/                        # *.job.ts        → regenerate-preview.job.ts
-    └─ outbound/
-        ├─ repositories/                # *.repository.ts → prisma-article.repository.ts
-        ├─ providers/                   # *.provider.ts   → medium.provider.ts
-        └─ agents/                      # *.agent.ts      → headline.agent.ts
-  di/                                   # Dependency wiring – factories: *.factory.ts, container.ts
-  shared/                               # Cross-cutting pure utils: *.ts → date.util.ts
+<repo>
+  src/
+  ├── domain/                           # Pure business logic
+  │   ├── entities/                     # Domain entities
+  │   └── value-objects/                # Value objects
+  ├── application/                      # Orchestration & use cases
+  │   ├── use-cases/                    # Application use cases
+  │   └── ports/
+  │       ├── inbound/                  # Inbound ports
+  │       └── outbound/                 # Outbound ports
+  ├── infrastructure/                   # Concrete adapters & frameworks
+  │   ├── inbound/                      # External entry points
+  │   │   ├── server/                   # HTTP/API concerns
+  │   │   │   ├── controllers/          # HTTP controllers
+  │   │   │   │   └── {feature}/        # Feature-specific controllers
+  │   │   │   │       ├── handlers/     # Command/query handlers
+  │   │   │   │       └── presenters/   # Response formatters
+  │   │   │   ├── routes/               # Route definitions
+  │   │   │   └── middleware/           # HTTP middleware
+  │   │   └── worker/                   # Background job concerns
+  │   │       ├── schedulers/           # Job schedulers
+  │   │       ├── jobs/                 # Background jobs
+  │   │       │   └── {feature}/        # Feature-specific jobs
+  │   │       │       ├── handlers/     # Event/message handlers
+  │   │       │       └── presenters/   # Message formatters
+  │   │       └── queues/               # Queue handlers
+  │   └── outbound/
+  │       ├── repositories/             # Data repositories
+  │       ├── providers/                # External providers
+  │       └── agents/                   # AI/LLM agents
+  ├── di/                               # Dependency injection
+  └── shared/                           # Cross-cutting utilities
 ```
+
+### 1.2 File Naming Conventions
+
+| Type              | Filename Pattern              | Class/Export Pattern     | Example                                                      |
+| ----------------- | ----------------------------- | ------------------------ | ------------------------------------------------------------ |
+| **Entity**        | `{name}.entity.ts`            | `{Name}`                 | `{entity}.entity.ts` → `{Entity}`                            |
+| **Value Object**  | `{name}.vo.ts`                | `{Name}`                 | `{value}.vo.ts` → `{Value}`                                  |
+| **Use Case**      | `verb-noun.use-case.ts`       | `{VerbNoun}UseCase`      | `{verb}-{entity}.use-case.ts` → `{Verb}{Entity}UseCase`      |
+| **Port**          | `{name}.port.ts`              | `{Name}Port`             | `{entity}-repository.port.ts` → `{Entity}RepositoryPort`     |
+| **Controller**    | `verb-noun.controller.ts`     | `{VerbNoun}Controller`   | `{verb}-{entity}.controller.ts` → `{Verb}{Entity}Controller` |
+| **Handler**       | `verb-noun.handler.ts`        | `{VerbNoun}Handler`      | `{verb}-{entity}.handler.ts` → `{Verb}{Entity}Handler`       |
+| **Presenter**     | `{name}.presenter.ts`         | `{Name}Presenter`        | `{entity}.presenter.ts` → `{Entity}Presenter`                |
+| **Route**         | `{entity}.routes.ts`          | `{entity}Routes`         | `{entity}.routes.ts` → `{entity}Routes`                      |
+| **Middleware**    | `{name}.middleware.ts`        | `{name}Middleware`       | `auth.middleware.ts` → `authMiddleware`                      |
+| **Scheduler**     | `{name}.scheduler.ts`         | `{Name}Scheduler`        | `{entity}.scheduler.ts` → `{Entity}Scheduler`                |
+| **Queue Handler** | `{name}.handler.ts`           | `{Name}Handler`          | `{entity}-queue.handler.ts` → `{Entity}QueueHandler`         |
+| **Repository**    | `{impl}-{name}.repository.ts` | `{Impl}{Name}Repository` | `{impl}-{entity}.repository.ts` → `{Impl}{Entity}Repository` |
+| **Provider**      | `{name}.provider.ts`          | `{Name}Provider`         | `{service}.provider.ts` → `{Service}Provider`                |
+| **Agent**         | `{name}.agent.ts`             | `{Name}Agent`            | `{feature}.agent.ts` → `{Feature}Agent`                      |
+| **Job**           | `{name}.job.ts`               | `{Name}Job`              | `{action}-{entity}.job.ts` → `{Action}{Entity}Job`           |
+| **Factory**       | `{name}.factory.ts`           | `{name}Factory`          | `{entity}.factory.ts` → `{entity}Factory`                    |
 
 ---
 
-## 2. Naming Conventions
-
-• Files & folders: **kebab-case**
-• TypeScript types: **PascalCase**
-• Ports: `SomethingPort`
-• Use cases: `VerbNounUseCase` (file `verb-noun.use-case.ts`)
-• Factories: `somethingFactory` returning concrete port implementations
-• Controller: `verb-noun.controller.ts`
-• Value Object: `*.vo.ts`, expose `create()` static factory returning `Result<T>` (never `new`).
-
----
-
-## 3. Dependency Rules
+## 2. Dependency Rules
 
 ```
  domain        →   ✖  nothing
@@ -85,7 +86,7 @@ src/
 
 ---
 
-## 4. Implementation Guidelines
+## 3. Implementation Guidelines
 
 1. **Pure Functions first** – Prefer simple functions; introduce classes only when stateful or polymorphic behaviour is mandatory.
 2. **Early returns & guard clauses** – flat control-flow, no deep nesting.
@@ -101,15 +102,15 @@ src/
 
 ---
 
-## 5. DI Container (di/)
+## 4. Dependency Injection
 
-• Single `container.ts` exposing `makeApp()` factory.
+• Single `container.ts` exposing `createContainer()` factory.
 • No decorators – use explicit factory functions for tree-shakability.
 • Factories named `<token>Factory` returning concrete impl.
 
 ---
 
-## 6. Patterns Catalogue
+## 5. Patterns Catalog
 
 • **Agent Pattern** – outbound port for AI / LLM calls (`AskHeadlineAgentPort`).
 • **Task / Job Pattern** – orchestrate long-running workflows; lives in `infrastructure/inbound/jobs`.
@@ -118,7 +119,7 @@ src/
 
 ---
 
-## 7. Documentation ✅
+## 6. Documentation
 
 Minimum viable comments:
 
@@ -129,11 +130,11 @@ Minimum viable comments:
 
 ---
 
-## 8. Best Practices
+## 7. Best Practices
 
 - ✅ **DO** validate all external data with Zod schemas
 - ✅ **DO** respect layer dependency rules
-- ✅ **DO** write or update tests for changes
+
 - ✅ **DO** include operation context in logs
 - ✅ **DO** use dependency injection via factories
 

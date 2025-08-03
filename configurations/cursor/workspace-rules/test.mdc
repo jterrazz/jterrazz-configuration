@@ -1,10 +1,10 @@
 ---
-description: Unified testing guidelines – structure, naming, skeleton & helpers for unit/integration/e2e tests
-globs: **/*.mock.*,**/*.test.*
-alwaysApply: false
+description: Testing guidelines for unit, integration, and e2e tests
+globs:
+alwaysApply: true
 ---
 
-# 🧪 Testing Standards – Unit & Integration
+# 🧪 Testing Standards
 
 These rules codify how every test suite should be structured so that tests remain **reliable, readable, and effortless to maintain**.
 
@@ -12,159 +12,230 @@ These rules codify how every test suite should be structured so that tests remai
 
 ---
 
-## 1. Directory Layout
+## 1. Test Strategy
+
+### Testing Pyramid
+
+```
+    /\     E2E Tests
+   /  \    • Critical user workflows
+  /____\   • Slow, expensive, selective
+ /      \
+/________\
+|        | Integration Tests
+|        | • Cross-layer interactions
+|        | • Real dependencies, mocked externals
+|________| • Medium speed, targeted coverage
+|        |
+|        | Unit Tests
+|        | • Pure business logic
+|        | • Fast, isolated, comprehensive
+|________|
+```
+
+### Test Types & When to Use
+
+| Test Type       | Purpose                  | Speed  | Location                 |
+| --------------- | ------------------------ | ------ | ------------------------ |
+| **Unit**        | Pure logic, domain rules | Fast   | Alongside source files   |
+| **Integration** | Cross-layer workflows    | Medium | `__tests__/integration/` |
+| **E2E**         | Critical user journeys   | Slow   | `__tests__/e2e/`         |
+| **Contract**    | External API boundaries  | Medium | Alongside adapters       |
+
+---
+
+## 2. Directory Structure
 
 ```
 <repo>
   src/
-    components/
-      button/
-        button.tsx
-        __tests__/button.test.tsx      # ← colocated unit test
+  ├── {feature}.ts
+  └── __tests__/
+      └── {feature}.test.ts                  # Colocated unit tests
 
-  __tests__/                           # ← root for cross-cutting tests/artifacts
-    server-articles-route.integration.test.ts
-    fixtures/
-      valid-user.fixture.ts
-    mocks/
-      payment-gateway.mock.ts
-    providers/
-      ai.openrouter/
-        open-router-universal.resolver.ts
+  __tests__/                                 # Integration tests & shared utilities
+  ├── integration/
+  │   └── {feature}.integration.test.ts      # Integration tests
+  ├── e2e/
+  │   └── {workflow}.e2e.test.ts             # E2E tests
+  ├── fixtures/
+  │   └── {entity}.factory.ts                # Domain object factories
+  ├── providers/                             # MSW handlers for external services
+  │   └── com.{domain}.api/
+  │       └── {service}-endpoint.resolver.ts
+  └── setup/
+      ├── integration.ts                     # Test context setup
+      └── test-utils.ts                      # Helper utilities
 ```
 
-- **Unit tests** live next to the source file inside a `__tests__/` folder.
-- **Integration / E2E** tests live in the root `__tests__/` folder.
-- Shared **fixtures**, **mocks** & **resolvers** are grouped under their dedicated sub-folders.
+### Core Principles
+
+- **Unit tests**: Always colocated with source code in `__tests__/` folders
+- **Integration tests**: In `__tests__/integration/`, test cross-layer interactions
+- **E2E tests**: In `__tests__/e2e/`, test complete workflows
+- **Test utilities**: Centralized in `__tests__/setup/` for reusability
 
 ---
 
-## 2. Naming Conventions
+## 3. Naming Conventions
 
-| Kind             | Suffix                 | Example                                     |
-| ---------------- | ---------------------- | ------------------------------------------- |
-| Unit test        | `.test.ts[x]`          | `button.test.tsx`                           |
-| Integration test | `.integration.test.ts` | `server-articles-route.integration.test.ts` |
-| Fixture          | `.fixture.ts`          | `valid-user.fixture.ts`                     |
-| Mock             | `.mock.ts`             | `payment-gateway.mock.ts`                   |
-| Test resolver    | `.resolver.ts`         | `open-router-universal.resolver.ts`         |
+| Type             | Pattern                          | Example                                                               |
+| ---------------- | -------------------------------- | --------------------------------------------------------------------- |
+| **Unit test**    | `{name}.test.ts[x]`              | `src/{feature}/__tests__/{feature}.test.ts`                           |
+| **Integration**  | `{name}.integration.test.ts`     | `__tests__/integration/{feature}.integration.test.ts`                 |
+| **E2E test**     | `{workflow}.e2e.test.ts`         | `__tests__/e2e/{verb}-{entity}.e2e.test.ts`                           |
+| **Factory**      | `{entity}.factory.ts`            | `__tests__/fixtures/{entity}.factory.ts`                              |
+| **MSW Provider** | `{service}-endpoint.resolver.ts` | `__tests__/providers/com.{domain}.api/{service}-endpoint.resolver.ts` |
+| **Test Helper**  | `{purpose}.ts`                   | `__tests__/setup/{purpose}.ts`                                        |
 
 ---
 
-## 3. Test File Skeleton
+## 4. Test File Structure
 
-Every test file **MUST** follow this order:
+Every test file follows this order:
 
-1. Imports (always use `.js` extension when importing compiled TS).
-2. Mocks / stubs.
-3. Test data (fixtures).
-4. Hooks in order: `beforeAll` → `beforeEach` → `afterEach` → `afterAll`.
-5. Test suites (`describe`) & scenarios (`it`).
+```typescript
+// 1. Imports (with .js extensions for ESM)
+import { describe, it, expect, beforeAll, afterEach } from "@jterrazz/test";
+import { UserFactory } from "../fixtures/user.factory.js";
 
-Example hook ordering for integration context:
+// 2. Test data setup & MSW handlers
+const mockUserData = UserFactory.build();
 
-```ts
+// 3. Test hooks
 beforeAll(async () => {
-  integrationCtx = await createIntegrationContext();
+  /* setup */
 });
-
-beforeEach(async () => {
-  await startIntegrationContext(integrationCtx);
-});
-
 afterEach(async () => {
-  await stopIntegrationContext(integrationCtx);
+  /* cleanup */
+});
+
+// 4. Test suites
+describe("User Entity", () => {
+  describe("validation", () => {
+    it("accepts valid email formats", () => {
+      // Given – valid email input
+      const email = "user@example.com";
+
+      // When – creating user
+      const user = User.create({ email, name: "Test User" });
+
+      // Then – user is valid
+      expect(user.isValid()).toBe(true);
+    });
+  });
 });
 ```
 
 ---
 
-## 4. Writing Tests
+## 5. Writing Tests
 
-• Prefer `it` over `test` for clarity.
-• Structure each block with **Given / When / Then** comments – use en dashes (–) for prose descriptions.
+### Structure Guidelines
 
-```ts
-it("returns full JSON response for mixed US articles", async () => {
-  // Given – a mixed set of US articles
-  await ArticleScenarios.createMixedArticles(prisma);
+- Use **Given/When/Then** comments for clarity
+- Prefer `it` over `test` for readability
+- Group related scenarios with nested `describe` blocks
+- Focus on **observable behaviour**, not implementation
 
-  // When – requesting articles
-  const res = await executeRequest("/articles?limit=10");
+### Integration Test Example
 
-  // Then – status OK & expected payload
-  expect(res.status).toBe(200);
-  expect(res.body.items).toHaveLength(10);
+```typescript
+import { describe, it, expect, beforeAll } from "@jterrazz/test";
+import {
+  createIntegrationContext,
+  executeRequest,
+} from "../setup/integration.js";
+
+describe("User Registration API", () => {
+  let context: IntegrationContext;
+
+  beforeAll(async () => {
+    context = await createIntegrationContext();
+  });
+
+  it("creates user and returns confirmation", async () => {
+    // Given – valid registration data
+    const userData = { email: "test@example.com", password: "secure123" };
+
+    // When – submitting registration
+    const response = await executeRequest(context, "POST", "/users", userData);
+
+    // Then – user is created successfully
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      id: expect.any(String),
+      email: userData.email,
+    });
+  });
 });
 ```
 
-• Group related scenarios with nested `describe` blocks (`success – happy path`, `error handling`).
-• Use `it.each` for table-driven tests.
-• Focus on **observable behaviour**, not implementation details.
-
 ---
 
-## 5. Recommended Toolkit
+## 6. Test Utilities & Patterns
 
-Always import from the internal toolkit first:
+### Integration Context Pattern
 
-```ts
-import { describe, it, expect, mockOf, mockOfDate, msw } from "@jterrazz/test";
+```typescript
+// __tests__/setup/integration.ts
+export interface IntegrationContext {
+  db: Database;
+  server: TestServer;
+  msw: SetupServer;
+}
+
+export async function createIntegrationContext(): Promise<IntegrationContext> {
+  // Setup temporary database, test server, MSW handlers
+}
 ```
 
-Key helpers:
+### Domain Factories
 
-- `mockOfDate` – deterministic Date mocking (`mockOfDate.set() / reset()`).
-- `msw` – API mocking with dynamic responses.
-- Integration helpers: `createIntegrationContext`, `startIntegrationContext`, `stopIntegrationContext`, `executeRequest`, `executeTask`, `normaliseSnapshot`.
+```typescript
+// __tests__/fixtures/user.factory.ts
+export class UserFactory {
+  static build(overrides?: Partial<User>): User {
+    return {
+      id: crypto.randomUUID(),
+      email: "test@example.com",
+      name: "Test User",
+      createdAt: new Date(),
+      ...overrides,
+    };
+  }
+}
+```
+
+### MSW Providers
+
+```typescript
+// __tests__/providers/com.auth.api/auth-service-endpoint.resolver.ts
+import { http, setupServer } from "msw";
+
+export const authServiceHandlers = [
+  http.post("/api/auth/login", ({ request }) => {
+    return new Response(JSON.stringify({ token: "mock-jwt-token" }));
+  }),
+];
+
+// Setup MSW server for integration tests
+export const server = setupServer(...authServiceHandlers);
+```
 
 ---
 
-## 6. Best Practices
+## 7. Best Practices
 
 - ✅ **DO** write behaviour-driven test titles
 - ✅ **DO** use Given/When/Then structure
 - ✅ **DO** reset state between tests
 - ✅ **DO** keep unit tests fast (≤ 200ms)
-- ✅ **DO** use **UPPERCASE** enum values in fixtures
-- ✅ **DO** aim for ≥ 90% meaningful branch coverage
+- ✅ **DO** use real databases for integration tests
+- ✅ **DO** mock external services with MSW
 
 - ❌ **DON'T** test implementation details
 - ❌ **DON'T** use multiple logical assertions per `it`
 - ❌ **DON'T** skip test data cleanup
 - ❌ **DON'T** ignore linting rules in test code
-- ❌ **DON'T** mix expected and unexpected error testing
-
----
-
-## 7. Testing Strategy by Layer
-
-### Mobile (React Native / Expo)
-
-| Layer          | Test type          | Location (by convention)                              |
-| -------------- | ------------------ | ----------------------------------------------------- |
-| Domain         | Pure unit          | alongside file → `src/domain/**/__tests__/**`         |
-| Application    | Use-case unit      | alongside file → `src/application/**/__tests__/**`    |
-| Infrastructure | Contract / adapter | alongside file → `src/infrastructure/**/__tests__/**` |
-| Presentation   | Component / hook   | alongside file → `src/presentation/**/__tests__/**`   |
-| Integration    | Cross-layer        | root → `__tests__/integration/**`                     |
-| E2E            | Detox / Playwright | root → `__tests__/e2e/**`                             |
-
-Guidelines:
-• Avoid mocks in domain tests.
-• Contract tests spin up fixtures (e.g., mock server) rather than unit stubs.
-• Use React Native Testing Library for UI; isolate navigation with `renderWithNavigation` helper.
-• Fixtures & mocks organised in `__tests__/`.
-
-### Server
-
-| Layer          | Test type       | Location (by convention)                              |
-| -------------- | --------------- | ----------------------------------------------------- |
-| Domain         | Pure unit       | alongside file → `src/domain/**/__tests__/**`         |
-| Application    | Use-case unit   | alongside file → `src/application/**/__tests__/**`    |
-| Infrastructure | Contract tests  | alongside file → `src/infrastructure/**/__tests__/**` |
-| DI + Framework | E2E/integration | root → `__tests__/e2e/**`                             |
-
-Guidelines:
-• Integration tests MUST assert against fixtures not mocks (e.g. spin up a test DB).
-• Critical flows covered by integration tests.
+- ❌ **DON'T** hardcode test data (use factories)
