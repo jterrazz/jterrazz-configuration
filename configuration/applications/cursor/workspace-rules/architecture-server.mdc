@@ -49,6 +49,12 @@ These rules codify how every server project should be structured so that code re
   │       └── agents/                   # AI/LLM agents
   ├── di/                               # Dependency injection
   └── shared/                           # Cross-cutting utilities
+  requests/                             # HTTP request files for API testing
+  ├── {path}/                           # Path-specific request collections
+  │   ├── get.http                      # GET requests for this path
+  │   ├── post.http                     # POST requests for this path
+  │   └── put.http                      # PUT/PATCH requests for this path
+  └── get.http                          # Root endpoint requests
 ```
 
 ### 1.2 File Naming Conventions
