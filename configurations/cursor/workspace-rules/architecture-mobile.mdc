@@ -1,5 +1,5 @@
 ---
-description: Clean-architecture & atomic-design rules for Mobile projects (TypeScript-strict, functional, modular, test-first).
+description: Clean-architecture & atomic-design rules for Typescript mobile projects
 globs:
 alwaysApply: true
 ---
@@ -7,13 +7,6 @@ alwaysApply: true
 # 📱 Clean Architecture – Mobile
 
 These rules describe how every mobile repository should be organised so that code is **predictable, portable, and a joy to iterate on**.
-Assumptions:
-• React Native with Expo  
-• TypeScript strict mode  
-• Functional components & hooks  
-• Dependency Injection via factories/contexts  
-• Atomic Design for UI  
-• Ports & Adapters for business logic / side-effects
 
 > "UI is just a function of state – keep state clean and the UI will follow." – Rule #0
 
@@ -94,13 +87,13 @@ For large apps, wrap the above folders inside `modules/<feature>/` to isolate bo
 
 ## 2. Naming Conventions
 
-• Folders & files: **kebab-case**  
-• React components: **PascalCase** (named exports)  
-• Hooks: `useSomething.ts`  
-• Ports: `SomethingPort`  
-• Use cases: `verb-noun.use-case.ts` exposing `execute()`  
-• Store: `entity.store.ts`  
-• Provider: `*.provider.ts`  
+• Folders & files: **kebab-case**
+• React components: **PascalCase** (named exports)
+• Hooks: `useSomething.ts`
+• Ports: `SomethingPort`
+• Use cases: `verb-noun.use-case.ts` exposing `execute()`
+• Store: `entity.store.ts`
+• Provider: `*.provider.ts`
 • Test file: `*.test.ts[x]` colocated under `__tests__`.
 
 ---
@@ -124,12 +117,12 @@ Any violation should fail CI via `@typescript-eslint/no-restricted-imports`.
 
 1. **Functional & declarative** – Components are pure functions; prefer hooks over class components.
 2. **Early returns & guard clauses** – keep render and logic flat.
-3. **State strategy**  
-   • Local component state with `useState` when truly local.  
+3. **State strategy**
+   • Local component state with `useState` when truly local.
    • Global cross-screen state via **Zustand** stores behind repositories.
 4. **Zod validation** – All external data (API, storage, env) validated at boundaries.
-5. **Error handling**  
-   • Expected errors returned as `Result`.  
+5. **Error handling**
+   • Expected errors returned as `Result`.
    • Unexpected errors caught by an ErrorBoundary (presentation) or global handler (native log).
 6. **No side-effects in domain & application** – All I/O lives in providers/persistence.
 7. **Platform code** – Use file suffixes `.ios`, `.android`, `.native` when diverging.
@@ -139,20 +132,20 @@ Any violation should fail CI via `@typescript-eslint/no-restricted-imports`.
 
 ## 5. DI Container (di/)
 
-• One `container.ts` exporting `createContainer()` that wires concrete implementations.  
-• Use React Context (`ContainerProvider`) to expose container to hooks.  
-• Factories named `<token>Factory`.  
+• One `container.ts` exporting `createContainer()` that wires concrete implementations.
+• Use React Context (`ContainerProvider`) to expose container to hooks.
+• Factories named `<token>Factory`.
 • Never import container directly in production code – always via `useContainer()`.
 
 ---
 
 ## 6. Patterns Catalogue
 
-• **Atomic Design** – atoms/molecules/organisms for shared components.  
-• **Repository Pattern** – bridges store ↔︎ application use cases.  
-• **Provider Pattern** – wraps remote APIs / SDKs / sensors.  
-• **Hook Facade** – each feature exposes a single hook (`useBookmarks`) that glues UI ↔︎ use cases.  
-• **Navigation Container** – own folder under `infrastructure/navigation` with typed params.  
+• **Atomic Design** – atoms/molecules/organisms for shared components.
+• **Repository Pattern** – bridges store ↔︎ application use cases.
+• **Provider Pattern** – wraps remote APIs / SDKs / sensors.
+• **Hook Facade** – each feature exposes a single hook (`useBookmarks`) that glues UI ↔︎ use cases.
+• **Navigation Container** – own folder under `infrastructure/navigation` with typed params.
 • **Theme / Design-System** – colocated in `presentation/shared` and provided via Context.
 
 ---
@@ -169,18 +162,24 @@ Any violation should fail CI via `@typescript-eslint/no-restricted-imports`.
 
 ## 8. Security & Accessibility
 
-• Secure storage with `expo-secure-store`, never plain AsyncStorage for secrets.  
-• HTTPS only; certificate pinning where required.  
-• Every touchable has `accessibilityLabel`, `accessibilityRole`, proper state.  
+• Secure storage with `expo-secure-store`, never plain AsyncStorage for secrets.
+• HTTPS only; certificate pinning where required.
+• Every touchable has `accessibilityLabel`, `accessibilityRole`, proper state.
 • Support dynamic font sizes via `allowFontScaling` and `StyleSheet.minScaleFactor`.
 
 ---
 
-## 9. PR Checklist
+## 9. Best Practices
 
-- [ ] New external data parsed & validated with Zod.
-- [ ] Layer import rules respected.
-- [ ] All public types exported from `index.ts`.
-- [ ] Tests added/updated (unit or e2e).
-- [ ] Screens/components support dark mode & RTL.
-- [ ] No `console.log` committed.
+- ✅ **DO** validate external data with Zod schemas
+- ✅ **DO** respect layer import rules
+- ✅ **DO** export public types from `index.ts`
+- ✅ **DO** write tests for new features
+- ✅ **DO** support dark mode & RTL layouts
+- ✅ **DO** use dependency injection via context
+
+- ❌ **DON'T** commit `console.log` statements
+- ❌ **DON'T** import infrastructure directly in presentation
+- ❌ **DON'T** put business logic in components
+- ❌ **DON'T** skip accessibility features
+- ❌ **DON'T** exceed 250 lines for UI components

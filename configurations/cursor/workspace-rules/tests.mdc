@@ -6,7 +6,9 @@ alwaysApply: false
 
 # 🧪 Testing Standards – Unit & Integration
 
-These rules ensure every repository shares the **same testing ergonomics** so that suites are easy to read, maintain and extend.
+These rules codify how every test suite should be structured so that tests remain **reliable, readable, and effortless to maintain**.
+
+> "Test behaviour, not implementation – focus on what the code does, not how it does it." – Rule #0
 
 ---
 
@@ -118,16 +120,20 @@ Key helpers:
 
 ---
 
-## 6. Best Practices Checklist
+## 6. Best Practices
 
-- [ ] Behaviour-driven titles (what not how).
-- [ ] One logical assertion group per `it` (multiple `expect` allowed).
-- [ ] Reset state in hooks to keep tests independent.
-- [ ] Keep unit tests fast (≤ 200 ms); integration reasonable.
-- [ ] Document expected vs unexpected errors explicitly.
-- [ ] Enum values in fixtures are **UPPERCASE**.
-- [ ] ≥ 90 % meaningful branch coverage.
-- [ ] Treat test code with same lint & formatting rules.
+- ✅ **DO** write behaviour-driven test titles
+- ✅ **DO** use Given/When/Then structure
+- ✅ **DO** reset state between tests
+- ✅ **DO** keep unit tests fast (≤ 200ms)
+- ✅ **DO** use **UPPERCASE** enum values in fixtures
+- ✅ **DO** aim for ≥ 90% meaningful branch coverage
+
+- ❌ **DON'T** test implementation details
+- ❌ **DON'T** use multiple logical assertions per `it`
+- ❌ **DON'T** skip test data cleanup
+- ❌ **DON'T** ignore linting rules in test code
+- ❌ **DON'T** mix expected and unexpected error testing
 
 ---
 
@@ -145,8 +151,8 @@ Key helpers:
 | E2E            | Detox / Playwright | root → `__tests__/e2e/**`                             |
 
 Guidelines:
-• Avoid mocks in domain tests.  
-• Contract tests spin up fixtures (e.g., mock server) rather than unit stubs.  
+• Avoid mocks in domain tests.
+• Contract tests spin up fixtures (e.g., mock server) rather than unit stubs.
 • Use React Native Testing Library for UI; isolate navigation with `renderWithNavigation` helper.
 • Fixtures & mocks organised in `__tests__/`.
 

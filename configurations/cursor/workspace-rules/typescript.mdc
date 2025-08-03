@@ -6,7 +6,9 @@ alwaysApply: false
 
 # 🏷️ TypeScript Standards
 
-Shared rules that keep every codebase strictly typed, predictable and easy to refactor.
+These rules codify how every TypeScript codebase should be structured so that code remains **type-safe, readable, and maintainable**.
+
+> "Make invalid states unrepresentable – use the type system to prevent bugs." – Rule #0
 
 ---
 
@@ -57,11 +59,11 @@ Keep `tsconfig.json` minimal – extend from a shared base and override **only w
 
 ## 4. Code Style Guidelines
 
-• **Explicit return types** for every exported function / method.<br>
-• Max **3 parameters** – otherwise use an options object.<br>
-• Prefer **arrow functions** for class properties.<br>
-• Always mark injected deps `private readonly`.<br>
-• Early returns + guard clauses; avoid deep nesting.<br>
+• **Explicit return types** for every exported function / method.
+• Max **3 parameters** – otherwise use an options object.
+• Prefer **arrow functions** for class properties.
+• Always mark injected deps `private readonly`.
+• Early returns + guard clauses; avoid deep nesting.
 • Class member order: public props → private props → constructor → public methods → private methods.
 
 ---
@@ -128,13 +130,16 @@ export class Category {
 
 ---
 
-## ✅ Checklist
+## 10. Best Practices
 
-- [ ] Import order respected & uses `.js` extension.
-- [ ] Strict compiler flags enabled.
-- [ ] Naming follows table conventions.
-- [ ] No more than 3 function parameters.
-- [ ] Early returns over nested `if`s.
-- [ ] Zod schemas validated at boundaries.
-- [ ] Descriptive error messages & separation expected/unexpected.
-- [ ] Public APIs fully typed & documented.
+- ✅ **DO** respect import order & use `.js` extensions
+- ✅ **DO** enable strict compiler flags
+- ✅ **DO** follow naming table conventions
+- ✅ **DO** use early returns over nested `if`s
+- ✅ **DO** validate Zod schemas at boundaries
+- ✅ **DO** provide descriptive error messages
+- ✅ **DO** fully type & document public APIs
+
+- ❌ **DON'T** use more than 3 function parameters
+- ❌ **DON'T** mix expected and unexpected error handling
+- ❌ **DON'T** skip type annotations on exported functions

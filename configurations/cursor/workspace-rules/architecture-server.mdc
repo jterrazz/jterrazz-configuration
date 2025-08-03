@@ -1,17 +1,12 @@
 ---
-description: Authoritative clean-architecture rules for Node.js / TypeScript server projects (DDD, Ports & Adapters, FP-first, test-driven).
+description: Authoritative clean-architecture rules for TypeScript server projects
 globs:
 alwaysApply: true
 ---
 
 # 🏗️ Clean Architecture – Server Side
 
-These rules codify how every backend repository should be structured so that code remains **testable, maintainable, and boring-to-change**. They assume:
-• TypeScript with `strict` on  
-• Functional & declarative style  
-• Dependency Injection via factories  
-• Hexagonal / Ports-and-Adapters layering  
-• Domain-Driven Design terminology
+These rules codify how every backend repository should be structured so that code remains **testable, maintainable, and boring-to-change**.
 
 > "Business logic never **knows** nor **cares** how it is called or where data is stored." – Rule #0
 
@@ -68,12 +63,12 @@ src/
 
 ## 2. Naming Conventions
 
-• Files & folders: **kebab-case**  
-• TypeScript types: **PascalCase**  
-• Ports: `SomethingPort`  
-• Use cases: `VerbNounUseCase` (file `verb-noun.use-case.ts`)  
-• Factories: `somethingFactory` returning concrete port implementations  
-• Controller: `verb-noun.controller.ts`  
+• Files & folders: **kebab-case**
+• TypeScript types: **PascalCase**
+• Ports: `SomethingPort`
+• Use cases: `VerbNounUseCase` (file `verb-noun.use-case.ts`)
+• Factories: `somethingFactory` returning concrete port implementations
+• Controller: `verb-noun.controller.ts`
 • Value Object: `*.vo.ts`, expose `create()` static factory returning `Result<T>` (never `new`).
 
 ---
@@ -95,10 +90,10 @@ src/
 1. **Pure Functions first** – Prefer simple functions; introduce classes only when stateful or polymorphic behaviour is mandatory.
 2. **Early returns & guard clauses** – flat control-flow, no deep nesting.
 3. **Zod everywhere** –
-   a. All external data (HTTP, DB, env) validated asap.  
+   a. All external data (HTTP, DB, env) validated asap.
    b. Schemas live alongside the receiving port.
-4. **Error strategy**  
-   • Expected errors = typed `Result<E, T>` return values.  
+4. **Error strategy**
+   • Expected errors = typed `Result<E, T>` return values.
    • Unexpected = thrown & captured by a framework-level error boundary.
 5. **No side effects in domain** – Domain cannot `console.log`, reach DB, or import `process.env`.
 6. **Immutability** – Entities/VOs expose mutation as `with*` copy methods.
@@ -108,17 +103,17 @@ src/
 
 ## 5. DI Container (di/)
 
-• Single `container.ts` exposing `makeApp()` factory.  
-• No decorators – use explicit factory functions for tree-shakability.  
+• Single `container.ts` exposing `makeApp()` factory.
+• No decorators – use explicit factory functions for tree-shakability.
 • Factories named `<token>Factory` returning concrete impl.
 
 ---
 
 ## 6. Patterns Catalogue
 
-• **Agent Pattern** – outbound port for AI / LLM calls (`AskHeadlineAgentPort`).  
-• **Task / Job Pattern** – orchestrate long-running workflows; lives in `infrastructure/inbound/jobs`.  
-• **Configuration Port** – validated env & feature flags; injected, never imported.  
+• **Agent Pattern** – outbound port for AI / LLM calls (`AskHeadlineAgentPort`).
+• **Task / Job Pattern** – orchestrate long-running workflows; lives in `infrastructure/inbound/jobs`.
+• **Configuration Port** – validated env & feature flags; injected, never imported.
 • **Event Bus Port** – decouple async domain events; injected implementation (e.g. Kafka, in-memory).
 
 ---
@@ -129,19 +124,21 @@ Minimum viable comments:
 
 1. Complex domain rules – explain **why** it exists.
 2. Ports – 1-liner describing the boundary.
-3. Public use-case `execute` – parameters, result, possible errors.  
+3. Public use-case `execute` – parameters, result, possible errors.
    Prefer Zod `.describe()` and `/** @description */` jsdoc tags over inline comments.
 
 ---
 
----
+## 8. Best Practices
 
-## 8. Checklists
+- ✅ **DO** validate all external data with Zod schemas
+- ✅ **DO** respect layer dependency rules
+- ✅ **DO** write or update tests for changes
+- ✅ **DO** include operation context in logs
+- ✅ **DO** use dependency injection via factories
 
-Use these before every PR:
-
-- [ ] Domain unchanged by infrastructure/framework refactor.
-- [ ] All new external data has a Zod schema.
-- [ ] Each file respects layer dependencies.
-- [ ] Tests written or updated.
-- [ ] Logs carry operation context (request id, correlation id).
+- ❌ **DON'T** let infrastructure changes affect domain
+- ❌ **DON'T** import across layer boundaries
+- ❌ **DON'T** put side effects in domain layer
+- ❌ **DON'T** skip error handling strategy
+- ❌ **DON'T** exceed 300 lines per file
