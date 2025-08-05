@@ -1,0 +1,200 @@
+# Extending the Modular `j` Command System
+
+## Adding a New Module
+
+The modular system automatically discovers new modules. To add a new category (e.g., `j mymodule`), simply create a new module directory and commands file.
+
+### Step 1: Create Module Directory
+
+```bash
+mkdir configuration/binaries/j/mymodule
+```
+
+### Step 2: Create Commands File
+
+Create `configuration/binaries/j/mymodule/commands.sh`:
+
+```bash
+#!/bin/bash
+
+# MyModule module for jterrazz command system
+# This file defines all mymodule-related commands
+
+# Main mymodule command handler
+j_mymodule() {
+    if [ $# -eq 0 ]; then
+        j_mymodule_help
+        return 1
+    fi
+
+    local command="$1"
+    shift
+
+    case "$command" in
+        "hello")
+            echo "👋 Hello from mymodule!"
+            ;;
+        "world")
+            echo "🌍 World command executed!"
+            ;;
+        "help"|"-h"|"--help")
+            j_mymodule_help
+            ;;
+        *)
+            echo "❌ Unknown mymodule command: $command"
+            j_mymodule_help
+            return 1
+            ;;
+    esac
+}
+
+# MyModule help function
+j_mymodule_help() {
+    echo "🔧 MyModule Commands"
+    echo ""
+    echo "Usage: j mymodule <command>"
+    echo ""
+    echo "Commands:"
+    echo "  hello     Say hello"
+    echo "  world     Execute world command"
+    echo "  help      Show this help"
+}
+
+# Auto-completion for mymodule commands
+j_mymodule_completion() {
+    echo "hello world help"
+}
+
+# Module metadata
+J_MODULE_NAME="mymodule"
+J_MODULE_DESCRIPTION="My custom module"
+J_MODULE_COMMANDS="hello world help"
+```
+
+### Step 3: Make Executable
+
+```bash
+chmod +x configuration/binaries/j/mymodule/commands.sh
+```
+
+### Step 4: Test
+
+The module auto-loads on next use:
+
+```bash
+j help              # Should show mymodule
+j mymodule help     # Show mymodule commands
+j mymodule hello    # Test the command
+```
+
+## Module Structure Requirements
+
+### Required Functions
+
+1. **Main Handler**: `j_<modulename>()`
+
+   - Entry point for your module
+   - Must handle help and error cases
+
+2. **Help Function**: `j_<modulename>_help()`
+   - Display usage and commands
+   - Follow the emoji + description format
+
+### Optional Functions
+
+3. **Completion**: `j_<modulename>_completion()`
+   - Return space-separated command list
+   - Used for shell tab completion
+
+### Required Metadata
+
+```bash
+J_MODULE_NAME="modulename"
+J_MODULE_DESCRIPTION="Short description"
+J_MODULE_COMMANDS="cmd1 cmd2 help"
+```
+
+## Best Practices
+
+### Naming Conventions
+
+- **Module directory**: lowercase, no spaces
+- **Function names**: `j_<modulename>_<function>`
+- **Variables**: `J_MODULE_*` for metadata
+
+### Error Handling
+
+```bash
+# Check for required parameters
+if [ $# -eq 0 ]; then
+    echo "❌ Please provide a parameter"
+    echo "💡 Usage: j mymodule command 'parameter'"
+    return 1
+fi
+
+# Check for external dependencies
+if ! command -v some_tool >/dev/null 2>&1; then
+    echo "❌ some_tool not found"
+    return 1
+fi
+```
+
+### User Feedback
+
+- Use emojis for visual clarity
+- Provide clear error messages with usage hints
+- Show progress for long-running operations
+- Use consistent formatting
+
+### Example Commands
+
+```bash
+case "$command" in
+    "start")
+        echo "🚀 Starting service..."
+        # your code here
+        ;;
+    "stop")
+        echo "🛑 Stopping service..."
+        # your code here
+        ;;
+    "status")
+        echo "📊 Service status:"
+        # your code here
+        ;;
+esac
+```
+
+## Real Example: System Module
+
+See `configuration/binaries/j/system/commands.sh` for a real implementation example that demonstrates:
+
+- Parameter validation
+- External dependency checking
+- Multiple command patterns
+- Proper error handling
+- Consistent help formatting
+
+## Testing Your Module
+
+```bash
+# Reload and test
+unset J_LOADED_MODULES J_MODULE_DESCRIPTIONS
+source configuration/binaries/j/j.sh
+
+# Test commands
+j help
+j mymodule help
+j mymodule hello
+```
+
+## Module Ideas
+
+- **dev**: Development workflow (build, test, deploy)
+- **net**: Network utilities (ping, scan, etc.)
+- **file**: File operations (compress, backup, etc.)
+- **config**: Configuration management
+- **media**: Media conversion and processing
+- **cloud**: Cloud service management
+
+The modular design makes it easy to organize and maintain your custom commands!
