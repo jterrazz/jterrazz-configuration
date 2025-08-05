@@ -109,10 +109,14 @@ _j_list_modules() {
 
 # Completion function for zsh
 _j_completion() {
-    local state
-    _arguments \
+    local state line
+    local -A opt_args
+    
+    _arguments -C \
         '1: :->category' \
-        '*: :->command'
+        '2: :->command' \
+        '3: :->subcommand' \
+        '*: :->args'
     
     case $state in
         category)
@@ -133,11 +137,28 @@ _j_completion() {
                 fi
             fi
             ;;
+        subcommand)
+            # Handle nested subcommands (e.g., j system install <subcommand>)
+            local category="$words[2]"
+            local command="$words[3]"
+            
+            if [ "${J_LOADED_MODULES[$category]}" = "1" ]; then
+                # Check if module has nested completion function
+                local nested_func="j_${category}_${command}_completion"
+                if declare -f "$nested_func" > /dev/null 2>&1; then
+                    local subcommands=$($nested_func)
+                    _values "${category} ${command} subcommand" ${=subcommands}
+                fi
+            fi
+            ;;
+        args)
+            # Future: handle command arguments
+            ;;
     esac
 }
 
-# Register completion if in zsh
-if [ -n "$ZSH_VERSION" ]; then
+# Register completion if in zsh and compdef is available
+if [ -n "$ZSH_VERSION" ] && command -v compdef > /dev/null 2>&1; then
     compdef _j_completion j
 fi
 

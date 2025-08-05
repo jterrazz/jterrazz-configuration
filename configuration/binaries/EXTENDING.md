@@ -103,8 +103,14 @@ j mymodule hello    # Test the command
 ### Optional Functions
 
 3. **Completion**: `j_<modulename>_completion()`
+
    - Return space-separated command list
    - Used for shell tab completion
+
+4. **Nested Completion**: `j_<modulename>_<command>_completion()`
+   - For commands with subcommands (like `j system install <subcommand>`)
+   - Return space-separated subcommand list
+   - Automatically detected and used
 
 ### Required Metadata
 
@@ -165,6 +171,25 @@ case "$command" in
 esac
 ```
 
+### Autocomplete Examples
+
+**Basic completion:**
+
+```bash
+j_mymodule_completion() {
+    echo "hello world help"
+}
+```
+
+**Nested completion (for subcommands):**
+
+```bash
+# For: j mymodule install <subcommand>
+j_mymodule_install_completion() {
+    echo "package1 package2 all help"
+}
+```
+
 ## Real Example: System Module
 
 See `configuration/binaries/j/system/commands.sh` for a real implementation example that demonstrates:
@@ -174,6 +199,7 @@ See `configuration/binaries/j/system/commands.sh` for a real implementation exam
 - Multiple command patterns
 - Proper error handling
 - Consistent help formatting
+- Nested subcommands with autocomplete
 
 ## Testing Your Module
 

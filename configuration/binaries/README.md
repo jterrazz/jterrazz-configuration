@@ -42,6 +42,7 @@ j git branches     # List branches
 
 ```shell
 j system update    # Update system packages (Homebrew + npm global)
+j system install   # Install development tools (brew, zsh, nvm, etc.)
 j system clean     # Clean system caches and trash
 j system info      # Show system information
 ```
@@ -77,6 +78,18 @@ configuration/binaries/j/
 3. Make it executable: `chmod +x commands.sh`
 4. Reload: the module auto-loads on next `j` command
 
+### Autocomplete Support
+
+The system includes full zsh autocomplete support for all commands and nested subcommands:
+
+```shell
+j <TAB>                    # Shows: docker git system help
+j system <TAB>             # Shows: update install clean info help
+j system install <TAB>     # Shows: brew ohmyzsh nvm git-ssh all help
+j git <TAB>                # Shows: feat fix chore push sync wip unwip status log branches help
+j docker <TAB>             # Shows: rm rmi clean reset ps images help
+```
+
 ### Setup
 
 Add to your `~/.zshrc`:
@@ -85,66 +98,19 @@ Add to your `~/.zshrc`:
 source ~/Developer/jterrazz-configuration/configuration/binaries/zsh/zshrc.sh
 ```
 
-## Oh My Zsh
+## Automated Installation
 
-> Command line tools.
-
-https://ohmyz.sh/#install
+Instead of manual setup, use the automated installation commands:
 
 ```shell
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# Full development environment setup
+j system install all
+
+# Or install components individually
+j system install brew      # Homebrew package manager
+j system install ohmyzsh   # Oh My Zsh + shell configuration
+j system install nvm       # Node Version Manager + Node.js
+j system install git-ssh   # Git SSH key generation + configuration
 ```
 
-And use these settings
-
-```shell
-# Add to ~/.zshrc
-source ~/Developer/jterrazz-configuration/scripts/zshrc.sh
-```
-
-## Brew
-
-> Package manager for MacOS.
-
-https://brew.sh
-
-```shell
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-## Nvm
-
-> Node version manager.
-
-https://github.com/nvm-sh/nvm
-
-```shell
-brew install nvm
-nvm alias default stable
-```
-
-## Git
-
-### Create the SSH key
-
-```shell
-ssh-keygen -t ed25519 -C "contact@jterrazz.com"
-eval "$(ssh-agent -s)"
-```
-
-Link this key to the GitHub host.
-
-```shell
-# vim ~/.ssh/config
-
-Host github.com
-  AddKeysToAgent yes
-  UseKeychain yes
-  IdentityFile ~/.ssh/id_github
-```
-
-### Use the SSH key
-
-```shell
-ssh-add --apple-use-keychain ~/.ssh/id_github
-```
+All installation commands are idempotent and safe to run multiple times.
