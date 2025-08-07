@@ -1,9 +1,6 @@
 ---
-description: TypeScript standards for type-safe, readable, and maintainable code
-globs:
-alwaysApply: false
+alwaysApply: true
 ---
-
 # 🏷️ TypeScript Standards
 
 These rules codify how every TypeScript codebase should be structured so that code remains **type-safe, readable, and maintainable**.
