@@ -1,6 +1,5 @@
 ---
 description: Clean Architecture rules for TypeScript server projects
-globs:
 alwaysApply: true
 ---
 

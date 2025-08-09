@@ -1,6 +1,5 @@
 ---
 description: Testing guidelines for unit, integration, and e2e tests
-globs:
 alwaysApply: true
 ---
 

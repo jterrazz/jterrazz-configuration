@@ -1,6 +1,8 @@
 ---
+description: TypeScript standards for type-safe, readable, and maintainable code
 alwaysApply: true
 ---
+
 # 🏷️ TypeScript Standards
 
 These rules codify how every TypeScript codebase should be structured so that code remains **type-safe, readable, and maintainable**.
@@ -278,6 +280,46 @@ export interface {Entity}Port {
    * @throws {ValidationError} When input is invalid
    */
   execute(input: string): Promise<string>;
+}
+```
+
+#### Component JSDoc Example
+
+```typescript
+// Props documented with JSDoc; each public prop must be described
+export interface PillButtonProps {
+  /**
+   * Text content to display inside the button
+   */
+  label: string;
+
+  /**
+   * Press handler invoked when the button is activated
+   */
+  onPress: () => void;
+
+  /**
+   * Visual importance (affects background, border, and text colors)
+   * @default "primary"
+   */
+  variant?: "primary" | "secondary" | "ghost";
+
+  /**
+   * Accessibility label announced by screen readers
+   */
+  accessibilityLabel?: string;
+}
+
+/**
+ * Pill-shaped, high-contrast CTA button
+ * @description Semantic button component following the design system (pill shape, bold border, compact height). Focuses on clarity and accessibility.
+ * @remarks Always set `accessibilityRole="button"` and provide a meaningful `accessibilityLabel`.
+ * @param props - {@link PillButtonProps} configuration
+ * @returns JSX.Element
+ */
+export function PillButton(props: PillButtonProps) {
+  // Implementation omitted – focus is on JSDoc structure
+  return null;
 }
 ```
 

@@ -1,6 +1,5 @@
 ---
 description: Clean Architecture rules for TypeScript mobile projects
-globs:
 alwaysApply: true
 ---
 
