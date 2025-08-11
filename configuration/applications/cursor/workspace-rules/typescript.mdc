@@ -43,14 +43,14 @@ import { {Value} } from "./{value}.vo.js";
 
 ## 3. Naming Conventions
 
-| Kind             | Example                                  |
-| ---------------- | ---------------------------------------- |
-| Interface / Type | `UserProfile`                            |
-| Class            | `WorldNewsAdapter`, `GetArticlesUseCase` |
-| Enum             | `StatusEnum`                             |
-| Constant         | `API_BASE_URL`, `RATE_LIMIT_DELAY`       |
-| Zod schema var   | `categorySchema`                         |
-| Port interface   | `ArticleRepositoryPort`                  |
+| Kind             | Example                            |
+| ---------------- | ---------------------------------- |
+| Interface / Type | `UserProfile`                      |
+| Class            | `WorldNews`, `GetArticlesUseCase`  |
+| Enum             | `StatusEnum`                       |
+| Constant         | `API_BASE_URL`, `RATE_LIMIT_DELAY` |
+| Zod schema var   | `categorySchema`                   |
+| Port interface   | `ArticleRepositoryPort`            |
 
 ---
 
@@ -67,7 +67,7 @@ import type { Context } from "hono";
 import type { {Entity}RepositoryPort } from "@/application/ports/outbound/persistence/{entity}-repository.port.js";
 
 // 3. Internal implementations (relative imports)
-import { {Entity}Processor } from "../adapters/{entity}-processor.adapter.js";
+import { {Entity}Provider } from "../providers/{entity}.provider.js";
 ```
 
 **Requirements:**
@@ -83,8 +83,8 @@ import { {Entity}Processor } from "../adapters/{entity}-processor.adapter.js";
 // DOMAIN FEATURES
 // =============================================================================
 
-export { {EntityLogic} } from "./adapters/{domain-a}/{entity}-logic.adapter.js";
-export { {DataProcessor} } from "./adapters/{domain-b}/{data}-processor.adapter.js";
+export { {EntityLogic} } from "./providers/{domain-a}/{entity}-logic.provider.js";
+export { {DataProcessor} } from "./providers/{domain-b}/{data}-processor.provider.js";
 
 // =============================================================================
 // PORTS (Interfaces)
