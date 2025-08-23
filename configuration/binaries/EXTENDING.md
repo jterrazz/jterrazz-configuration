@@ -1,5 +1,15 @@
 # Extending the Modular `j` Command System
 
+## Prerequisites
+
+Ensure the jterrazz-configuration system is installed:
+
+```bash
+# From project root
+make install
+# OR manually: source ~/Developer/jterrazz-configuration/configuration/binaries/zsh/zshrc.sh
+```
+
 ## Adding a New Module
 
 The modular system automatically discovers new modules. To add a new category (e.g., `j mymodule`), simply create a new module directory and commands file.
@@ -7,6 +17,7 @@ The modular system automatically discovers new modules. To add a new category (e
 ### Step 1: Create Module Directory
 
 ```bash
+# From project root: ~/Developer/jterrazz-configuration/
 mkdir configuration/binaries/j/mymodule
 ```
 
@@ -190,28 +201,43 @@ j_mymodule_install_completion() {
 }
 ```
 
-## Real Example: System Module
+## Real Examples
 
-See `configuration/binaries/j/system/commands.sh` for a real implementation example that demonstrates:
+Study the existing modules for implementation patterns:
 
-- Parameter validation
-- External dependency checking
-- Multiple command patterns
-- Proper error handling
-- Consistent help formatting
-- Nested subcommands with autocomplete
+**`configuration/binaries/j/system/commands.sh`** - Complex module with:
+
+- Parameter validation and external dependency checking
+- Nested subcommands (`j system install brew`)
+- Multi-level autocomplete support
+- Idempotent installation logic
+
+**`configuration/binaries/j/git/commands.sh`** - Simple module with:
+
+- Streamlined git workflow commands
+- Parameter handling for commit messages
+- Basic command structure
+
+**`configuration/binaries/j/docker/commands.sh`** - Clean utility module with:
+
+- System cleanup and management commands
+- Clear command organization
+- Consistent error handling
 
 ## Testing Your Module
 
 ```bash
-# Reload and test
-unset J_LOADED_MODULES J_MODULE_DESCRIPTIONS
-source configuration/binaries/j/j.sh
+# Reload shell or source the zsh integration
+source ~/Developer/jterrazz-configuration/configuration/binaries/zsh/zshrc.sh
 
 # Test commands
-j help
-j mymodule help
-j mymodule hello
+j help                  # Should show your module
+j mymodule help         # Show your module's commands
+j mymodule hello        # Test specific commands
+
+# Test autocomplete
+j <TAB>                 # Should include your module
+j mymodule <TAB>        # Should show your commands
 ```
 
 ## Module Ideas

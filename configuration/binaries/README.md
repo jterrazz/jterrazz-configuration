@@ -42,9 +42,8 @@ j git branches     # List branches
 
 ```shell
 j system update    # Update system packages (Homebrew + npm global)
-j system install   # Install development tools (brew, zsh, nvm, etc.)
-j system clean     # Clean system caches and trash
-j system info      # Show system information
+j system install   # Install development tools (brew, ohmyzsh, nvm, git-ssh)
+j system clean     # Clean system (Homebrew, Docker, Multipass, trash)
 ```
 
 **Help:**
@@ -61,14 +60,19 @@ j system help      # Show system commands
 The system automatically discovers modules from `configuration/binaries/j/*/commands.sh`:
 
 ```
-configuration/binaries/j/
-├── j.sh                    # Main orchestrator
-├── docker/
-│   └── commands.sh         # Docker module
-├── git/
-│   └── commands.sh         # Git module
-└── system/
-    └── commands.sh         # System module
+configuration/binaries/
+├── EXTENDING.md            # Module development guide
+├── README.md               # This file
+├── j/                      # Unified command system
+│   ├── j.sh               # Main orchestrator
+│   ├── docker/
+│   │   └── commands.sh    # Docker module
+│   ├── git/
+│   │   └── commands.sh    # Git module
+│   └── system/
+│       └── commands.sh    # System module
+└── zsh/
+    └── zshrc.sh           # Shell integration & autocomplete
 ```
 
 ### Adding New Modules
@@ -84,13 +88,32 @@ The system includes full zsh autocomplete support for all commands and nested su
 
 ```shell
 j <TAB>                    # Shows: docker git system help
-j system <TAB>             # Shows: update install clean info help
+j system <TAB>             # Shows: update install clean help
 j system install <TAB>     # Shows: brew ohmyzsh nvm git-ssh all help
 j git <TAB>                # Shows: feat fix chore push sync wip unwip status log branches help
 j docker <TAB>             # Shows: rm rmi clean reset ps images help
 ```
 
 ### Setup
+
+#### Option 1: Automated Installation (Recommended)
+
+Use the Makefile from the project root:
+
+```shell
+cd ~/Developer/jterrazz-configuration
+make install
+```
+
+This will automatically add the source line to your `~/.zshrc` and provide helpful feedback.
+
+**Additional commands:**
+
+- `make check-installed` - Check if already installed
+- `make uninstall` - Remove from ~/.zshrc
+- `make help` - Show all options
+
+#### Option 2: Manual Installation
 
 Add to your `~/.zshrc`:
 
@@ -107,7 +130,7 @@ Instead of manual setup, use the automated installation commands:
 j system install all
 
 # Or install components individually
-j system install brew      # Homebrew package manager
+j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass)
 j system install ohmyzsh   # Oh My Zsh + shell configuration
 j system install nvm       # Node Version Manager + Node.js
 j system install git-ssh   # Git SSH key generation + configuration
