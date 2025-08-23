@@ -121,18 +121,27 @@ j_system_install_brew() {
     echo "🍺 Installing Homebrew..."
     if command -v brew >/dev/null 2>&1; then
         echo "✅ Homebrew already installed"
-        return 0
-    fi
-    
-    echo "📥 Downloading and installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    
-    if command -v brew >/dev/null 2>&1; then
-        echo "✅ Homebrew installed successfully"
     else
-        echo "❌ Homebrew installation failed"
-        return 1
+        echo "📥 Downloading and installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        
+        if command -v brew >/dev/null 2>&1; then
+            echo "✅ Homebrew installed successfully"
+        else
+            echo "❌ Homebrew installation failed"
+            return 1
+        fi
     fi
+    
+    # Install essential development packages
+    echo "📦 Installing essential development packages..."
+    if command -v ansible-lint >/dev/null 2>&1; then
+        echo "✅ ansible-lint already installed"
+    else
+        echo "📥 Installing ansible-lint..."
+        brew install ansible-lint
+    fi
+    echo "✅ Development packages check completed"
 }
 
 # Install Oh My Zsh
