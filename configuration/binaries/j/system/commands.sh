@@ -43,26 +43,64 @@ j_system() {
             ;;
         "clean")
             echo "🧹 Cleaning system..."
+            
+            # Clean Homebrew
             if command -v brew >/dev/null 2>&1; then
+                echo "🍺 Cleaning Homebrew cache..."
                 brew cleanup
             fi
+            
+            # Clean Docker
+            if command -v docker >/dev/null 2>&1; then
+                echo "🐳 Cleaning Docker..."
+                
+                # Remove stopped containers
+                echo "  🗑️  Removing stopped containers..."
+                docker container prune -f
+                
+                # Remove unused images
+                echo "  🗑️  Removing unused images..."
+                docker image prune -f
+                
+                # Remove unused volumes
+                echo "  🗑️  Removing unused volumes..."
+                docker volume prune -f
+                
+                # Remove unused networks
+                echo "  🗑️  Removing unused networks..."
+                docker network prune -f
+                
+                # Clean build cache
+                echo "  🗑️  Cleaning build cache..."
+                docker builder prune -f
+                
+                echo "  ✅ Docker cleanup completed"
+            else
+                echo "  ⚠️  Docker not found, skipping Docker cleanup"
+            fi
+            
+            # Clean Multipass
+            if command -v multipass >/dev/null 2>&1; then
+                echo "🖥️  Cleaning Multipass..."
+                
+                # List and delete all instances
+                echo "  🗑️  Removing all instances..."
+                multipass delete --all 2>/dev/null || true
+                
+                # Purge deleted instances
+                echo "  🗑️  Purging deleted instances..."
+                multipass purge
+                
+                echo "  ✅ Multipass cleanup completed"
+            else
+                echo "  ⚠️  Multipass not found, skipping Multipass cleanup"
+            fi
+            
+            # Empty trash
             echo "🗑️  Emptying trash..."
             rm -rf ~/.Trash/*
-            ;;
-        "info")
-            echo "ℹ️  System information:"
-            echo "OS: $(uname -s) $(uname -r)"
-            echo "User: $(whoami)"
-            echo "Shell: $SHELL"
-            if command -v brew >/dev/null 2>&1; then
-                echo "Homebrew: $(brew --version | head -1)"
-            fi
-            if command -v node >/dev/null 2>&1; then
-                echo "Node: $(node --version)"
-            fi
-            if command -v npm >/dev/null 2>&1; then
-                echo "npm: $(npm --version)"
-            fi
+            
+            echo "✅ System cleanup completed"
             ;;
         "help"|"-h"|"--help")
             j_system_help
@@ -135,12 +173,47 @@ j_system_install_brew() {
     
     # Install essential development packages
     echo "📦 Installing essential development packages..."
+    
+    # ansible-lint
     if command -v ansible-lint >/dev/null 2>&1; then
-        echo "✅ ansible-lint already installed"
+        echo "  ✅ ansible-lint already installed"
     else
-        echo "📥 Installing ansible-lint..."
+        echo "  📥 Installing ansible-lint..."
         brew install ansible-lint
     fi
+    
+    # ansible
+    if command -v ansible >/dev/null 2>&1; then
+        echo "  ✅ ansible already installed"
+    else
+        echo "  📥 Installing ansible..."
+        brew install ansible
+    fi
+    
+    # terraform
+    if command -v terraform >/dev/null 2>&1; then
+        echo "  ✅ terraform already installed"
+    else
+        echo "  📥 Installing terraform..."
+        brew install terraform
+    fi
+    
+    # kubectl
+    if command -v kubectl >/dev/null 2>&1; then
+        echo "  ✅ kubectl already installed"
+    else
+        echo "  📥 Installing kubectl..."
+        brew install kubectl
+    fi
+    
+    # multipass
+    if command -v multipass >/dev/null 2>&1; then
+        echo "  ✅ multipass already installed"
+    else
+        echo "  📥 Installing multipass..."
+        brew install multipass
+    fi
+    
     echo "✅ Development packages check completed"
 }
 
@@ -279,7 +352,7 @@ j_system_install_help() {
     echo "Usage: j system install <subcommand>"
     echo ""
     echo "Subcommands:"
-    echo "  brew      Install Homebrew package manager"
+    echo "  brew      Install Homebrew + development packages (ansible, terraform, kubectl, multipass)"
     echo "  ohmyzsh   Install Oh My Zsh and configure shell"
     echo "  nvm       Install NVM and Node.js stable"
     echo "  git-ssh   Generate SSH key and configure Git"
@@ -288,7 +361,7 @@ j_system_install_help() {
     echo ""
     echo "Examples:"
     echo "  j system install all       # Full development environment"
-    echo "  j system install brew      # Just Homebrew"
+    echo "  j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass)"
     echo "  j system install git-ssh   # Just Git SSH setup"
 }
 
@@ -300,15 +373,17 @@ j_system_help() {
     echo ""
     echo "Commands:"
     echo "  update    Update system packages (Homebrew + npm global)"
-    echo "  install   Install development tools (brew, zsh, nvm, etc.)"
-    echo "  clean     Clean system caches and trash"
-    echo "  info      Show system information"
+    echo "  install   Install development tools (brew, ansible, terraform, kubectl, etc.)"
+    echo "  clean     Clean system caches, Docker, Multipass, and trash"
     echo "  help      Show this help"
+    echo ""
+    echo "⚠️  WARNING: 'clean' removes all Multipass instances and Docker containers"
+    echo "💡 For comprehensive system status, use: j status"
 }
 
 # Auto-completion for system commands
 j_system_completion() {
-    echo "update install clean info help"
+    echo "update install clean help"
 }
 
 # Auto-completion for system install subcommands
@@ -318,5 +393,5 @@ j_system_install_completion() {
 
 # Module metadata
 J_MODULE_NAME="system"
-J_MODULE_DESCRIPTION="System maintenance and information"
-J_MODULE_COMMANDS="update install clean info help"
+J_MODULE_DESCRIPTION="System maintenance and development tools installation"
+J_MODULE_COMMANDS="update install clean help"
