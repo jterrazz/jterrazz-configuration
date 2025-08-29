@@ -187,16 +187,37 @@ _j_status() {
     
     # kubectl
     if command -v kubectl >/dev/null 2>&1; then
-        echo "  ✅ kubectl: $(kubectl version --client --short 2>/dev/null | cut -d' ' -f3)"
+        echo "  ✅ kubectl: $(kubectl version --client 2>/dev/null | head -1 | cut -d' ' -f3)"
     else
         echo "  ❌ kubectl: Not installed"
     fi
     
     # multipass
     if command -v multipass >/dev/null 2>&1; then
-        echo "  ✅ multipass: $(multipass version | head -1 | cut -d' ' -f2)"
+        echo "  ✅ multipass: $(multipass version | head -1 | awk '{print $NF}')"
     else
         echo "  ❌ multipass: Not installed"
+    fi
+    
+    # biome
+    if command -v biome >/dev/null 2>&1; then
+        echo "  ✅ biome: $(biome --version)"
+    else
+        echo "  ❌ biome: Not installed"
+    fi
+    
+    # bun
+    if command -v bun >/dev/null 2>&1; then
+        echo "  ✅ bun: $(bun --version)"
+    else
+        echo "  ❌ bun: Not installed"
+    fi
+    
+    # python
+    if command -v python3 >/dev/null 2>&1; then
+        echo "  ✅ python: $(python3 --version | cut -d' ' -f2)"
+    else
+        echo "  ❌ python: Not installed"
     fi
     
     echo ""

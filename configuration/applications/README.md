@@ -6,36 +6,36 @@
 
 - [BetterDisplay](https://www.betterdisplay.app/)
 
-### Sound
-
-- [Klack](https://www.reggi.co.kr/klack/)
-
 ### Network
 
 - DNSecure: DNS over TLS
 
 ## System
 
-### Dock
-
-- [x] Spacing for icons
-
-```shell
-defaults write com.apple.dock persistent-apps -array-add '{"tile-type"="small-spacer-tile";}'; killall Dock
-```
-
 ### Fonts
 
-- [Geist & Geist Mono](https://vercel.com/font)
+- Fira Code
 
 ## Applications
 
-- IDE: [Cursor](https://www.cursor.com/)
-    - [ ] MCPs: Notion, Linear 
-- Docker: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- Terminal: [Hyper](https://hyper.is/)
-- API: [RapidAPI](https://rapidapi.com/)
-- Chat: [Slack](https://slack.com/)
-- Browser: [Arc](https://www.macenhance.com/arc)
-- Task manager: [Linear](https://linear.app/)
-- Notes: [Obsidian](https://obsidian.md/)
+### Development
+
+- **IDE:** [Cursor](https://www.cursor.com/)  
+  &nbsp;&nbsp;• Context7 MCP enabled
+- **Docker:** [Orbstack](https://orbstack.dev/)
+- **Terminal:**  
+  &nbsp;&nbsp;• [Warp](https://www.warp.dev/)  
+  &nbsp;&nbsp;• [Hyper](https://hyper.is/)
+
+### Communication
+
+- **Chat:** [Slack](https://slack.com/)
+
+### Browsing
+
+- **Browser:** [Dia](https://www.diabrowser.com/)
+
+### Productivity
+
+- **Task Manager:** [Linear](https://linear.app/)
+- **Notes:** [Obsidian](https://obsidian.md/)

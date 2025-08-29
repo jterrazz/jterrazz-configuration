@@ -102,6 +102,9 @@ j_system() {
             
             echo "✅ System cleanup completed"
             ;;
+        "dock")
+            j_system_dock "$@"
+            ;;
         "help"|"-h"|"--help")
             j_system_help
             ;;
@@ -220,6 +223,22 @@ j_system_install_brew() {
     else
         echo "  📥 Installing biome..."
         brew install biome
+    fi
+    
+    # bun
+    if command -v bun >/dev/null 2>&1; then
+        echo "  ✅ bun already installed"
+    else
+        echo "  📥 Installing bun..."
+        brew install bun
+    fi
+    
+    # python
+    if command -v python3 >/dev/null 2>&1; then
+        echo "  ✅ python already installed"
+    else
+        echo "  📥 Installing python..."
+        brew install python
     fi
     
     echo "✅ Development packages check completed"
@@ -353,6 +372,56 @@ EOF
     echo "✅ Git SSH setup completed"
 }
 
+# macOS Dock management
+j_system_dock() {
+    if [ $# -eq 0 ]; then
+        j_system_dock_help
+        return 1
+    fi
+
+    local subcommand="$1"
+    shift
+
+    case "$subcommand" in
+        "add-spacer")
+            echo "🔧 Adding spacer to macOS Dock..."
+            defaults write com.apple.dock persistent-apps -array-add '{"tile-type"="small-spacer-tile";}'
+            killall Dock
+            echo "✅ Dock spacer added and restarted"
+            ;;
+        "reset")
+            echo "🔧 Resetting macOS Dock to defaults..."
+            defaults delete com.apple.dock
+            killall Dock
+            echo "✅ Dock reset to defaults"
+            ;;
+        "help"|"-h"|"--help")
+            j_system_dock_help
+            ;;
+        *)
+            echo "❌ Unknown dock subcommand: $subcommand"
+            j_system_dock_help
+            return 1
+            ;;
+    esac
+}
+
+# Dock help function
+j_system_dock_help() {
+    echo "🖥️  macOS Dock Commands"
+    echo ""
+    echo "Usage: j system dock <subcommand>"
+    echo ""
+    echo "Subcommands:"
+    echo "  add-spacer    Add a small spacer tile to the dock"
+    echo "  reset         Reset dock to system defaults"
+    echo "  help          Show this help"
+    echo ""
+    echo "Examples:"
+    echo "  j system dock add-spacer    # Add spacer between apps"
+    echo "  j system dock reset         # Reset dock layout"
+}
+
 # Install help function
 j_system_install_help() {
     echo "📦 System Install Commands"
@@ -360,7 +429,7 @@ j_system_install_help() {
     echo "Usage: j system install <subcommand>"
     echo ""
     echo "Subcommands:"
-    echo "  brew      Install Homebrew + development packages (ansible, terraform, kubectl, multipass, biome)"
+    echo "  brew      Install Homebrew + development packages (ansible, terraform, kubectl, multipass, biome, bun, python)"
     echo "  ohmyzsh   Install Oh My Zsh and configure shell"
     echo "  nvm       Install NVM and Node.js stable"
     echo "  git-ssh   Generate SSH key and configure Git"
@@ -369,7 +438,7 @@ j_system_install_help() {
     echo ""
     echo "Examples:"
     echo "  j system install all       # Full development environment"
-    echo "  j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass, biome)"
+    echo "  j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass, biome, bun, python)"
     echo "  j system install git-ssh   # Just Git SSH setup"
 }
 
@@ -381,8 +450,9 @@ j_system_help() {
     echo ""
     echo "Commands:"
     echo "  update    Update system packages (Homebrew + npm global)"
-    echo "  install   Install development tools (brew, ansible, terraform, kubectl, biome, etc.)"
+    echo "  install   Install development tools (brew, ansible, terraform, kubectl, biome, bun, python, etc.)"
     echo "  clean     Clean system caches, Docker, Multipass, and trash"
+    echo "  dock      Manage macOS Dock (add spacers, reset)"
     echo "  help      Show this help"
     echo ""
     echo "⚠️  WARNING: 'clean' removes all Multipass instances and Docker containers"
@@ -391,7 +461,7 @@ j_system_help() {
 
 # Auto-completion for system commands
 j_system_completion() {
-    echo "update install clean help"
+    echo "update install clean dock help"
 }
 
 # Auto-completion for system install subcommands
@@ -399,7 +469,12 @@ j_system_install_completion() {
     echo "brew ohmyzsh nvm git-ssh all help"
 }
 
+# Auto-completion for system dock subcommands
+j_system_dock_completion() {
+    echo "add-spacer reset help"
+}
+
 # Module metadata
 J_MODULE_NAME="system"
 J_MODULE_DESCRIPTION="System maintenance and development tools installation"
-J_MODULE_COMMANDS="update install clean help"
+J_MODULE_COMMANDS="update install clean dock help"

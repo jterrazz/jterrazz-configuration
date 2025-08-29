@@ -130,7 +130,7 @@ Instead of manual setup, use the automated installation commands:
 j system install all
 
 # Or install components individually
-j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass, biome)
+j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass, biome, bun, python)
 j system install ohmyzsh   # Oh My Zsh + shell configuration
 j system install nvm       # Node Version Manager + Node.js
 j system install git-ssh   # Git SSH key generation + configuration
