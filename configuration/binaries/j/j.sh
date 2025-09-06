@@ -227,6 +227,20 @@ _j_status() {
         echo "  ❌ neohtop: Not installed"
     fi
     
+    # codex
+    if command -v codex >/dev/null 2>&1; then
+        echo "  ✅ codex: $(codex --version 2>/dev/null | head -1 || echo "installed")"
+    else
+        echo "  ❌ codex: Not installed"
+    fi
+    
+    # claude
+    if command -v claude >/dev/null 2>&1; then
+        echo "  ✅ claude: $(claude --version 2>/dev/null | head -1 || echo "installed")"
+    else
+        echo "  ❌ claude: Not installed"
+    fi
+    
     echo ""
     
     # Loaded Modules

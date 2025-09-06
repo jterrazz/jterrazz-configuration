@@ -249,6 +249,26 @@ j_system_install_brew() {
         brew install --cask neohtop
     fi
     
+    # codex
+    if command -v codex >/dev/null 2>&1; then
+        echo "  ✅ codex already installed"
+    else
+        echo "  📥 Installing codex..."
+        brew install codex
+    fi
+    
+    # claude
+    if command -v claude >/dev/null 2>&1; then
+        echo "  ✅ claude already installed"
+    else
+        echo "  📥 Installing claude..."
+        if command -v npm >/dev/null 2>&1; then
+            npm install -g @anthropic-ai/claude-code
+        else
+            echo "  ❌ npm not found, cannot install claude"
+        fi
+    fi
+    
     echo "✅ Development packages check completed"
 }
 
@@ -437,7 +457,7 @@ j_system_install_help() {
     echo "Usage: j system install <subcommand>"
     echo ""
     echo "Subcommands:"
-    echo "  brew      Install Homebrew + development packages (ansible, terraform, kubectl, multipass, biome, bun, python, neohtop)"
+    echo "  brew      Install Homebrew + development packages (ansible, terraform, kubectl, multipass, biome, bun, python, neohtop, codex, claude)"
     echo "  ohmyzsh   Install Oh My Zsh and configure shell"
     echo "  nvm       Install NVM and Node.js stable"
     echo "  git-ssh   Generate SSH key and configure Git"
@@ -446,7 +466,7 @@ j_system_install_help() {
     echo ""
     echo "Examples:"
     echo "  j system install all       # Full development environment"
-    echo "  j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass, biome, bun, python, neohtop)"
+    echo "  j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass, biome, bun, python, neohtop, codex, claude)"
     echo "  j system install git-ssh   # Just Git SSH setup"
 }
 
@@ -458,7 +478,7 @@ j_system_help() {
     echo ""
     echo "Commands:"
     echo "  update    Update system packages (Homebrew + npm global)"
-    echo "  install   Install development tools (brew, ansible, terraform, kubectl, biome, bun, python, neohtop, etc.)"
+    echo "  install   Install development tools (brew, ansible, terraform, kubectl, biome, bun, python, neohtop, codex, claude, etc.)"
     echo "  clean     Clean system caches, Docker, Multipass, and trash"
     echo "  dock      Manage macOS Dock (add spacers, reset)"
     echo "  help      Show this help"
