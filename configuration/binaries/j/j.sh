@@ -220,6 +220,13 @@ _j_status() {
         echo "  ❌ python: Not installed"
     fi
     
+    # neohtop
+    if brew list --cask neohtop >/dev/null 2>&1; then
+        echo "  ✅ neohtop: $(brew list --cask --versions neohtop 2>/dev/null || echo "installed")"
+    else
+        echo "  ❌ neohtop: Not installed"
+    fi
+    
     echo ""
     
     # Loaded Modules
