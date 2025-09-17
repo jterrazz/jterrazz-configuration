@@ -23,6 +23,13 @@ j docker ps        # List containers
 j docker images    # List images
 ```
 
+**Dock:**
+
+```shell
+j dock add-spacer  # Add spacer to macOS Dock
+j dock reset       # Reset dock to defaults
+```
+
 **Git:**
 
 ```shell
@@ -51,6 +58,7 @@ j system clean     # Clean system (Homebrew, Docker, Multipass, trash)
 ```shell
 j help             # Show all categories
 j docker help      # Show docker commands
+j dock help        # Show dock commands
 j git help         # Show git commands
 j system help      # Show system commands
 ```
@@ -67,6 +75,8 @@ configuration/binaries/
 │   ├── j.sh               # Main orchestrator
 │   ├── docker/
 │   │   └── commands.sh    # Docker module
+│   ├── dock/
+│   │   └── commands.sh    # Dock module
 │   ├── git/
 │   │   └── commands.sh    # Git module
 │   └── system/
@@ -87,11 +97,12 @@ configuration/binaries/
 The system includes full zsh autocomplete support for all commands and nested subcommands:
 
 ```shell
-j <TAB>                    # Shows: docker git system help
+j <TAB>                    # Shows: docker dock git system help
 j system <TAB>             # Shows: update install clean help
 j system install <TAB>     # Shows: brew ohmyzsh nvm git-ssh all help
 j git <TAB>                # Shows: feat fix chore push sync wip unwip status log branches help
 j docker <TAB>             # Shows: rm rmi clean reset ps images help
+j dock <TAB>               # Shows: add-spacer reset help
 ```
 
 ### Setup
