@@ -7,46 +7,39 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "agent_ui_font_size": 16.0,
   "autosave": "on_focus_change",
   "auto_indent_on_paste": true,
   "minimap": {
-    "show": "auto"
+    "show": "auto",
   },
   "terminal": {
-    "font_size": 12.0
+    "font_size": 12.0,
   },
   "base_keymap": "VSCode",
   "icon_theme": {
     "mode": "system",
     "light": "Zed (Default)",
-    "dark": "Zed (Default)"
+    "dark": "Zed (Default)",
   },
-  "ui_font_size": 16,
+  "ui_font_size": 15.0,
   "buffer_font_size": 12.0,
   "theme": {
-    "mode": "system",
-    "light": "Tokyo Night Light",
-    "dark": "Tokyo Night Storm"
+    "mode": "dark",
+    "light": "Nightfox - opaque",
+    "dark": "Ayu Mirage",
   },
-  "auto_install_extensions": {
-    "html": true,
-    "toml": true,
-    "java": true,
-    "git-firefly": true,
-    "dockerfile": true,
-    "sql": true,
-    "vue": true,
-    "make": true,
-    "tokyo-night": true,
-    "scss": true,
-    "terraform": true,
-    "zig": true,
-    "xml": true,
-    "swift": true,
-    "graphql": true,
-    "prisma": true,
-    "nvim-nightfox": true,
-    "serendipity": true,
-    "vercel-theme": true
-  }
+  "agent_servers": {
+    "gemini": {
+      "ignore_system_version": false,
+    },
+    "codex": {
+      "ignore_system_version": false,
+    },
+    "claude": {
+      "default_mode": "acceptEdits",
+      "default_model": "default",
+      "ignore_system_version": false,
+    },
+  },
 }
