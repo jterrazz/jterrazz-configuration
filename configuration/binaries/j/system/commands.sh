@@ -16,7 +16,7 @@ j_system() {
     case "$command" in
         "update")
             echo "🔄 Updating system packages..."
-            
+
             # Update Homebrew packages
             if command -v brew >/dev/null 2>&1; then
                 echo "🍺 Updating Homebrew packages..."
@@ -25,7 +25,7 @@ j_system() {
                 echo "❌ Homebrew not found"
                 return 1
             fi
-            
+
             # Update npm global packages
             if command -v npm >/dev/null 2>&1; then
                 echo "📦 Updating npm global packages..."
@@ -43,63 +43,63 @@ j_system() {
             ;;
         "clean")
             echo "🧹 Cleaning system..."
-            
+
             # Clean Homebrew
             if command -v brew >/dev/null 2>&1; then
                 echo "🍺 Cleaning Homebrew cache..."
                 brew cleanup
             fi
-            
+
             # Clean Docker
             if command -v docker >/dev/null 2>&1; then
                 echo "🐳 Cleaning Docker..."
-                
+
                 # Remove stopped containers
                 echo "  🗑️  Removing stopped containers..."
                 docker container prune -f
-                
+
                 # Remove unused images
                 echo "  🗑️  Removing unused images..."
                 docker image prune -f
-                
+
                 # Remove unused volumes
                 echo "  🗑️  Removing unused volumes..."
                 docker volume prune -f
-                
+
                 # Remove unused networks
                 echo "  🗑️  Removing unused networks..."
                 docker network prune -f
-                
+
                 # Clean build cache
                 echo "  🗑️  Cleaning build cache..."
                 docker builder prune -f
-                
+
                 echo "  ✅ Docker cleanup completed"
             else
                 echo "  ⚠️  Docker not found, skipping Docker cleanup"
             fi
-            
+
             # Clean Multipass
             if command -v multipass >/dev/null 2>&1; then
                 echo "🖥️  Cleaning Multipass..."
-                
+
                 # List and delete all instances
                 echo "  🗑️  Removing all instances..."
                 multipass delete --all 2>/dev/null || true
-                
+
                 # Purge deleted instances
                 echo "  🗑️  Purging deleted instances..."
                 multipass purge
-                
+
                 echo "  ✅ Multipass cleanup completed"
             else
                 echo "  ⚠️  Multipass not found, skipping Multipass cleanup"
             fi
-            
+
             # Empty trash
             echo "🗑️  Emptying trash..."
             rm -rf ~/.Trash/*
-            
+
             echo "✅ System cleanup completed"
             ;;
         "help"|"-h"|"--help")
@@ -162,7 +162,7 @@ j_system_install_brew() {
     else
         echo "📥 Downloading and installing Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        
+
         if command -v brew >/dev/null 2>&1; then
             echo "✅ Homebrew installed successfully"
         else
@@ -170,10 +170,10 @@ j_system_install_brew() {
             return 1
         fi
     fi
-    
+
     # Install essential development packages
     echo "📦 Installing essential development packages..."
-    
+
     # ansible-lint
     if command -v ansible-lint >/dev/null 2>&1; then
         echo "  ✅ ansible-lint already installed"
@@ -181,7 +181,7 @@ j_system_install_brew() {
         echo "  📥 Installing ansible-lint..."
         brew install ansible-lint
     fi
-    
+
     # ansible
     if command -v ansible >/dev/null 2>&1; then
         echo "  ✅ ansible already installed"
@@ -189,7 +189,7 @@ j_system_install_brew() {
         echo "  📥 Installing ansible..."
         brew install ansible
     fi
-    
+
     # terraform
     if command -v terraform >/dev/null 2>&1; then
         echo "  ✅ terraform already installed"
@@ -197,7 +197,7 @@ j_system_install_brew() {
         echo "  📥 Installing terraform..."
         brew install terraform
     fi
-    
+
     # kubectl
     if command -v kubectl >/dev/null 2>&1; then
         echo "  ✅ kubectl already installed"
@@ -205,7 +205,7 @@ j_system_install_brew() {
         echo "  📥 Installing kubectl..."
         brew install kubectl
     fi
-    
+
     # multipass
     if command -v multipass >/dev/null 2>&1; then
         echo "  ✅ multipass already installed"
@@ -213,15 +213,7 @@ j_system_install_brew() {
         echo "  📥 Installing multipass..."
         brew install multipass
     fi
-    
-    # biome
-    if command -v biome >/dev/null 2>&1; then
-        echo "  ✅ biome already installed"
-    else
-        echo "  📥 Installing biome..."
-        brew install biome
-    fi
-    
+
     # bun
     if command -v bun >/dev/null 2>&1; then
         echo "  ✅ bun already installed"
@@ -229,7 +221,7 @@ j_system_install_brew() {
         echo "  📥 Installing bun..."
         brew install bun
     fi
-    
+
     # python
     if command -v python3 >/dev/null 2>&1; then
         echo "  ✅ python already installed"
@@ -237,7 +229,7 @@ j_system_install_brew() {
         echo "  📥 Installing python..."
         brew install python
     fi
-    
+
     # neohtop
     if brew list --cask neohtop >/dev/null 2>&1; then
         echo "  ✅ neohtop already installed"
@@ -245,7 +237,7 @@ j_system_install_brew() {
         echo "  📥 Installing neohtop..."
         brew install --cask neohtop
     fi
-    
+
     # codex
     if command -v codex >/dev/null 2>&1; then
         echo "  ✅ codex already installed"
@@ -253,7 +245,23 @@ j_system_install_brew() {
         echo "  📥 Installing codex..."
         brew install codex
     fi
-    
+
+    # mole (macOS system maintenance CLI)
+    if command -v mo >/dev/null 2>&1; then
+        echo "  ✅ mole already installed"
+    else
+        echo "  📥 Installing mole..."
+        brew install tw93/tap/mole
+    fi
+
+    # gemini-cli
+    if command -v gemini >/dev/null 2>&1; then
+        echo "  ✅ gemini-cli already installed"
+    else
+        echo "  📥 Installing gemini-cli..."
+        brew install gemini-cli
+    fi
+
     # claude
     if command -v claude >/dev/null 2>&1; then
         echo "  ✅ claude already installed"
@@ -265,7 +273,7 @@ j_system_install_brew() {
             echo "  ❌ npm not found, cannot install claude"
         fi
     fi
-    
+
     echo "✅ Development packages check completed"
 }
 
@@ -276,10 +284,10 @@ j_system_install_ohmyzsh() {
         echo "✅ Oh My Zsh already installed"
         return 0
     fi
-    
+
     echo "📥 Downloading and installing Oh My Zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-    
+
     echo "⚙️  Configuring zshrc..."
     if ! grep -q "source ~/Developer/jterrazz-configuration/configuration/binaries/zsh/zshrc.sh" ~/.zshrc; then
         echo "" >> ~/.zshrc
@@ -289,7 +297,7 @@ j_system_install_ohmyzsh() {
     else
         echo "✅ jterrazz configuration already in ~/.zshrc"
     fi
-    
+
     if [ -d "$HOME/.oh-my-zsh" ]; then
         echo "✅ Oh My Zsh installed successfully"
     else
@@ -301,43 +309,43 @@ j_system_install_ohmyzsh() {
 # Install NVM
 j_system_install_nvm() {
     echo "📦 Installing NVM (Node Version Manager)..."
-    
+
     if ! command -v brew >/dev/null 2>&1; then
         echo "❌ Homebrew required for NVM installation"
         echo "💡 Run: j system install brew"
         return 1
     fi
-    
+
     if command -v nvm >/dev/null 2>&1; then
         echo "✅ NVM already installed"
         return 0
     fi
-    
+
     echo "📥 Installing NVM via Homebrew..."
     brew install nvm
-    
+
     echo "⚙️  Setting up NVM..."
     # Create nvm directory if it doesn't exist
     mkdir -p ~/.nvm
-    
+
     # Add NVM configuration to shell profile if not already present
     local nvm_config='
 # NVM Configuration
 export NVM_DIR="$HOME/.nvm"
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
 [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"'
-    
+
     if ! grep -q "NVM Configuration" ~/.zshrc; then
         echo "$nvm_config" >> ~/.zshrc
         echo "✅ Added NVM configuration to ~/.zshrc"
     else
         echo "✅ NVM configuration already in ~/.zshrc"
     fi
-    
+
     # Source the NVM script for immediate use
     export NVM_DIR="$HOME/.nvm"
     [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
-    
+
     if command -v nvm >/dev/null 2>&1; then
         echo "📥 Installing Node.js stable..."
         nvm install stable
@@ -353,10 +361,10 @@ export NVM_DIR="$HOME/.nvm"
 # Install Git SSH setup
 j_system_install_git_ssh() {
     echo "🔑 Setting up Git SSH..."
-    
+
     local ssh_key="$HOME/.ssh/id_github"
     local email="contact@jterrazz.com"
-    
+
     # Check if SSH key already exists
     if [ -f "$ssh_key" ]; then
         echo "✅ SSH key already exists at $ssh_key"
@@ -365,11 +373,11 @@ j_system_install_git_ssh() {
         ssh-keygen -t ed25519 -C "$email" -f "$ssh_key" -N ""
         echo "✅ SSH key generated"
     fi
-    
+
     # Configure SSH
     echo "⚙️  Configuring SSH..."
     local ssh_config="$HOME/.ssh/config"
-    
+
     if ! grep -q "Host github.com" "$ssh_config" 2>/dev/null; then
         cat >> "$ssh_config" << EOF
 
@@ -382,18 +390,18 @@ EOF
     else
         echo "✅ SSH config already configured"
     fi
-    
+
     # Add key to SSH agent
     echo "🔗 Adding key to SSH agent..."
     eval "$(ssh-agent -s)"
     ssh-add --apple-use-keychain "$ssh_key"
-    
+
     echo "📋 Your public key (add this to GitHub):"
     echo "----------------------------------------"
     cat "${ssh_key}.pub"
     echo "----------------------------------------"
     echo "💡 Copy the above key and add it to: https://github.com/settings/ssh/new"
-    
+
     echo "✅ Git SSH setup completed"
 }
 
@@ -405,7 +413,7 @@ j_system_install_help() {
     echo "Usage: j system install <subcommand>"
     echo ""
     echo "Subcommands:"
-    echo "  brew      Install Homebrew + development packages (ansible, terraform, kubectl, multipass, biome, bun, python, neohtop, codex, claude)"
+    echo "  brew      Install Homebrew + development packages (ansible, terraform, kubectl, multipass, bun, python, neohtop, codex, mole, gemini-cli, claude)"
     echo "  ohmyzsh   Install Oh My Zsh and configure shell"
     echo "  nvm       Install NVM and Node.js stable"
     echo "  git-ssh   Generate SSH key and configure Git"
@@ -414,7 +422,7 @@ j_system_install_help() {
     echo ""
     echo "Examples:"
     echo "  j system install all       # Full development environment"
-    echo "  j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass, biome, bun, python, neohtop, codex, claude)"
+    echo "  j system install brew      # Homebrew + dev tools (ansible, terraform, kubectl, multipass, bun, python, neohtop, codex, mole, gemini-cli, claude)"
     echo "  j system install git-ssh   # Just Git SSH setup"
 }
 
@@ -426,7 +434,7 @@ j_system_help() {
     echo ""
     echo "Commands:"
     echo "  update    Update system packages (Homebrew + npm global)"
-    echo "  install   Install development tools (brew, ansible, terraform, kubectl, biome, bun, python, neohtop, codex, claude, etc.)"
+    echo "  install   Install development tools (brew, ansible, terraform, kubectl, bun, python, neohtop, codex, mole, gemini-cli, claude, etc.)"
     echo "  clean     Clean system caches, Docker, Multipass, and trash"
     echo "  help      Show this help"
     echo ""

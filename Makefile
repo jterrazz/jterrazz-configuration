@@ -1,4 +1,4 @@
-.PHONY: install uninstall help check-installed
+.PHONY: install uninstall help check
 
 # Configuration
 ZSHRC_PATH := $(HOME)/.zshrc
@@ -42,7 +42,7 @@ uninstall: ## Remove source line from ~/.zshrc
 		echo "⚠️  ~/.zshrc not found - nothing to remove"; \
 	fi
 
-check-installed: ## Check if the package is currently installed
+check: ## Check if the package is currently installed
 	@echo "Checking installation status..."
 	@if [ -f "$(ZSHRC_PATH)" ] && grep -Fxq "$(SOURCE_LINE)" "$(ZSHRC_PATH)"; then \
 		echo "✅ jterrazz-configuration is installed"; \
