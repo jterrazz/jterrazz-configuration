@@ -50,8 +50,6 @@ j git unwip            # Undo last commit and unstage
 ### Docker
 
 ```bash
-j docker ps            # List containers
-j docker images        # List images
 j docker rm            # Remove all containers
 j docker rmi           # Remove all images
 j docker clean         # docker system prune -af

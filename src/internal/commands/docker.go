@@ -71,32 +71,10 @@ var dockerResetCmd = &cobra.Command{
 	},
 }
 
-var dockerPsCmd = &cobra.Command{
-	Use:   "ps",
-	Short: "List all containers",
-	Run: func(cmd *cobra.Command, args []string) {
-		cyan := color.New(color.FgCyan).SprintFunc()
-		fmt.Println(cyan("📋 Docker containers:"))
-		runCommand("docker", "ps", "-a")
-	},
-}
-
-var dockerImagesCmd = &cobra.Command{
-	Use:   "images",
-	Short: "List all images",
-	Run: func(cmd *cobra.Command, args []string) {
-		cyan := color.New(color.FgCyan).SprintFunc()
-		fmt.Println(cyan("📋 Docker images:"))
-		runCommand("docker", "images")
-	},
-}
-
 func init() {
 	dockerCmd.AddCommand(dockerRmCmd)
 	dockerCmd.AddCommand(dockerRmiCmd)
 	dockerCmd.AddCommand(dockerCleanCmd)
 	dockerCmd.AddCommand(dockerResetCmd)
-	dockerCmd.AddCommand(dockerPsCmd)
-	dockerCmd.AddCommand(dockerImagesCmd)
 	rootCmd.AddCommand(dockerCmd)
 }

@@ -125,8 +125,8 @@ func TestDockerSubcommands(t *testing.T) {
 	}
 
 	expectedSubcommands := []string{
-		"ps",
-		"images",
+		"rm",
+		"rmi",
 		"clean",
 		"reset",
 	}
