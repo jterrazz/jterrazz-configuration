@@ -161,14 +161,19 @@ var Packages = []Package{
 		Category:     CategoryDevelopment,
 		Dependencies: []string{"homebrew"},
 		CheckFn: func() (bool, string, string) {
-			if _, err := exec.LookPath("docker"); err != nil {
+			// Check if Docker Desktop app is installed
+			_, appErr := os.Stat("/Applications/Docker.app")
+			if appErr != nil {
 				return false, "", ""
 			}
-			out, _ := exec.Command("docker", "--version").Output()
-			parts := strings.Split(string(out), " ")
+			// Get version from CLI if available
 			version := ""
-			if len(parts) >= 3 {
-				version = strings.TrimSuffix(parts[2], ",")
+			if _, err := exec.LookPath("docker"); err == nil {
+				out, _ := exec.Command("docker", "--version").Output()
+				parts := strings.Split(string(out), " ")
+				if len(parts) >= 3 {
+					version = strings.TrimSuffix(parts[2], ",")
+				}
 			}
 			extra := "stopped"
 			if err := exec.Command("docker", "info").Run(); err == nil {
