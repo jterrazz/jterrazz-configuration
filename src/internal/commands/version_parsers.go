@@ -102,19 +102,6 @@ func parseAnsibleVersion(s string) string {
 	return ""
 }
 
-func parseKubectlVersion(s string) string {
-	s = stripAnsi(s)
-	for _, line := range strings.Split(s, "\n") {
-		if strings.Contains(line, "gitVersion:") {
-			parts := strings.Split(line, ":")
-			if len(parts) >= 2 {
-				return strings.TrimSpace(strings.TrimPrefix(parts[1], " v"))
-			}
-		}
-	}
-	return ""
-}
-
 func parseMultipassVersion(s string) string {
 	s = stripAnsi(s)
 	lines := strings.Split(s, "\n")

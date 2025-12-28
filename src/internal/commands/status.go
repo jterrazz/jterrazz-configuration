@@ -336,55 +336,160 @@ func printNetworkTable() {
 }
 
 func printDiskTable() {
-	rows := [][]string{}
 	home := os.Getenv("HOME")
 
-	if commandExists("docker") {
-		out, _ := exec.Command("docker", "system", "df", "--format", "{{.Size}}").Output()
-		dockerLines := strings.Split(strings.TrimSpace(string(out)), "\n")
-		if len(dockerLines) > 0 && dockerLines[0] != "" {
-			rows = append(rows, []string{"docker", warning.Render(strings.Join(dockerLines, " + "))})
-		}
+	// Main directories section
+	mainRows := [][]string{}
+
+	// Developer folder
+	developerPath := home + "/Developer"
+	if size := getDirSize(developerPath); size > 0 {
+		mainRows = append(mainRows, []string{"~/Developer", special.Render(formatBytes(size))})
 	}
 
-	brewCache := home + "/Library/Caches/Homebrew"
-	if size := getDirSize(brewCache); size > 0 {
-		rows = append(rows, []string{"homebrew cache", warning.Render(formatBytes(size))})
+	// Applications
+	appsPath := "/Applications"
+	if size := getDirSize(appsPath); size > 0 {
+		mainRows = append(mainRows, []string{"/Applications", dimStyle.Render(formatBytes(size))})
 	}
 
-	if commandExists("multipass") {
-		multipassData := home + "/Library/Application Support/multipassd"
-		if size := getDirSize(multipassData); size > 0 {
-			rows = append(rows, []string{"multipass", warning.Render(formatBytes(size))})
-		}
+	// Documents
+	documentsPath := home + "/Documents"
+	if size := getDirSize(documentsPath); size > 0 {
+		mainRows = append(mainRows, []string{"~/Documents", dimStyle.Render(formatBytes(size))})
 	}
 
-	npmCache := home + "/.npm"
-	if size := getDirSize(npmCache); size > 0 {
-		rows = append(rows, []string{"npm cache", warning.Render(formatBytes(size))})
+	// Downloads
+	downloadsPath := home + "/Downloads"
+	if size := getDirSize(downloadsPath); size > 0 {
+		mainRows = append(mainRows, []string{"~/Downloads", warning.Render(formatBytes(size))})
 	}
 
-	pnpmCache := home + "/Library/pnpm"
-	if size := getDirSize(pnpmCache); size > 0 {
-		rows = append(rows, []string{"pnpm cache", warning.Render(formatBytes(size))})
-	}
-
-	trashPath := home + "/.Trash"
-	if size := getDirSize(trashPath); size > 0 {
-		rows = append(rows, []string{"trash", warning.Render(formatBytes(size))})
-	}
-
-	if len(rows) > 0 {
+	if len(mainRows) > 0 {
 		t := table.New().
 			Border(lipgloss.RoundedBorder()).
 			BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
 			StyleFunc(func(row, col int) lipgloss.Style {
 				if col == 0 {
-					return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1).Width(16)
+					return lipgloss.NewStyle().Foreground(lipgloss.Color("212")).PaddingLeft(1).PaddingRight(1).Width(18)
 				}
 				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 			}).
-			Rows(rows...)
+			Rows(mainRows...)
+		fmt.Println(t.Render())
+		fmt.Println()
+	}
+
+	// Caches & cleanable section
+	fmt.Println(subSectionStyle.Render("Caches & Cleanable"))
+	cacheRows := [][]string{}
+
+	// Docker
+	if commandExists("docker") {
+		out, _ := exec.Command("docker", "system", "df", "--format", "{{.Size}}").Output()
+		dockerLines := strings.Split(strings.TrimSpace(string(out)), "\n")
+		if len(dockerLines) > 0 && dockerLines[0] != "" {
+			cacheRows = append(cacheRows, []string{"docker", warning.Render(strings.Join(dockerLines, " + "))})
+		}
+	}
+
+	// Xcode derived data
+	xcodeDerivedData := home + "/Library/Developer/Xcode/DerivedData"
+	if size := getDirSize(xcodeDerivedData); size > 0 {
+		cacheRows = append(cacheRows, []string{"xcode derived", warning.Render(formatBytes(size))})
+	}
+
+	// Xcode archives
+	xcodeArchives := home + "/Library/Developer/Xcode/Archives"
+	if size := getDirSize(xcodeArchives); size > 0 {
+		cacheRows = append(cacheRows, []string{"xcode archives", warning.Render(formatBytes(size))})
+	}
+
+	// iOS Device Support
+	iosDeviceSupport := home + "/Library/Developer/Xcode/iOS DeviceSupport"
+	if size := getDirSize(iosDeviceSupport); size > 0 {
+		cacheRows = append(cacheRows, []string{"ios device support", warning.Render(formatBytes(size))})
+	}
+
+	// CocoaPods cache
+	cocoapodsCache := home + "/Library/Caches/CocoaPods"
+	if size := getDirSize(cocoapodsCache); size > 0 {
+		cacheRows = append(cacheRows, []string{"cocoapods cache", warning.Render(formatBytes(size))})
+	}
+
+	// Homebrew cache
+	brewCache := home + "/Library/Caches/Homebrew"
+	if size := getDirSize(brewCache); size > 0 {
+		cacheRows = append(cacheRows, []string{"homebrew cache", warning.Render(formatBytes(size))})
+	}
+
+	// Multipass
+	if commandExists("multipass") {
+		multipassData := home + "/Library/Application Support/multipassd"
+		if size := getDirSize(multipassData); size > 0 {
+			cacheRows = append(cacheRows, []string{"multipass", warning.Render(formatBytes(size))})
+		}
+	}
+
+	// npm cache
+	npmCache := home + "/.npm"
+	if size := getDirSize(npmCache); size > 0 {
+		cacheRows = append(cacheRows, []string{"npm cache", warning.Render(formatBytes(size))})
+	}
+
+	// pnpm cache
+	pnpmCache := home + "/Library/pnpm"
+	if size := getDirSize(pnpmCache); size > 0 {
+		cacheRows = append(cacheRows, []string{"pnpm cache", warning.Render(formatBytes(size))})
+	}
+
+	// Yarn cache
+	yarnCache := home + "/Library/Caches/Yarn"
+	if size := getDirSize(yarnCache); size > 0 {
+		cacheRows = append(cacheRows, []string{"yarn cache", warning.Render(formatBytes(size))})
+	}
+
+	// Go module cache
+	goCache := home + "/go/pkg/mod"
+	if size := getDirSize(goCache); size > 0 {
+		cacheRows = append(cacheRows, []string{"go modules", warning.Render(formatBytes(size))})
+	}
+
+	// Gradle cache
+	gradleCache := home + "/.gradle/caches"
+	if size := getDirSize(gradleCache); size > 0 {
+		cacheRows = append(cacheRows, []string{"gradle cache", warning.Render(formatBytes(size))})
+	}
+
+	// System logs
+	systemLogs := "/var/log"
+	if size := getDirSize(systemLogs); size > 0 {
+		cacheRows = append(cacheRows, []string{"system logs", dimStyle.Render(formatBytes(size))})
+	}
+
+	// User logs
+	userLogs := home + "/Library/Logs"
+	if size := getDirSize(userLogs); size > 0 {
+		cacheRows = append(cacheRows, []string{"user logs", warning.Render(formatBytes(size))})
+	}
+
+	// Trash
+	trashPath := home + "/.Trash"
+	if size := getDirSize(trashPath); size > 0 {
+		cacheRows = append(cacheRows, []string{"trash", warning.Render(formatBytes(size))})
+	}
+
+	if len(cacheRows) > 0 {
+		t := table.New().
+			Border(lipgloss.RoundedBorder()).
+			BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+			StyleFunc(func(row, col int) lipgloss.Style {
+				if col == 0 {
+					return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1).Width(20)
+				}
+				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
+			}).
+			Rows(cacheRows...)
 
 		fmt.Println(t.Render())
 		fmt.Printf("%s %s", dimStyle.Render("run"), special.Render("j clean"))

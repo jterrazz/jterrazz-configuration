@@ -151,6 +151,16 @@ var Packages = []Package{
 		VersionArgs:   []string{"--version"},
 		VersionParser: trimVersion,
 	},
+	{
+		Name:          "cocoapods",
+		Command:       "pod",
+		Formula:       "cocoapods",
+		Method:        InstallBrewFormula,
+		Category:      CategoryPackageManager,
+		Dependencies:  []string{"homebrew"},
+		VersionArgs:   []string{"--version"},
+		VersionParser: trimVersion,
+	},
 
 	// Development
 	{
@@ -242,7 +252,6 @@ var Packages = []Package{
 		VersionArgs:   []string{"--version"},
 		VersionParser: parsePythonVersion,
 	},
-
 	// Infrastructure
 	{
 		Name:          "ansible",
@@ -264,16 +273,7 @@ var Packages = []Package{
 		VersionArgs:   []string{"--version"},
 		VersionParser: parseAnsibleLintVersion,
 	},
-	{
-		Name:          "kubectl",
-		Command:       "kubectl",
-		Formula:       "kubectl",
-		Method:        InstallBrewFormula,
-		Category:      CategoryInfrastructure,
-		Dependencies:  []string{"homebrew"},
-		VersionArgs:   []string{"version", "--client", "-o", "yaml"},
-		VersionParser: parseKubectlVersion,
-	},
+
 	{
 		Name:          "multipass",
 		Command:       "multipass",
@@ -337,14 +337,6 @@ var Packages = []Package{
 		Dependencies:  []string{"homebrew"},
 		VersionArgs:   []string{"--version"},
 		VersionParser: parseMoleVersion,
-	},
-	{
-		Name:         "neohtop",
-		Command:      "",
-		Formula:      "neohtop",
-		Method:       InstallBrewCask,
-		Category:     CategorySystemTools,
-		Dependencies: []string{"homebrew"},
 	},
 }
 

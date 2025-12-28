@@ -37,9 +37,6 @@ func TestVersionParsers(t *testing.T) {
 		{"parseAnsibleVersion core", parseAnsibleVersion, "ansible [core 2.15.0]", "2.15.0"},
 		{"parseAnsibleVersion simple", parseAnsibleVersion, "ansible 2.14.0", "2.14.0"},
 
-		// parseKubectlVersion
-		{"parseKubectlVersion", parseKubectlVersion, "clientVersion:\n  gitVersion: v1.28.0\n", "1.28.0"},
-
 		// parseMultipassVersion
 		{"parseMultipassVersion", parseMultipassVersion, "multipass 1.12.0+mac\nmultipassd 1.12.0+mac", "1.12.0+mac"},
 
