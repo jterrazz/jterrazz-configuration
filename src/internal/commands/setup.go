@@ -9,84 +9,66 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var setupCmd = &cobra.Command{
-	Use:   "setup",
-	Short: "Setup development tools",
-}
+var setupAll bool
 
-var setupBrewCmd = &cobra.Command{
-	Use:   "brew",
-	Short: "Install Homebrew + development packages",
+var setupCmd = &cobra.Command{
+	Use:   "setup [item...]",
+	Short: "Setup system configurations",
+	Long: `Setup system configurations.
+
+Examples:
+  j setup --all              Setup all configurations
+  j setup ohmyzsh            Setup Oh My Zsh
+  j setup git-ssh            Setup Git SSH key
+  j setup ohmyzsh git-ssh    Setup specific items
+  j setup                    List available setup items`,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		suggestions := []string{"ohmyzsh", "git-ssh", "dock-spacer", "dock-reset"}
+		var filtered []string
+		for _, s := range suggestions {
+			alreadyUsed := false
+			for _, arg := range args {
+				if arg == s {
+					alreadyUsed = true
+					break
+				}
+			}
+			if !alreadyUsed {
+				filtered = append(filtered, s)
+			}
+		}
+		return filtered, cobra.ShellCompDirectiveNoFileComp
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		cyan := color.New(color.FgCyan).SprintFunc()
-		green := color.New(color.FgGreen).SprintFunc()
 
-		fmt.Println(cyan("🍺 Installing Homebrew..."))
-
-		if !commandExists("brew") {
-			fmt.Println("📥 Downloading and installing Homebrew...")
-			runCommand("/bin/bash", "-c", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)")
-		} else {
-			fmt.Println(green("✅ Homebrew already installed"))
+		if setupAll {
+			fmt.Println(cyan("🚀 Setting up all configurations..."))
+			runSetupItem("ohmyzsh")
+			runSetupItem("git-ssh")
+			return
 		}
 
-		fmt.Println(cyan("📦 Installing essential development packages..."))
-
-		brewPackages := []struct {
-			name    string
-			cmd     string
-			formula string
-			cask    bool
-		}{
-			{"ansible-lint", "ansible-lint", "ansible-lint", false},
-			{"ansible", "ansible", "ansible", false},
-			{"terraform", "terraform", "terraform", false},
-			{"kubectl", "kubectl", "kubectl", false},
-			{"multipass", "multipass", "multipass", false},
-			{"bun", "bun", "bun", false},
-			{"python", "python3", "python", false},
-			{"neohtop", "", "neohtop", true},
-			{"codex", "codex", "codex", false},
-			{"mole", "mo", "tw93/tap/mole", false},
-			{"gemini-cli", "gemini", "gemini-cli", false},
+		if len(args) == 0 {
+			listSetupItems()
+			return
 		}
 
-		for _, pkg := range brewPackages {
-			if pkg.cmd != "" && commandExists(pkg.cmd) {
-				fmt.Printf("  %s %s already installed\n", green("✅"), pkg.name)
-			} else if pkg.cask {
-				fmt.Printf("  📥 Installing %s...\n", pkg.name)
-				runCommand("brew", "install", "--cask", pkg.formula)
-			} else {
-				fmt.Printf("  📥 Installing %s...\n", pkg.name)
-				runCommand("brew", "install", pkg.formula)
-			}
+		fmt.Println(cyan("🚀 Setting up selected configurations..."))
+		for _, name := range args {
+			runSetupItem(name)
 		}
-
-		// Claude via npm
-		if commandExists("claude") {
-			fmt.Printf("  %s claude already installed\n", green("✅"))
-		} else {
-			fmt.Println("  📥 Installing claude...")
-			if commandExists("npm") {
-				runCommand("npm", "install", "-g", "@anthropic-ai/claude-code")
-			} else {
-				printError("npm not found, cannot install claude")
-			}
-		}
-
-		fmt.Println(green("✅ Development packages check completed"))
 	},
 }
 
 var setupOhMyZshCmd = &cobra.Command{
 	Use:   "ohmyzsh",
-	Short: "Install Oh My Zsh and configure shell",
+	Short: "Install and configure Oh My Zsh",
 	Run: func(cmd *cobra.Command, args []string) {
 		cyan := color.New(color.FgCyan).SprintFunc()
 		green := color.New(color.FgGreen).SprintFunc()
 
-		fmt.Println(cyan("🐚 Installing Oh My Zsh..."))
+		fmt.Println(cyan("🐚 Setting up Oh My Zsh..."))
 
 		omzPath := os.Getenv("HOME") + "/.oh-my-zsh"
 		if _, err := os.Stat(omzPath); err == nil {
@@ -97,33 +79,7 @@ var setupOhMyZshCmd = &cobra.Command{
 		fmt.Println("📥 Downloading and installing Oh My Zsh...")
 		runCommand("sh", "-c", "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended")
 
-		fmt.Println(green("✅ Oh My Zsh installed successfully"))
-	},
-}
-
-var setupNvmCmd = &cobra.Command{
-	Use:   "nvm",
-	Short: "Install NVM and Node.js stable",
-	Run: func(cmd *cobra.Command, args []string) {
-		cyan := color.New(color.FgCyan).SprintFunc()
-		green := color.New(color.FgGreen).SprintFunc()
-
-		fmt.Println(cyan("📦 Installing NVM (Node Version Manager)..."))
-
-		if !commandExists("brew") {
-			printError("Homebrew required for NVM installation")
-			fmt.Println("💡 Run: j setup brew")
-			return
-		}
-
-		fmt.Println("📥 Installing NVM via Homebrew...")
-		runCommand("brew", "install", "nvm")
-
-		fmt.Println("⚙️  Setting up NVM...")
-		nvmDir := os.Getenv("HOME") + "/.nvm"
-		os.MkdirAll(nvmDir, 0755)
-
-		fmt.Println(green("✅ NVM installed - restart terminal and run 'nvm install stable'"))
+		fmt.Println(green("✅ Oh My Zsh configured"))
 	},
 }
 
@@ -179,19 +135,6 @@ Host github.com
 	},
 }
 
-var setupAllCmd = &cobra.Command{
-	Use:   "all",
-	Short: "Setup everything (brew, ohmyzsh, nvm, git-ssh)",
-	Run: func(cmd *cobra.Command, args []string) {
-		cyan := color.New(color.FgCyan).SprintFunc()
-		fmt.Println(cyan("🚀 Setting up full development environment..."))
-		setupBrewCmd.Run(cmd, args)
-		setupOhMyZshCmd.Run(cmd, args)
-		setupNvmCmd.Run(cmd, args)
-		setupGitSSHCmd.Run(cmd, args)
-	},
-}
-
 var setupDockSpacerCmd = &cobra.Command{
 	Use:   "dock-spacer",
 	Short: "Add a small spacer tile to the dock",
@@ -221,14 +164,62 @@ var setupDockResetCmd = &cobra.Command{
 }
 
 func init() {
-	setupCmd.AddCommand(setupBrewCmd)
-	setupCmd.AddCommand(setupOhMyZshCmd)
-	setupCmd.AddCommand(setupNvmCmd)
-	setupCmd.AddCommand(setupGitSSHCmd)
-	setupCmd.AddCommand(setupAllCmd)
-	setupCmd.AddCommand(setupDockSpacerCmd)
-	setupCmd.AddCommand(setupDockResetCmd)
+	setupCmd.Flags().BoolVarP(&setupAll, "all", "a", false, "Setup all configurations")
 	rootCmd.AddCommand(setupCmd)
+}
+
+func listSetupItems() {
+	cyan := color.New(color.FgCyan).SprintFunc()
+	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
+	dim := color.New(color.FgHiBlack).SprintFunc()
+
+	fmt.Println(cyan("Available setup items:"))
+	fmt.Println()
+
+	items := []struct {
+		name        string
+		description string
+		check       func() bool
+	}{
+		{"ohmyzsh", "Install and configure Oh My Zsh", func() bool {
+			_, err := os.Stat(os.Getenv("HOME") + "/.oh-my-zsh")
+			return err == nil
+		}},
+		{"git-ssh", "Generate SSH key and configure Git", func() bool {
+			_, err := os.Stat(os.Getenv("HOME") + "/.ssh/id_github")
+			return err == nil
+		}},
+		{"dock-spacer", "Add a small spacer tile to the dock", func() bool { return false }},
+		{"dock-reset", "Reset dock to system defaults", func() bool { return false }},
+	}
+
+	for _, item := range items {
+		status := red("✗")
+		if item.check() {
+			status = green("✓")
+		}
+		fmt.Printf("  %s %-14s %s\n", status, item.name, dim(item.description))
+	}
+
+	fmt.Println()
+	fmt.Println(dim("Usage: j setup <item> [item...]"))
+	fmt.Println(dim("       j setup --all"))
+}
+
+func runSetupItem(name string) {
+	switch name {
+	case "ohmyzsh":
+		setupOhMyZshCmd.Run(nil, nil)
+	case "git-ssh":
+		setupGitSSHCmd.Run(nil, nil)
+	case "dock-spacer":
+		setupDockSpacerCmd.Run(nil, nil)
+	case "dock-reset":
+		setupDockResetCmd.Run(nil, nil)
+	default:
+		printError(fmt.Sprintf("Unknown setup item: %s", name))
+	}
 }
 
 func commandExists(cmd string) bool {

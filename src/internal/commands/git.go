@@ -116,7 +116,7 @@ func init() {
 	gitCmd.AddCommand(gitStatusCmd)
 	gitCmd.AddCommand(gitLogCmd)
 	gitCmd.AddCommand(gitBranchesCmd)
-	rootCmd.AddCommand(gitCmd)
+	runCmd.AddCommand(gitCmd)
 }
 
 func gitCommit(prefix, message string) {

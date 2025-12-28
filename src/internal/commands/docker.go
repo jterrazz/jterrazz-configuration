@@ -14,6 +14,11 @@ var dockerCmd = &cobra.Command{
 	Short: "Docker container and image management",
 }
 
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "Run common development commands",
+}
+
 var dockerRmCmd = &cobra.Command{
 	Use:   "rm",
 	Short: "Remove all containers",
@@ -76,5 +81,6 @@ func init() {
 	dockerCmd.AddCommand(dockerRmiCmd)
 	dockerCmd.AddCommand(dockerCleanCmd)
 	dockerCmd.AddCommand(dockerResetCmd)
-	rootCmd.AddCommand(dockerCmd)
+	runCmd.AddCommand(dockerCmd)
+	rootCmd.AddCommand(runCmd)
 }

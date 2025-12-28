@@ -23,37 +23,42 @@ j update            # Update Homebrew + npm packages
 j clean             # Clean caches, Docker, Multipass, trash
 ```
 
-### Setup
+### Install (Packages)
 
 ```bash
-j setup brew         # Install Homebrew + dev packages
-j setup ohmyzsh      # Install Oh My Zsh
-j setup nvm          # Install NVM + Node.js
+j install                  # List available packages
+j install --all            # Install all packages
+j install brew             # Install Homebrew
+j install go python node   # Install specific packages
+```
+
+### Setup (Configurations)
+
+```bash
+j setup ohmyzsh      # Configure Oh My Zsh
 j setup git-ssh      # Setup Git SSH keys
-j setup all          # Full dev environment setup
 j setup dock-spacer  # Add spacer to dock
 j setup dock-reset   # Reset dock to defaults
+j setup all          # Setup all configurations
 ```
 
-### Git Shortcuts
+### Run Commands
 
 ```bash
-j git feat "message"   # git add . && git commit -m "feat: message"
-j git fix "message"    # git add . && git commit -m "fix: message"
-j git chore "message"  # git add . && git commit -m "chore: message"
-j git push             # git push -u origin HEAD
-j git sync             # git fetch -p && git pull
-j git wip              # git add --all && git commit -m "WIP"
-j git unwip            # Undo last commit and unstage
-```
+# Git shortcuts
+j run git feat "message"   # git add . && git commit -m "feat: message"
+j run git fix "message"    # git add . && git commit -m "fix: message"
+j run git chore "message"  # git add . && git commit -m "chore: message"
+j run git push             # git push -u origin HEAD
+j run git sync             # git fetch -p && git pull
+j run git wip              # git add --all && git commit -m "WIP"
+j run git unwip            # Undo last commit and unstage
 
-### Docker
-
-```bash
-j docker rm            # Remove all containers
-j docker rmi           # Remove all images
-j docker clean         # docker system prune -af
-j docker reset         # Remove all containers and images
+# Docker
+j run docker rm            # Remove all containers
+j run docker rmi           # Remove all images
+j run docker clean         # docker system prune -af
+j run docker reset         # Remove all containers and images
 ```
 
 ## Development
