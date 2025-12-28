@@ -42,6 +42,7 @@ type Package struct {
 	VersionParser func(string) string
 	CheckFn       func() (installed bool, version string, extra string) // Custom check function
 	InstallFn     func() error                                          // Custom install function
+	SetupCmd      string                                                // Setup command to run after installation (e.g., "java")
 }
 
 // Packages is the single source of truth for all installable packages
@@ -226,6 +227,7 @@ var Packages = []Package{
 		Method:       InstallBrewFormula,
 		Category:     CategoryDevelopment,
 		Dependencies: []string{"homebrew"},
+		SetupCmd:     "java",
 		CheckFn: func() (bool, string, string) {
 			// Check for brew-installed openjdk first
 			brewJava := "/opt/homebrew/opt/openjdk/bin/java"

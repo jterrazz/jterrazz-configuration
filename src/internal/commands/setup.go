@@ -23,7 +23,7 @@ Examples:
   j setup ohmyzsh git-ssh    Setup specific items
   j setup                    List available setup items`,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		suggestions := []string{"ohmyzsh", "git-ssh", "dock-spacer", "dock-reset"}
+		suggestions := []string{"ohmyzsh", "git-ssh", "dock-spacer", "dock-reset", "java"}
 		var filtered []string
 		for _, s := range suggestions {
 			alreadyUsed := false
@@ -163,6 +163,49 @@ var setupDockResetCmd = &cobra.Command{
 	},
 }
 
+var setupJavaCmd = &cobra.Command{
+	Use:   "java",
+	Short: "Configure Java runtime symlink for macOS",
+	Run: func(cmd *cobra.Command, args []string) {
+		cyan := color.New(color.FgCyan).SprintFunc()
+		green := color.New(color.FgGreen).SprintFunc()
+
+		fmt.Println(cyan("☕ Setting up Java runtime..."))
+
+		// Check if openjdk is installed via Homebrew
+		brewJava := "/opt/homebrew/opt/openjdk/libexec/openjdk.jdk"
+		if _, err := os.Stat(brewJava); err != nil {
+			printError("OpenJDK not installed. Run: j install openjdk")
+			return
+		}
+
+		// Create symlink for macOS to recognize Java
+		jvmDir := "/Library/Java/JavaVirtualMachines"
+		symlinkPath := jvmDir + "/openjdk.jdk"
+
+		// Check if symlink already exists
+		if _, err := os.Lstat(symlinkPath); err == nil {
+			fmt.Printf("%s Java symlink already exists at %s\n", green("✅"), symlinkPath)
+			return
+		}
+
+		fmt.Println("🔗 Creating symlink for macOS Java recognition...")
+		fmt.Printf("   %s -> %s\n", symlinkPath, brewJava)
+
+		// Need sudo for /Library/Java/JavaVirtualMachines
+		sudoCmd := exec.Command("sudo", "ln", "-sfn", brewJava, symlinkPath)
+		sudoCmd.Stdout = os.Stdout
+		sudoCmd.Stderr = os.Stderr
+		sudoCmd.Stdin = os.Stdin
+		if err := sudoCmd.Run(); err != nil {
+			printError(fmt.Sprintf("Failed to create symlink: %v", err))
+			return
+		}
+
+		fmt.Println(green("✅ Java configured - macOS will now recognize OpenJDK"))
+	},
+}
+
 func init() {
 	setupCmd.Flags().BoolVarP(&setupAll, "all", "a", false, "Setup all configurations")
 	rootCmd.AddCommand(setupCmd)
@@ -180,24 +223,36 @@ func listSetupItems() {
 	items := []struct {
 		name        string
 		description string
-		check       func() bool
+		check       func() *bool // nil = action (no state), true = configured, false = not configured
 	}{
-		{"ohmyzsh", "Install and configure Oh My Zsh", func() bool {
+		{"ohmyzsh", "Install and configure Oh My Zsh", func() *bool {
 			_, err := os.Stat(os.Getenv("HOME") + "/.oh-my-zsh")
-			return err == nil
+			result := err == nil
+			return &result
 		}},
-		{"git-ssh", "Generate SSH key and configure Git", func() bool {
+		{"git-ssh", "Generate SSH key and configure Git", func() *bool {
 			_, err := os.Stat(os.Getenv("HOME") + "/.ssh/id_github")
-			return err == nil
+			result := err == nil
+			return &result
 		}},
-		{"dock-spacer", "Add a small spacer tile to the dock", func() bool { return false }},
-		{"dock-reset", "Reset dock to system defaults", func() bool { return false }},
+		{"java", "Configure Java runtime symlink for macOS", func() *bool {
+			_, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk")
+			result := err == nil
+			return &result
+		}},
+		{"dock-spacer", "Add a small spacer tile to the dock", func() *bool { return nil }},
+		{"dock-reset", "Reset dock to system defaults", func() *bool { return nil }},
 	}
 
 	for _, item := range items {
-		status := red("✗")
-		if item.check() {
+		checkResult := item.check()
+		var status string
+		if checkResult == nil {
+			status = dim("•")
+		} else if *checkResult {
 			status = green("✓")
+		} else {
+			status = red("✗")
 		}
 		fmt.Printf("  %s %-14s %s\n", status, item.name, dim(item.description))
 	}
@@ -213,6 +268,8 @@ func runSetupItem(name string) {
 		setupOhMyZshCmd.Run(nil, nil)
 	case "git-ssh":
 		setupGitSSHCmd.Run(nil, nil)
+	case "java":
+		setupJavaCmd.Run(nil, nil)
 	case "dock-spacer":
 		setupDockSpacerCmd.Run(nil, nil)
 	case "dock-reset":

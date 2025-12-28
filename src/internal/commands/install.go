@@ -139,6 +139,10 @@ func installPackageByName(name string) {
 		printError(fmt.Sprintf("Failed to install %s: %v", pkg.Name, err))
 	} else {
 		fmt.Printf("  %s %s installed\n", green("✓"), pkg.Name)
+		// Run setup command if defined
+		if pkg.SetupCmd != "" {
+			runSetupItem(pkg.SetupCmd)
+		}
 	}
 }
 
@@ -209,6 +213,11 @@ func installAllPackages() {
 		fmt.Printf("  📥 Installing %s...\n", pkg.Name)
 		if err := InstallPackage(pkg); err != nil {
 			printError(fmt.Sprintf("Failed to install %s: %v", pkg.Name, err))
+		} else {
+			// Run setup command if defined
+			if pkg.SetupCmd != "" {
+				runSetupItem(pkg.SetupCmd)
+			}
 		}
 	}
 
