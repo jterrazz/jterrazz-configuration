@@ -156,3 +156,9 @@ func parseAnsibleLintVersion(s string) string {
 	}
 	return ""
 }
+
+func parsePulumiVersion(s string) string {
+	s = stripAnsi(s)
+	// "v3.100.0" -> "3.100.0"
+	return strings.TrimPrefix(strings.TrimSpace(s), "v")
+}

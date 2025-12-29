@@ -296,6 +296,16 @@ var Packages = []Package{
 		VersionArgs:   []string{"--version"},
 		VersionParser: parseTerraformVersion,
 	},
+	{
+		Name:          "pulumi",
+		Command:       "pulumi",
+		Formula:       "pulumi/tap/pulumi",
+		Method:        InstallBrewFormula,
+		Category:      CategoryInfrastructure,
+		Dependencies:  []string{"homebrew"},
+		VersionArgs:   []string{"version"},
+		VersionParser: parsePulumiVersion,
+	},
 
 	// AI Tools
 	{
