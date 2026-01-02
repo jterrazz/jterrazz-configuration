@@ -338,6 +338,16 @@ var Packages = []Package{
 		VersionArgs:   []string{"--version"},
 		VersionParser: trimVersion,
 	},
+	{
+		Name:          "opencode",
+		Command:       "opencode",
+		Formula:       "opencode",
+		Method:        InstallBrewFormula,
+		Category:      CategoryAI,
+		Dependencies:  []string{"homebrew"},
+		VersionArgs:   []string{"--version"},
+		VersionParser: trimVersion,
+	},
 
 	// System Tools
 	{

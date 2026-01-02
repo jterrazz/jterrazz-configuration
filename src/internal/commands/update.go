@@ -25,7 +25,7 @@ Examples:
   j update --npm             Update npm global packages only
   j update --pnpm            Update pnpm global packages only
   j update node              Update specific brew package
-  j update claude codex      Update specific packages
+  j update claude opencode   Update specific packages
   j update                   List available options`,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		// Suggest brew packages for completion
