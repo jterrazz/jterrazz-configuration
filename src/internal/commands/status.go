@@ -120,15 +120,17 @@ func printSetupTable() {
 
 func printSecurityTable() {
 	type securityCheck struct {
-		name     string
-		checkFn  func() (ok bool, detail string)
-		goodWhen bool // true = check passes when enabled, false = check passes when disabled
+		name        string
+		description string
+		checkFn     func() (ok bool, detail string)
+		goodWhen    bool // true = check passes when enabled, false = check passes when disabled
 	}
 
 	checks := []securityCheck{
 		// System Protection
 		{
-			name: "filevault",
+			name:        "filevault",
+			description: "Full disk encryption",
 			checkFn: func() (bool, string) {
 				out, _ := exec.Command("fdesetup", "status").Output()
 				return strings.Contains(string(out), "FileVault is On"), ""
@@ -136,7 +138,8 @@ func printSecurityTable() {
 			goodWhen: true,
 		},
 		{
-			name: "firewall",
+			name:        "firewall",
+			description: "Block incoming connections",
 			checkFn: func() (bool, string) {
 				out, _ := exec.Command("/usr/libexec/ApplicationFirewall/socketfilterfw", "--getglobalstate").Output()
 				return strings.Contains(string(out), "enabled"), ""
@@ -144,7 +147,8 @@ func printSecurityTable() {
 			goodWhen: true,
 		},
 		{
-			name: "sip",
+			name:        "sip",
+			description: "System Integrity Protection",
 			checkFn: func() (bool, string) {
 				out, _ := exec.Command("csrutil", "status").Output()
 				return strings.Contains(string(out), "enabled"), ""
@@ -152,7 +156,8 @@ func printSecurityTable() {
 			goodWhen: true,
 		},
 		{
-			name: "gatekeeper",
+			name:        "gatekeeper",
+			description: "App signature verification",
 			checkFn: func() (bool, string) {
 				out, _ := exec.Command("spctl", "--status").Output()
 				return strings.Contains(string(out), "enabled"), ""
@@ -161,34 +166,47 @@ func printSecurityTable() {
 		},
 		// Network
 		{
-			name: "ssh-remote",
+			name:        "remote-login",
+			description: "SSH server disabled",
 			checkFn: func() (bool, string) {
-				// Check if SSH is running by looking at launchd
 				out, _ := exec.Command("launchctl", "list").Output()
 				sshRunning := strings.Contains(string(out), "com.openssh.sshd")
-				return !sshRunning, "" // good when SSH is NOT running
+				return !sshRunning, ""
+			},
+			goodWhen: true,
+		},
+		// Keys
+		{
+			name:        "ssh",
+			description: "SSH key for authentication",
+			checkFn: func() (bool, string) {
+				sshKey := os.Getenv("HOME") + "/.ssh/id_ed25519"
+				if _, err := os.Stat(sshKey); err == nil {
+					return true, "~/.ssh/id_ed25519"
+				}
+				return false, ""
+			},
+			goodWhen: true,
+		},
+		{
+			name:        "gpg",
+			description: "GPG key for signing",
+			checkFn: func() (bool, string) {
+				out, err := exec.Command("gpg", "--list-secret-keys", "--keyid-format", "long").Output()
+				if err != nil || len(out) == 0 {
+					return false, ""
+				}
+				return true, "~/.gnupg"
 			},
 			goodWhen: true,
 		},
 		// Developer
 		{
-			name: "git-signing",
+			name:        "commit-signing",
+			description: "Sign git commits with GPG",
 			checkFn: func() (bool, string) {
 				out, _ := exec.Command("git", "config", "--global", "commit.gpgsign").Output()
 				return strings.TrimSpace(string(out)) == "true", ""
-			},
-			goodWhen: true,
-		},
-		{
-			name: "git-credential",
-			checkFn: func() (bool, string) {
-				out, _ := exec.Command("git", "config", "--global", "credential.helper").Output()
-				helper := strings.TrimSpace(string(out))
-				if helper == "" {
-					return false, ""
-				}
-				// osxkeychain or other secure helpers are good
-				return true, helper
 			},
 			goodWhen: true,
 		},
@@ -203,17 +221,23 @@ func printSecurityTable() {
 		} else {
 			status = warning.Render("!")
 		}
-		rows = append(rows, []string{check.name, detail, status})
+		rows = append(rows, []string{check.name, check.description, detail, status})
 	}
 
 	t := table.New().
 		Border(lipgloss.RoundedBorder()).
 		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
 		StyleFunc(func(row, col int) lipgloss.Style {
-			if col == 0 {
+			switch col {
+			case 0:
 				return lipgloss.NewStyle().Foreground(lipgloss.Color("212")).PaddingLeft(1).PaddingRight(1).Width(16)
+			case 1:
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1).Width(28)
+			case 2:
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("86")).PaddingLeft(1).PaddingRight(1)
+			default:
+				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 			}
-			return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1)
 		}).
 		Rows(rows...)
 

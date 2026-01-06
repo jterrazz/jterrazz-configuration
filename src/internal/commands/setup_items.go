@@ -26,16 +26,4 @@ var SetupItems = []SetupItem{
 		},
 		SetupCmd: "ohmyzsh",
 	},
-	{
-		Name:        "ssh-key",
-		Description: "SSH key (ed25519)",
-		CheckFn: func() (bool, string) {
-			sshKey := os.Getenv("HOME") + "/.ssh/id_ed25519"
-			if _, err := os.Stat(sshKey); err == nil {
-				return true, "~/.ssh/id_ed25519"
-			}
-			return false, ""
-		},
-		SetupCmd: "ssh",
-	},
 }

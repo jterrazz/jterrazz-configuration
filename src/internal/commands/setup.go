@@ -24,7 +24,7 @@ Examples:
   j setup ohmyzsh ssh        Setup specific items
   j setup                    List available setup items`,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		suggestions := []string{"ohmyzsh", "ssh", "dock-spacer", "dock-reset", "java"}
+		suggestions := []string{"ohmyzsh", "ssh", "gpg", "dock-spacer", "dock-reset", "java"}
 		var filtered []string
 		for _, s := range suggestions {
 			alreadyUsed := false
@@ -179,6 +179,113 @@ Host *
 	},
 }
 
+var setupGPGCmd = &cobra.Command{
+	Use:   "gpg",
+	Short: "Generate GPG key and configure Git commit signing",
+	Run: func(cmd *cobra.Command, args []string) {
+		cyan := color.New(color.FgCyan).SprintFunc()
+		green := color.New(color.FgGreen).SprintFunc()
+		dim := color.New(color.FgHiBlack).SprintFunc()
+
+		fmt.Println(cyan("🔐 Setting up GPG for Git commit signing..."))
+
+		email := "admin@jterrazz.com"
+		name := "Jean-Baptiste Music"
+
+		// Check if gpg is installed
+		if !commandExists("gpg") {
+			printError("GPG not installed. Run: brew install gnupg")
+			return
+		}
+
+		// Check if a key already exists for this email
+		checkCmd := exec.Command("gpg", "--list-secret-keys", "--keyid-format", "long", email)
+		if output, err := checkCmd.Output(); err == nil && len(output) > 0 {
+			fmt.Println(green("✅ GPG key already exists for " + email))
+			// Extract key ID and configure git
+			configureGitGPG(email, dim, green)
+			return
+		}
+
+		fmt.Println("🔑 Generating GPG key...")
+		fmt.Println(dim("   Using ed25519 algorithm (modern, secure)"))
+		fmt.Println()
+
+		// Generate key using batch mode with ed25519
+		batchConfig := fmt.Sprintf(`%%no-protection
+Key-Type: eddsa
+Key-Curve: ed25519
+Name-Real: %s
+Name-Email: %s
+Expire-Date: 0
+%%commit
+`, name, email)
+
+		genCmd := exec.Command("gpg", "--batch", "--generate-key")
+		genCmd.Stdin = strings.NewReader(batchConfig)
+		genCmd.Stdout = os.Stdout
+		genCmd.Stderr = os.Stderr
+		if err := genCmd.Run(); err != nil {
+			printError(fmt.Sprintf("Failed to generate GPG key: %v", err))
+			return
+		}
+		fmt.Println(green("✅ GPG key generated"))
+
+		configureGitGPG(email, dim, green)
+	},
+}
+
+func configureGitGPG(email string, dim, green func(a ...interface{}) string) {
+	// Get the key ID
+	listCmd := exec.Command("gpg", "--list-secret-keys", "--keyid-format", "long", email)
+	output, err := listCmd.Output()
+	if err != nil {
+		printError("Failed to list GPG keys")
+		return
+	}
+
+	// Parse key ID from output (format: "ed25519/KEYID")
+	lines := strings.Split(string(output), "\n")
+	var keyID string
+	for _, line := range lines {
+		if strings.Contains(line, "ed25519/") || strings.Contains(line, "rsa") {
+			parts := strings.Split(line, "/")
+			if len(parts) >= 2 {
+				keyID = strings.Fields(parts[1])[0]
+				break
+			}
+		}
+	}
+
+	if keyID == "" {
+		printError("Could not find GPG key ID")
+		return
+	}
+
+	fmt.Println("⚙️  Configuring Git to use GPG key...")
+
+	// Configure git
+	exec.Command("git", "config", "--global", "user.signingkey", keyID).Run()
+	exec.Command("git", "config", "--global", "commit.gpgsign", "true").Run()
+	exec.Command("git", "config", "--global", "gpg.program", "gpg").Run()
+
+	fmt.Println(green("✅ Git configured for commit signing"))
+
+	// Export public key
+	fmt.Println()
+	fmt.Println("📋 Your GPG public key (add this to GitHub):")
+	fmt.Println("----------------------------------------")
+	exportCmd := exec.Command("gpg", "--armor", "--export", email)
+	exportCmd.Stdout = os.Stdout
+	exportCmd.Run()
+	fmt.Println("----------------------------------------")
+	fmt.Println("💡 Copy the above key and add it to: https://github.com/settings/gpg/new")
+
+	fmt.Println()
+	fmt.Println(green("✅ GPG setup completed"))
+	fmt.Println(dim("   All future commits will be signed automatically"))
+}
+
 var setupDockSpacerCmd = &cobra.Command{
 	Use:   "dock-spacer",
 	Short: "Add a small spacer tile to the dock",
@@ -279,6 +386,11 @@ func listSetupItems() {
 			result := err == nil
 			return &result
 		}},
+		{"gpg", "Generate GPG key for commit signing", func() *bool {
+			out, _ := exec.Command("git", "config", "--global", "commit.gpgsign").Output()
+			result := strings.TrimSpace(string(out)) == "true"
+			return &result
+		}},
 		{"java", "Configure Java runtime symlink for macOS", func() *bool {
 			_, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk")
 			result := err == nil
@@ -312,6 +424,8 @@ func runSetupItem(name string) {
 		setupOhMyZshCmd.Run(nil, nil)
 	case "ssh":
 		setupSSHCmd.Run(nil, nil)
+	case "gpg":
+		setupGPGCmd.Run(nil, nil)
 	case "java":
 		setupJavaCmd.Run(nil, nil)
 	case "dock-spacer":
