@@ -200,7 +200,27 @@ func printSecurityTable() {
 			},
 			goodWhen: true,
 		},
-		// Developer
+		// Git config
+		{
+			name:        "git-email",
+			description: "Git commit email",
+			checkFn: func() (bool, string) {
+				out, _ := exec.Command("git", "config", "--global", "user.email").Output()
+				email := strings.TrimSpace(string(out))
+				return email == "admin@jterrazz.com", email
+			},
+			goodWhen: true,
+		},
+		{
+			name:        "git-name",
+			description: "Git commit author name",
+			checkFn: func() (bool, string) {
+				out, _ := exec.Command("git", "config", "--global", "user.name").Output()
+				name := strings.TrimSpace(string(out))
+				return name != "", name
+			},
+			goodWhen: true,
+		},
 		{
 			name:        "commit-signing",
 			description: "Sign git commits with GPG",
