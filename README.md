@@ -1,14 +1,14 @@
 *Hey there – I'm Jean-Baptiste, just another developer doing weird things with code. All my projects live on [jterrazz.com](https://jterrazz.com) – complete with backstories and lessons learned. Feel free to poke around – you might just find something useful!*
 
-# jterrazz-setup
+# jterrazz-configuration
 
 A unified CLI tool (`j`) for development workflow automation, plus dotfiles and machine setup.
 
 ## Installation
 
 ```bash
-git clone https://github.com/jterrazz/jterrazz-setup.git
-cd jterrazz-setup
+git clone https://github.com/jterrazz/jterrazz-configuration.git
+cd jterrazz-configuration
 make install
 ```
 
