@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -19,11 +20,11 @@ var setupCmd = &cobra.Command{
 Examples:
   j setup --all              Setup all configurations
   j setup ohmyzsh            Setup Oh My Zsh
-  j setup git-ssh            Setup Git SSH key
-  j setup ohmyzsh git-ssh    Setup specific items
+  j setup ssh                Setup SSH key
+  j setup ohmyzsh ssh        Setup specific items
   j setup                    List available setup items`,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		suggestions := []string{"ohmyzsh", "git-ssh", "dock-spacer", "dock-reset", "java"}
+		suggestions := []string{"ohmyzsh", "ssh", "dock-spacer", "dock-reset", "java"}
 		var filtered []string
 		for _, s := range suggestions {
 			alreadyUsed := false
@@ -45,7 +46,7 @@ Examples:
 		if setupAll {
 			fmt.Println(cyan("🚀 Setting up all configurations..."))
 			runSetupItem("ohmyzsh")
-			runSetupItem("git-ssh")
+			runSetupItem("ssh")
 			return
 		}
 
@@ -83,47 +84,89 @@ var setupOhMyZshCmd = &cobra.Command{
 	},
 }
 
-var setupGitSSHCmd = &cobra.Command{
-	Use:   "git-ssh",
-	Short: "Generate SSH key and configure Git",
+var setupSSHCmd = &cobra.Command{
+	Use:   "ssh",
+	Short: "Generate SSH key with macOS Keychain integration",
 	Run: func(cmd *cobra.Command, args []string) {
 		cyan := color.New(color.FgCyan).SprintFunc()
 		green := color.New(color.FgGreen).SprintFunc()
+		dim := color.New(color.FgHiBlack).SprintFunc()
 
 		fmt.Println(cyan("🔑 Setting up Git SSH..."))
 
-		sshKey := os.Getenv("HOME") + "/.ssh/id_github"
-		email := "contact@jterrazz.com"
+		sshDir := os.Getenv("HOME") + "/.ssh"
+		sshKey := sshDir + "/id_ed25519"
+		email := "admin@jterrazz.com"
+
+		// Ensure .ssh directory exists with correct permissions
+		if err := os.MkdirAll(sshDir, 0700); err != nil {
+			printError(fmt.Sprintf("Failed to create .ssh directory: %v", err))
+			return
+		}
 
 		if _, err := os.Stat(sshKey); err == nil {
 			fmt.Printf("%s SSH key already exists at %s\n", green("✅"), sshKey)
 		} else {
-			fmt.Println("🔐 Generating SSH key...")
-			runCommand("ssh-keygen", "-t", "ed25519", "-C", email, "-f", sshKey, "-N", "")
+			fmt.Println("🔐 Generating SSH key with macOS Keychain integration...")
+			fmt.Println(dim("   You'll be prompted to create a passphrase (stored securely in Keychain)"))
+			fmt.Println()
+
+			// Generate key with passphrase prompt (user enters it interactively)
+			// Using ed25519 which is the current best practice for SSH keys
+			genCmd := exec.Command("ssh-keygen",
+				"-t", "ed25519",
+				"-C", email,
+				"-f", sshKey,
+			)
+			genCmd.Stdin = os.Stdin
+			genCmd.Stdout = os.Stdout
+			genCmd.Stderr = os.Stderr
+			if err := genCmd.Run(); err != nil {
+				printError(fmt.Sprintf("Failed to generate SSH key: %v", err))
+				return
+			}
 			fmt.Println(green("✅ SSH key generated"))
 		}
 
-		// Configure SSH
+		// Configure SSH with macOS Keychain integration
 		fmt.Println("⚙️  Configuring SSH...")
-		sshConfig := os.Getenv("HOME") + "/.ssh/config"
+		sshConfig := sshDir + "/config"
 
-		configContent := `
-Host github.com
+		// Configure SSH to use macOS Keychain for all hosts
+		existingConfig, _ := os.ReadFile(sshConfig)
+		if !strings.Contains(string(existingConfig), "AddKeysToAgent yes") {
+			configContent := `
+Host *
   AddKeysToAgent yes
   UseKeychain yes
-  IdentityFile ~/.ssh/id_github
+  IdentityFile ~/.ssh/id_ed25519
 `
-		f, err := os.OpenFile(sshConfig, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err == nil {
-			f.WriteString(configContent)
-			f.Close()
-			fmt.Println(green("✅ SSH config updated"))
+			f, err := os.OpenFile(sshConfig, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+			if err == nil {
+				f.WriteString(configContent)
+				f.Close()
+				fmt.Println(green("✅ SSH config updated"))
+			}
+		} else {
+			fmt.Println(green("✅ SSH config already configured"))
 		}
 
-		// Add key to SSH agent
-		fmt.Println("🔗 Adding key to SSH agent...")
-		runCommand("ssh-add", "--apple-use-keychain", sshKey)
+		// Add key to SSH agent with Keychain storage
+		fmt.Println("🔗 Adding key to SSH agent with Keychain...")
+		fmt.Println(dim("   Your passphrase will be stored in macOS Keychain"))
+		fmt.Println(dim("   Future authentications will use Touch ID or auto-unlock"))
+		fmt.Println()
 
+		addCmd := exec.Command("ssh-add", "--apple-use-keychain", sshKey)
+		addCmd.Stdin = os.Stdin
+		addCmd.Stdout = os.Stdout
+		addCmd.Stderr = os.Stderr
+		if err := addCmd.Run(); err != nil {
+			printError(fmt.Sprintf("Failed to add key to SSH agent: %v", err))
+			return
+		}
+
+		fmt.Println()
 		fmt.Println("📋 Your public key (add this to GitHub):")
 		fmt.Println("----------------------------------------")
 		pubKey, _ := os.ReadFile(sshKey + ".pub")
@@ -132,6 +175,7 @@ Host github.com
 		fmt.Println("💡 Copy the above key and add it to: https://github.com/settings/ssh/new")
 
 		fmt.Println(green("✅ Git SSH setup completed"))
+		fmt.Println(dim("   Passphrase stored in macOS Keychain - unlocks automatically"))
 	},
 }
 
@@ -230,8 +274,8 @@ func listSetupItems() {
 			result := err == nil
 			return &result
 		}},
-		{"git-ssh", "Generate SSH key and configure Git", func() *bool {
-			_, err := os.Stat(os.Getenv("HOME") + "/.ssh/id_github")
+		{"ssh", "Generate SSH key with Keychain integration", func() *bool {
+			_, err := os.Stat(os.Getenv("HOME") + "/.ssh/id_ed25519")
 			result := err == nil
 			return &result
 		}},
@@ -266,8 +310,8 @@ func runSetupItem(name string) {
 	switch name {
 	case "ohmyzsh":
 		setupOhMyZshCmd.Run(nil, nil)
-	case "git-ssh":
-		setupGitSSHCmd.Run(nil, nil)
+	case "ssh":
+		setupSSHCmd.Run(nil, nil)
 	case "java":
 		setupJavaCmd.Run(nil, nil)
 	case "dock-spacer":
