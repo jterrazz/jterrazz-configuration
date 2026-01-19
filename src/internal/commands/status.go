@@ -57,6 +57,7 @@ func showStatus() {
 	printSystemInfo()
 	printSystemSection()
 	printToolsSection()
+	printResourcesSection()
 }
 
 func printSystemInfo() {
@@ -78,17 +79,13 @@ func printSystemSection() {
 	fmt.Println(subSectionStyle.Render("Setup"))
 	printSetupTable()
 
-	// Security subsection
-	fmt.Println(subSectionStyle.Render("Security"))
-	printSecurityTable()
+	// macOS Security subsection
+	fmt.Println(subSectionStyle.Render("macOS Security"))
+	printMacOSSecurityTable()
 
-	// Network subsection
-	fmt.Println(subSectionStyle.Render("Network"))
-	printNetworkTable()
-
-	// Disk Usage subsection
-	fmt.Println(subSectionStyle.Render("Disk Usage"))
-	printDiskTable()
+	// Identity subsection
+	fmt.Println(subSectionStyle.Render("Identity"))
+	printIdentityTable()
 }
 
 func printSetupTable() {
@@ -118,16 +115,49 @@ func printSetupTable() {
 	fmt.Println()
 }
 
-func printSecurityTable() {
-	type securityCheck struct {
-		name        string
-		description string
-		checkFn     func() (ok bool, detail string)
-		goodWhen    bool // true = check passes when enabled, false = check passes when disabled
+type securityCheck struct {
+	name        string
+	description string
+	checkFn     func() (ok bool, detail string)
+	goodWhen    bool // true = check passes when enabled, false = check passes when disabled
+}
+
+func printSecurityCheckTable(checks []securityCheck) {
+	rows := [][]string{}
+	for _, check := range checks {
+		ok, detail := check.checkFn()
+		var status string
+		if ok == check.goodWhen {
+			status = success.Render("✓")
+		} else {
+			status = warning.Render("!")
+		}
+		rows = append(rows, []string{check.name, check.description, detail, status})
 	}
 
+	t := table.New().
+		Border(lipgloss.RoundedBorder()).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			switch col {
+			case 0:
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("212")).PaddingLeft(1).PaddingRight(1).Width(16)
+			case 1:
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1).Width(30)
+			case 2:
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("86")).PaddingLeft(1).PaddingRight(1)
+			default:
+				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
+			}
+		}).
+		Rows(rows...)
+
+	fmt.Println(t.Render())
+	fmt.Println()
+}
+
+func printMacOSSecurityTable() {
 	checks := []securityCheck{
-		// System Protection
 		{
 			name:        "filevault",
 			description: "Full disk encryption",
@@ -164,7 +194,6 @@ func printSecurityTable() {
 			},
 			goodWhen: true,
 		},
-		// Network
 		{
 			name:        "remote-login",
 			description: "SSH server disabled",
@@ -175,7 +204,13 @@ func printSecurityTable() {
 			},
 			goodWhen: true,
 		},
-		// Keys
+	}
+
+	printSecurityCheckTable(checks)
+}
+
+func printIdentityTable() {
+	checks := []securityCheck{
 		{
 			name:        "ssh",
 			description: "SSH key for authentication",
@@ -200,7 +235,6 @@ func printSecurityTable() {
 			},
 			goodWhen: true,
 		},
-		// Git config
 		{
 			name:        "git-email",
 			description: "Git commit email",
@@ -232,37 +266,7 @@ func printSecurityTable() {
 		},
 	}
 
-	rows := [][]string{}
-	for _, check := range checks {
-		ok, detail := check.checkFn()
-		var status string
-		if ok == check.goodWhen {
-			status = success.Render("✓")
-		} else {
-			status = warning.Render("!")
-		}
-		rows = append(rows, []string{check.name, check.description, detail, status})
-	}
-
-	t := table.New().
-		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
-		StyleFunc(func(row, col int) lipgloss.Style {
-			switch col {
-			case 0:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("212")).PaddingLeft(1).PaddingRight(1).Width(16)
-			case 1:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1).Width(28)
-			case 2:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("86")).PaddingLeft(1).PaddingRight(1)
-			default:
-				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
-			}
-		}).
-		Rows(rows...)
-
-	fmt.Println(t.Render())
-	fmt.Println()
+	printSecurityCheckTable(checks)
 }
 
 func printNetworkTable() {
@@ -551,9 +555,10 @@ func printToolsSection() {
 
 	categories := []PackageCategory{
 		CategoryPackageManager,
-		CategoryDevelopment,
+		CategoryLanguages,
 		CategoryInfrastructure,
 		CategoryAI,
+		CategoryApps,
 		CategorySystemTools,
 	}
 
@@ -566,6 +571,19 @@ func printToolsSection() {
 		fmt.Println(subSectionStyle.Render(string(category)))
 		printPackageTable(packages)
 	}
+}
+
+func printResourcesSection() {
+	fmt.Println(sectionStyle.Render("Resources"))
+	fmt.Println()
+
+	// Network subsection
+	fmt.Println(subSectionStyle.Render("Network"))
+	printNetworkTable()
+
+	// Disk Usage subsection
+	fmt.Println(subSectionStyle.Render("Disk Usage"))
+	printDiskTable()
 }
 
 func printPackageTable(packages []Package) {

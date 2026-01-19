@@ -12,8 +12,32 @@ type SetupItem struct {
 	SetupCmd    string // The j setup subcommand to run
 }
 
-// SetupItems is the single source of truth for all setup configurations
+// SetupItems is the single source of truth for all setup configurations (alphabetical)
 var SetupItems = []SetupItem{
+	{
+		Name:        "ghostty",
+		Description: "Ghostty terminal config",
+		CheckFn: func() (bool, string) {
+			configPath := os.Getenv("HOME") + "/.config/ghostty/config"
+			if _, err := os.Stat(configPath); err == nil {
+				return true, "~/.config/ghostty/config"
+			}
+			return false, ""
+		},
+		SetupCmd: "ghostty",
+	},
+	{
+		Name:        "hushlogin",
+		Description: "Silence terminal login message",
+		CheckFn: func() (bool, string) {
+			hushPath := os.Getenv("HOME") + "/.hushlogin"
+			if _, err := os.Stat(hushPath); err == nil {
+				return true, "~/.hushlogin"
+			}
+			return false, ""
+		},
+		SetupCmd: "hushlogin",
+	},
 	{
 		Name:        "oh-my-zsh",
 		Description: "Oh My Zsh shell configuration",

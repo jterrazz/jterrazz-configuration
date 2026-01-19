@@ -24,9 +24,10 @@ type PackageCategory string
 
 const (
 	CategoryPackageManager PackageCategory = "Package Managers"
-	CategoryDevelopment    PackageCategory = "Development"
+	CategoryLanguages      PackageCategory = "Languages"
 	CategoryInfrastructure PackageCategory = "Infrastructure"
-	CategoryAI             PackageCategory = "AI Tools"
+	CategoryAI             PackageCategory = "AI"
+	CategoryApps           PackageCategory = "Apps"
 	CategorySystemTools    PackageCategory = "System Tools"
 )
 
@@ -47,7 +48,27 @@ type Package struct {
 
 // Packages is the single source of truth for all installable packages
 var Packages = []Package{
-	// Package Managers
+	// Package Managers (alphabetical)
+	{
+		Name:          "bun",
+		Command:       "bun",
+		Formula:       "bun",
+		Method:        InstallBrewFormula,
+		Category:      CategoryPackageManager,
+		Dependencies:  []string{"homebrew"},
+		VersionArgs:   []string{"--version"},
+		VersionParser: trimVersion,
+	},
+	{
+		Name:          "cocoapods",
+		Command:       "pod",
+		Formula:       "cocoapods",
+		Method:        InstallBrewFormula,
+		Category:      CategoryPackageManager,
+		Dependencies:  []string{"homebrew"},
+		VersionArgs:   []string{"--version"},
+		VersionParser: trimVersion,
+	},
 	{
 		Name:     "homebrew",
 		Command:  "brew",
@@ -79,16 +100,6 @@ var Packages = []Package{
 			cmd.Stdin = os.Stdin
 			return cmd.Run()
 		},
-	},
-	{
-		Name:          "bun",
-		Command:       "bun",
-		Formula:       "bun",
-		Method:        InstallBrewFormula,
-		Category:      CategoryPackageManager,
-		Dependencies:  []string{"homebrew"},
-		VersionArgs:   []string{"--version"},
-		VersionParser: trimVersion,
 	},
 	{
 		Name:         "npm",
@@ -152,61 +163,14 @@ var Packages = []Package{
 		VersionArgs:   []string{"--version"},
 		VersionParser: trimVersion,
 	},
-	{
-		Name:          "cocoapods",
-		Command:       "pod",
-		Formula:       "cocoapods",
-		Method:        InstallBrewFormula,
-		Category:      CategoryPackageManager,
-		Dependencies:  []string{"homebrew"},
-		VersionArgs:   []string{"--version"},
-		VersionParser: trimVersion,
-	},
 
-	// Development
-	{
-		Name:         "docker",
-		Command:      "docker",
-		Formula:      "docker",
-		Method:       InstallBrewCask,
-		Category:     CategoryDevelopment,
-		Dependencies: []string{"homebrew"},
-		CheckFn: func() (bool, string, string) {
-			// Check if Docker Desktop app is installed
-			_, appErr := os.Stat("/Applications/Docker.app")
-			if appErr != nil {
-				return false, "", ""
-			}
-			// Get version from CLI if available
-			version := ""
-			if _, err := exec.LookPath("docker"); err == nil {
-				out, _ := exec.Command("docker", "--version").Output()
-				parts := strings.Split(string(out), " ")
-				if len(parts) >= 3 {
-					version = strings.TrimSuffix(parts[2], ",")
-				}
-			}
-			extra := "stopped"
-			if err := exec.Command("docker", "info").Run(); err == nil {
-				extra = "running"
-			}
-			return true, version, extra
-		},
-	},
-	{
-		Name:          "git",
-		Command:       "git",
-		Method:        InstallXcode,
-		Category:      CategoryDevelopment,
-		VersionArgs:   []string{"--version"},
-		VersionParser: parseGitVersion,
-	},
+	// Languages (alphabetical)
 	{
 		Name:          "go",
 		Command:       "go",
 		Formula:       "go",
 		Method:        InstallBrewFormula,
-		Category:      CategoryDevelopment,
+		Category:      CategoryLanguages,
 		Dependencies:  []string{"homebrew"},
 		VersionArgs:   []string{"version"},
 		VersionParser: parseGoVersion,
@@ -215,7 +179,7 @@ var Packages = []Package{
 		Name:          "node",
 		Command:       "node",
 		Method:        InstallNvm,
-		Category:      CategoryDevelopment,
+		Category:      CategoryLanguages,
 		Dependencies:  []string{"nvm"},
 		VersionArgs:   []string{"--version"},
 		VersionParser: trimVersion,
@@ -225,7 +189,7 @@ var Packages = []Package{
 		Command:      "java",
 		Formula:      "openjdk",
 		Method:       InstallBrewFormula,
-		Category:     CategoryDevelopment,
+		Category:     CategoryLanguages,
 		Dependencies: []string{"homebrew"},
 		SetupCmd:     "java",
 		CheckFn: func() (bool, string, string) {
@@ -249,12 +213,12 @@ var Packages = []Package{
 		Command:       "python3",
 		Formula:       "python",
 		Method:        InstallBrewFormula,
-		Category:      CategoryDevelopment,
+		Category:      CategoryLanguages,
 		Dependencies:  []string{"homebrew"},
 		VersionArgs:   []string{"--version"},
 		VersionParser: parsePythonVersion,
 	},
-	// Infrastructure
+	// Infrastructure (alphabetical)
 	{
 		Name:          "ansible",
 		Command:       "ansible",
@@ -275,7 +239,6 @@ var Packages = []Package{
 		VersionArgs:   []string{"--version"},
 		VersionParser: parseAnsibleLintVersion,
 	},
-
 	{
 		Name:          "multipass",
 		Command:       "multipass",
@@ -287,16 +250,6 @@ var Packages = []Package{
 		VersionParser: parseMultipassVersion,
 	},
 	{
-		Name:          "terraform",
-		Command:       "terraform",
-		Formula:       "terraform",
-		Method:        InstallBrewFormula,
-		Category:      CategoryInfrastructure,
-		Dependencies:  []string{"homebrew"},
-		VersionArgs:   []string{"--version"},
-		VersionParser: parseTerraformVersion,
-	},
-	{
 		Name:          "pulumi",
 		Command:       "pulumi",
 		Formula:       "pulumi/tap/pulumi",
@@ -306,25 +259,35 @@ var Packages = []Package{
 		VersionArgs:   []string{"version"},
 		VersionParser: parsePulumiVersion,
 	},
+	{
+		Name:          "terraform",
+		Command:       "terraform",
+		Formula:       "terraform",
+		Method:        InstallBrewFormula,
+		Category:      CategoryInfrastructure,
+		Dependencies:  []string{"homebrew"},
+		VersionArgs:   []string{"--version"},
+		VersionParser: parseTerraformVersion,
+	},
 
-	// AI Tools
+	// AI (alphabetical)
 	{
 		Name:          "claude",
 		Command:       "claude",
-		Formula:       "@anthropic-ai/claude-code",
-		Method:        InstallNpm,
+		Formula:       "claude-code",
+		Method:        InstallBrewCask,
 		Category:      CategoryAI,
-		Dependencies:  []string{"npm"},
+		Dependencies:  []string{"homebrew"},
 		VersionArgs:   []string{"--version"},
 		VersionParser: parseClaudeVersion,
 	},
 	{
 		Name:          "codex",
 		Command:       "codex",
-		Formula:       "@openai/codex",
-		Method:        InstallNpm,
+		Formula:       "codex",
+		Method:        InstallBrewCask,
 		Category:      CategoryAI,
-		Dependencies:  []string{"npm"},
+		Dependencies:  []string{"homebrew"},
 		VersionArgs:   []string{"--version"},
 		VersionParser: parseCodexVersion,
 	},
@@ -349,7 +312,72 @@ var Packages = []Package{
 		VersionParser: trimVersion,
 	},
 
-	// System Tools
+	// Apps (alphabetical)
+	{
+		Name:         "docker",
+		Command:      "docker",
+		Formula:      "docker",
+		Method:       InstallBrewCask,
+		Category:     CategoryApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() (bool, string, string) {
+			// Check if Docker Desktop app is installed
+			_, appErr := os.Stat("/Applications/Docker.app")
+			if appErr != nil {
+				return false, "", ""
+			}
+			// Get version from CLI if available
+			version := ""
+			if _, err := exec.LookPath("docker"); err == nil {
+				out, _ := exec.Command("docker", "--version").Output()
+				parts := strings.Split(string(out), " ")
+				if len(parts) >= 3 {
+					version = strings.TrimSuffix(parts[2], ",")
+				}
+			}
+			extra := "stopped"
+			if err := exec.Command("docker", "info").Run(); err == nil {
+				extra = "running"
+			}
+			return true, version, extra
+		},
+	},
+	{
+		Name:         "ghostty",
+		Command:      "ghostty",
+		Formula:      "ghostty",
+		Method:       InstallBrewCask,
+		Category:     CategoryApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() (bool, string, string) {
+			// Check if Ghostty app is installed
+			_, appErr := os.Stat("/Applications/Ghostty.app")
+			if appErr != nil {
+				return false, "", ""
+			}
+			// Get version from CLI if available
+			version := ""
+			if _, err := exec.LookPath("ghostty"); err == nil {
+				out, _ := exec.Command("ghostty", "--version").Output()
+				// Output format: "ghostty 1.0.0"
+				parts := strings.Fields(string(out))
+				if len(parts) >= 2 {
+					version = parts[1]
+				}
+			}
+			return true, version, ""
+		},
+	},
+
+	// System Tools (alphabetical)
+	{
+		Name:          "git",
+		Command:       "git",
+		Method:        InstallXcode,
+		Category:      CategorySystemTools,
+		VersionArgs:   []string{"--version"},
+		VersionParser: parseGitVersion,
+	},
 	{
 		Name:          "mole",
 		Command:       "mo",
@@ -497,7 +525,7 @@ func (m InstallMethod) String() string {
 	case InstallBrewFormula:
 		return "brew"
 	case InstallBrewCask:
-		return "cask"
+		return "brew"
 	case InstallNpm:
 		return "npm"
 	case InstallNvm:

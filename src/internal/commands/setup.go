@@ -24,7 +24,7 @@ Examples:
   j setup ohmyzsh ssh        Setup specific items
   j setup                    List available setup items`,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		suggestions := []string{"ohmyzsh", "ssh", "gpg", "dock-spacer", "dock-reset", "java"}
+		suggestions := []string{"dock-reset", "dock-spacer", "ghostty", "gpg", "hushlogin", "java", "ohmyzsh", "ssh"}
 		var filtered []string
 		for _, s := range suggestions {
 			alreadyUsed := false
@@ -314,6 +314,65 @@ var setupDockResetCmd = &cobra.Command{
 	},
 }
 
+var setupGhosttyCmd = &cobra.Command{
+	Use:   "ghostty",
+	Short: "Install Ghostty terminal configuration",
+	Run: func(cmd *cobra.Command, args []string) {
+		cyan := color.New(color.FgCyan).SprintFunc()
+		green := color.New(color.FgGreen).SprintFunc()
+
+		fmt.Println(cyan("👻 Setting up Ghostty config..."))
+
+		configDir := os.Getenv("HOME") + "/.config/ghostty"
+		configPath := configDir + "/config"
+
+		// Create config directory if it doesn't exist
+		if err := os.MkdirAll(configDir, 0755); err != nil {
+			printError(fmt.Sprintf("Failed to create config directory: %v", err))
+			return
+		}
+
+		// Ghostty config content
+		configContent := `theme = Ayu
+`
+
+		// Write config file
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			printError(fmt.Sprintf("Failed to write config file: %v", err))
+			return
+		}
+
+		fmt.Println(green("✅ Ghostty config installed at ~/.config/ghostty/config"))
+	},
+}
+
+var setupHushloginCmd = &cobra.Command{
+	Use:   "hushlogin",
+	Short: "Create .hushlogin to silence terminal login message",
+	Run: func(cmd *cobra.Command, args []string) {
+		cyan := color.New(color.FgCyan).SprintFunc()
+		green := color.New(color.FgGreen).SprintFunc()
+
+		fmt.Println(cyan("🤫 Setting up hushlogin..."))
+
+		hushPath := os.Getenv("HOME") + "/.hushlogin"
+		if _, err := os.Stat(hushPath); err == nil {
+			fmt.Printf("%s .hushlogin already exists at %s\n", green("✅"), hushPath)
+			return
+		}
+
+		// Create empty .hushlogin file
+		f, err := os.Create(hushPath)
+		if err != nil {
+			printError(fmt.Sprintf("Failed to create .hushlogin: %v", err))
+			return
+		}
+		f.Close()
+
+		fmt.Println(green("✅ .hushlogin created - terminal login message silenced"))
+	},
+}
+
 var setupJavaCmd = &cobra.Command{
 	Use:   "java",
 	Short: "Configure Java runtime symlink for macOS",
@@ -376,6 +435,28 @@ func listSetupItems() {
 		description string
 		check       func() *bool // nil = action (no state), true = configured, false = not configured
 	}{
+		{"dock-reset", "Reset dock to system defaults", func() *bool { return nil }},
+		{"dock-spacer", "Add a small spacer tile to the dock", func() *bool { return nil }},
+		{"ghostty", "Install Ghostty terminal config", func() *bool {
+			_, err := os.Stat(os.Getenv("HOME") + "/.config/ghostty/config")
+			result := err == nil
+			return &result
+		}},
+		{"gpg", "Generate GPG key for commit signing", func() *bool {
+			out, _ := exec.Command("git", "config", "--global", "commit.gpgsign").Output()
+			result := strings.TrimSpace(string(out)) == "true"
+			return &result
+		}},
+		{"hushlogin", "Silence terminal login message", func() *bool {
+			_, err := os.Stat(os.Getenv("HOME") + "/.hushlogin")
+			result := err == nil
+			return &result
+		}},
+		{"java", "Configure Java runtime symlink for macOS", func() *bool {
+			_, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk")
+			result := err == nil
+			return &result
+		}},
 		{"ohmyzsh", "Install and configure Oh My Zsh", func() *bool {
 			_, err := os.Stat(os.Getenv("HOME") + "/.oh-my-zsh")
 			result := err == nil
@@ -386,18 +467,6 @@ func listSetupItems() {
 			result := err == nil
 			return &result
 		}},
-		{"gpg", "Generate GPG key for commit signing", func() *bool {
-			out, _ := exec.Command("git", "config", "--global", "commit.gpgsign").Output()
-			result := strings.TrimSpace(string(out)) == "true"
-			return &result
-		}},
-		{"java", "Configure Java runtime symlink for macOS", func() *bool {
-			_, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk")
-			result := err == nil
-			return &result
-		}},
-		{"dock-spacer", "Add a small spacer tile to the dock", func() *bool { return nil }},
-		{"dock-reset", "Reset dock to system defaults", func() *bool { return nil }},
 	}
 
 	for _, item := range items {
@@ -420,18 +489,22 @@ func listSetupItems() {
 
 func runSetupItem(name string) {
 	switch name {
+	case "dock-reset":
+		setupDockResetCmd.Run(nil, nil)
+	case "dock-spacer":
+		setupDockSpacerCmd.Run(nil, nil)
+	case "ghostty":
+		setupGhosttyCmd.Run(nil, nil)
+	case "gpg":
+		setupGPGCmd.Run(nil, nil)
+	case "hushlogin":
+		setupHushloginCmd.Run(nil, nil)
+	case "java":
+		setupJavaCmd.Run(nil, nil)
 	case "ohmyzsh":
 		setupOhMyZshCmd.Run(nil, nil)
 	case "ssh":
 		setupSSHCmd.Run(nil, nil)
-	case "gpg":
-		setupGPGCmd.Run(nil, nil)
-	case "java":
-		setupJavaCmd.Run(nil, nil)
-	case "dock-spacer":
-		setupDockSpacerCmd.Run(nil, nil)
-	case "dock-reset":
-		setupDockResetCmd.Run(nil, nil)
 	default:
 		printError(fmt.Sprintf("Unknown setup item: %s", name))
 	}
