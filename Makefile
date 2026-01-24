@@ -5,7 +5,7 @@ BINARY_NAME := j
 INSTALL_PATH := /usr/local/bin/$(BINARY_NAME)
 
 help: ## Show this help message
-	@echo "jterrazz-configuration"
+	@echo "jterrazz-cli"
 	@echo ""
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'

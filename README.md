@@ -1,4 +1,4 @@
-# jterrazz-configuration
+# jterrazz-cli
 
 A unified CLI tool (`j`) for development workflow automation, plus dotfiles and machine setup.
 
@@ -7,8 +7,8 @@ A unified CLI tool (`j`) for development workflow automation, plus dotfiles and 
 ## Installation
 
 ```bash
-git clone https://github.com/jterrazz/jterrazz-configuration.git
-cd jterrazz-configuration
+git clone https://github.com/jterrazz/jterrazz-cli.git
+cd jterrazz-cli
 make install
 ```
 

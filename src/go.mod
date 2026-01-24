@@ -1,4 +1,4 @@
-module github.com/jterrazz/jterrazz-configuration
+module github.com/jterrazz/jterrazz-cli
 
 go 1.21
 
