@@ -24,7 +24,7 @@ Examples:
   j setup ohmyzsh ssh        Setup specific items
   j setup                    List available setup items`,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		suggestions := []string{"dock-reset", "dock-spacer", "ghostty", "gpg", "hushlogin", "java", "ohmyzsh", "ssh"}
+		suggestions := []string{"dock-reset", "dock-spacer", "ghostty", "gpg", "hushlogin", "java", "ohmyzsh", "ssh", "zed"}
 		var filtered []string
 		for _, s := range suggestions {
 			alreadyUsed := false
@@ -332,18 +332,86 @@ var setupGhosttyCmd = &cobra.Command{
 			return
 		}
 
-		// Ghostty config content
-		configContent := `theme = Ayu
-`
+		// Get the source config from the repo
+		repoConfig, err := getRepoConfigPath("configuration/applications/ghostty/config")
+		if err != nil {
+			printError(fmt.Sprintf("Failed to find repo config: %v", err))
+			return
+		}
+
+		configContent, err := os.ReadFile(repoConfig)
+		if err != nil {
+			printError(fmt.Sprintf("Failed to read config file: %v", err))
+			return
+		}
 
 		// Write config file
-		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		if err := os.WriteFile(configPath, configContent, 0644); err != nil {
 			printError(fmt.Sprintf("Failed to write config file: %v", err))
 			return
 		}
 
 		fmt.Println(green("✅ Ghostty config installed at ~/.config/ghostty/config"))
 	},
+}
+
+var setupZedCmd = &cobra.Command{
+	Use:   "zed",
+	Short: "Install Zed editor configuration",
+	Run: func(cmd *cobra.Command, args []string) {
+		cyan := color.New(color.FgCyan).SprintFunc()
+		green := color.New(color.FgGreen).SprintFunc()
+
+		fmt.Println(cyan("⚡ Setting up Zed config..."))
+
+		configDir := os.Getenv("HOME") + "/.config/zed"
+		configPath := configDir + "/settings.json"
+
+		// Create config directory if it doesn't exist
+		if err := os.MkdirAll(configDir, 0755); err != nil {
+			printError(fmt.Sprintf("Failed to create config directory: %v", err))
+			return
+		}
+
+		// Get the source config from the repo
+		repoConfig, err := getRepoConfigPath("configuration/applications/zed/settings.json")
+		if err != nil {
+			printError(fmt.Sprintf("Failed to find repo config: %v", err))
+			return
+		}
+
+		configContent, err := os.ReadFile(repoConfig)
+		if err != nil {
+			printError(fmt.Sprintf("Failed to read config file: %v", err))
+			return
+		}
+
+		// Write config file
+		if err := os.WriteFile(configPath, configContent, 0644); err != nil {
+			printError(fmt.Sprintf("Failed to write config file: %v", err))
+			return
+		}
+
+		fmt.Println(green("✅ Zed config installed at ~/.config/zed/settings.json"))
+	},
+}
+
+// getRepoConfigPath returns the absolute path to a config file in the repo
+func getRepoConfigPath(relativePath string) (string, error) {
+	// Try to find the repo root by looking for known paths
+	possibleRoots := []string{
+		os.Getenv("HOME") + "/Developer/jterrazz-cli",
+		"/usr/local/share/jterrazz-cli",
+	}
+
+	for _, root := range possibleRoots {
+		fullPath := root + "/" + relativePath
+		if _, err := os.Stat(fullPath); err == nil {
+			return fullPath, nil
+		}
+	}
+
+	return "", fmt.Errorf("config file not found: %s", relativePath)
 }
 
 var setupHushloginCmd = &cobra.Command{
@@ -467,6 +535,11 @@ func listSetupItems() {
 			result := err == nil
 			return &result
 		}},
+		{"zed", "Install Zed editor config", func() *bool {
+			_, err := os.Stat(os.Getenv("HOME") + "/.config/zed/settings.json")
+			result := err == nil
+			return &result
+		}},
 	}
 
 	for _, item := range items {
@@ -505,6 +578,8 @@ func runSetupItem(name string) {
 		setupOhMyZshCmd.Run(nil, nil)
 	case "ssh":
 		setupSSHCmd.Run(nil, nil)
+	case "zed":
+		setupZedCmd.Run(nil, nil)
 	default:
 		printError(fmt.Sprintf("Unknown setup item: %s", name))
 	}

@@ -11,8 +11,8 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})
+	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 }
 
 func Execute() error {

@@ -50,4 +50,16 @@ var SetupItems = []SetupItem{
 		},
 		SetupCmd: "ohmyzsh",
 	},
+	{
+		Name:        "zed",
+		Description: "Zed editor configuration",
+		CheckFn: func() (bool, string) {
+			configPath := os.Getenv("HOME") + "/.config/zed/settings.json"
+			if _, err := os.Stat(configPath); err == nil {
+				return true, "~/.config/zed/settings.json"
+			}
+			return false, ""
+		},
+		SetupCmd: "zed",
+	},
 }

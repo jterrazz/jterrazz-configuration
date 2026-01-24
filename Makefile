@@ -3,6 +3,8 @@
 # Configuration
 BINARY_NAME := j
 INSTALL_PATH := /usr/local/bin/$(BINARY_NAME)
+ZSHRC_SOURCE := configuration/binaries/zsh/zshrc.sh
+ZSHRC_LINE := source $(PWD)/$(ZSHRC_SOURCE)
 
 help: ## Show this help message
 	@echo "jterrazz-cli"
@@ -20,7 +22,20 @@ install: build ## Build and install j to /usr/local/bin
 	@sudo cp $(BINARY_NAME) $(INSTALL_PATH)
 	@sudo chmod +x $(INSTALL_PATH)
 	@rm $(BINARY_NAME)
-	@echo "✅ Installed! Run 'j help' to get started."
+	@echo "Setting up shell completions..."
+	@if [ -f "$$HOME/.zshrc" ]; then \
+		if ! grep -q "$(ZSHRC_SOURCE)" "$$HOME/.zshrc"; then \
+			echo '\n# jterrazz-cli' >> "$$HOME/.zshrc"; \
+			echo 'source $(PWD)/$(ZSHRC_SOURCE)' >> "$$HOME/.zshrc"; \
+			echo "✅ Added shell completions to ~/.zshrc"; \
+		else \
+			echo "✅ Shell completions already configured in ~/.zshrc"; \
+		fi \
+	else \
+		echo "⚠️  ~/.zshrc not found. Add this line manually:"; \
+		echo "    source $(PWD)/$(ZSHRC_SOURCE)"; \
+	fi
+	@echo "✅ Installed! Run 'source ~/.zshrc' then 'j help' to get started."
 
 uninstall: ## Remove j from /usr/local/bin
 	@echo "Uninstalling $(BINARY_NAME)..."
