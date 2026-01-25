@@ -333,6 +333,16 @@ var Packages = []Package{
 		},
 	},
 	{
+		Name:          "happy-coder",
+		Command:       "happy",
+		Formula:       "happy-coder",
+		Method:        InstallNpm,
+		Category:      CategoryAI,
+		Dependencies:  []string{"npm"},
+		VersionArgs:   []string{"--version"},
+		VersionParser: parseHappyCoderVersion,
+	},
+	{
 		Name:          "opencode",
 		Command:       "opencode",
 		Formula:       "opencode",

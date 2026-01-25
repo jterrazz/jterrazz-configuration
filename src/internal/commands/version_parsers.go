@@ -162,3 +162,16 @@ func parsePulumiVersion(s string) string {
 	// "v3.100.0" -> "3.100.0"
 	return strings.TrimPrefix(strings.TrimSpace(s), "v")
 }
+
+func parseHappyCoderVersion(s string) string {
+	s = stripAnsi(s)
+	// "happy version: 0.13.0\nUsing Claude Code..." -> "0.13.0"
+	lines := strings.Split(s, "\n")
+	if len(lines) > 0 {
+		line := lines[0]
+		if strings.HasPrefix(line, "happy version:") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "happy version:"))
+		}
+	}
+	return ""
+}
