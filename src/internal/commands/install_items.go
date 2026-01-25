@@ -302,6 +302,37 @@ var Packages = []Package{
 		VersionParser: trimVersion,
 	},
 	{
+		Name:         "ollama",
+		Command:      "ollama",
+		Formula:      "ollama-app",
+		Method:       InstallBrewCask,
+		Category:     CategoryAI,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() (bool, string, string) {
+			// Check if Ollama app is installed
+			_, appErr := os.Stat("/Applications/Ollama.app")
+			if appErr != nil {
+				return false, "", ""
+			}
+			// Get version from CLI if available
+			version := ""
+			if _, err := exec.LookPath("ollama"); err == nil {
+				out, _ := exec.Command("ollama", "--version").Output()
+				// Output format: "ollama version 0.x.x"
+				parts := strings.Fields(string(out))
+				if len(parts) >= 3 {
+					version = parts[2]
+				}
+			}
+			// Check if ollama is running
+			extra := "stopped"
+			if err := exec.Command("pgrep", "-x", "ollama").Run(); err == nil {
+				extra = "running"
+			}
+			return true, version, extra
+		},
+	},
+	{
 		Name:          "opencode",
 		Command:       "opencode",
 		Formula:       "opencode",
