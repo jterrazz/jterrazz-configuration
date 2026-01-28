@@ -144,7 +144,6 @@ func TestSkillsModelBuildItems(t *testing.T) {
 	m := &skillsModel{
 		expanded:  make(map[string]bool),
 		installed: []string{},
-		styles:    newSkillStyles(),
 	}
 
 	items := m.buildItems()
@@ -209,7 +208,7 @@ func TestSkillsModelBuildItemsWithInstalled(t *testing.T) {
 	m := &skillsModel{
 		expanded:  make(map[string]bool),
 		installed: []string{"frontend-design"},
-		styles:    newSkillStyles(),
+		
 	}
 
 	items := m.buildItems()
@@ -238,7 +237,7 @@ func TestSkillsModelBuildItemsWithOtherInstalled(t *testing.T) {
 	m := &skillsModel{
 		expanded:  make(map[string]bool),
 		installed: []string{"remotion-best-practices"}, // Not in MySkills
-		styles:    newSkillStyles(),
+		
 	}
 
 	items := m.buildItems()
@@ -265,7 +264,7 @@ func TestSkillsModelBuildItemsWithExpanded(t *testing.T) {
 	m := &skillsModel{
 		expanded:  map[string]bool{"anthropics/skills": true},
 		installed: []string{},
-		styles:    newSkillStyles(),
+		
 	}
 
 	items := m.buildItems()

@@ -480,36 +480,17 @@ type setupUIItem struct {
 	configured  *bool
 }
 
-type setupStyles struct {
-	selected   lipgloss.Style
-	configured lipgloss.Style
-	notConfig  lipgloss.Style
-	action     lipgloss.Style
-	dimmed     lipgloss.Style
-	header     lipgloss.Style
-}
-
-func newSetupStyles() setupStyles {
-	return setupStyles{
-		selected:   lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true),
-		configured: lipgloss.NewStyle().Foreground(lipgloss.Color("42")),
-		notConfig:  lipgloss.NewStyle().Foreground(lipgloss.Color("196")),
-		action:     lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true),
-		dimmed:     lipgloss.NewStyle().Foreground(lipgloss.Color("241")),
-		header:     lipgloss.NewStyle().Foreground(lipgloss.Color("99")).Bold(true),
-	}
-}
-
 type setupModel struct {
 	items      []setupUIItem
 	cursor     int
-	styles     setupStyles
 	width      int
 	height     int
 	message    string
 	processing bool
 	quitting   bool
-	openSkills bool
+	// Skills sub-view
+	showSkills  bool
+	skillsModel *skillsModel
 }
 
 // SetupItemType categorizes setup items
@@ -662,7 +643,6 @@ func checkZed() *bool {
 func initialSetupModel() setupModel {
 	m := setupModel{
 		items:  buildSetupItems(),
-		styles: newSetupStyles(),
 		width:  80,
 		height: 24,
 	}
@@ -681,6 +661,33 @@ func (m setupModel) Init() tea.Cmd {
 }
 
 func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// If showing skills sub-view, delegate to it
+	if m.showSkills && m.skillsModel != nil {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			// Check for back/quit in skills view
+			if key.Matches(msg, key.NewBinding(key.WithKeys("esc"))) {
+				m.showSkills = false
+				m.skillsModel = nil
+				return m, nil
+			}
+			if key.Matches(msg, key.NewBinding(key.WithKeys("q", "ctrl+c"))) {
+				m.quitting = true
+				return m, tea.Quit
+			}
+		case tea.WindowSizeMsg:
+			m.width = msg.Width
+			m.height = msg.Height
+			m.skillsModel.width = msg.Width
+			m.skillsModel.height = msg.Height
+		}
+		newModel, cmd := m.skillsModel.Update(msg)
+		if sm, ok := newModel.(skillsModel); ok {
+			m.skillsModel = &sm
+		}
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if m.processing {
@@ -762,9 +769,10 @@ func (m setupModel) handleSelect() (setupModel, tea.Cmd) {
 
 	case setupItemTypeUtility:
 		if item.name == "skills" {
-			m.quitting = true
-			m.openSkills = true
-			return m, tea.Quit
+			sm := initialSkillsModel()
+			m.skillsModel = &sm
+			m.showSkills = true
+			return m, nil
 		}
 		m.processing = true
 		m.message = fmt.Sprintf("Running %s...", item.name)
@@ -836,10 +844,15 @@ func (m setupModel) View() string {
 		return ""
 	}
 
+	// Show skills sub-view if active
+	if m.showSkills && m.skillsModel != nil {
+		return m.skillsModel.viewWithBreadcrumb("Setup", "Skills")
+	}
+
 	var b strings.Builder
 
-	title := m.styles.header.Render("Setup")
-	b.WriteString(title + "\n\n")
+	// Title
+	b.WriteString(uiTitleStyle.Render("Setup") + "\n\n")
 
 	for i, item := range m.items {
 		selected := i == m.cursor
@@ -847,16 +860,16 @@ func (m setupModel) View() string {
 		b.WriteString(line + "\n")
 	}
 
-	b.WriteString("\n")
-	help := m.styles.dimmed.Render("↑/↓ navigate • enter select • q quit")
-	b.WriteString(help)
+	// Help
+	b.WriteString(uiHelpStyle.Render("↑/↓ navigate • enter select • q quit"))
 
+	// Message
 	if m.message != "" {
 		b.WriteString("\n")
 		if m.processing {
-			b.WriteString(m.styles.action.Render(m.message))
+			b.WriteString(uiActionStyle.Render(m.message))
 		} else {
-			b.WriteString(m.styles.configured.Render(m.message))
+			b.WriteString(uiSuccessStyle.Render(m.message))
 		}
 	}
 
@@ -866,47 +879,47 @@ func (m setupModel) View() string {
 func (m setupModel) renderSetupItem(item setupUIItem, selected bool) string {
 	switch item.itemType {
 	case setupItemTypeHeader:
-		return m.styles.header.Render("─── " + item.description + " ───")
+		return uiRenderSection(item.description)
 
 	case setupItemTypeAction:
 		prefix := "  "
 		if selected {
-			prefix = "> "
-			return m.styles.selected.Render(prefix + item.description)
+			prefix = iconSelected + " "
+			return uiSelectedStyle.Render(prefix + item.description)
 		}
-		return m.styles.action.Render(prefix + item.description)
+		return uiActionStyle.Render(prefix + item.description)
 
 	case setupItemTypeConfig:
 		var status string
 		var style lipgloss.Style
 
 		if item.configured != nil && *item.configured {
-			status = "✓"
-			style = m.styles.configured
+			status = iconCheck
+			style = uiSuccessStyle
 		} else {
-			status = "✗"
-			style = m.styles.notConfig
+			status = iconCross
+			style = uiDangerStyle
 		}
 
 		prefix := "  "
 		if selected {
-			prefix = "> "
-			style = m.styles.selected
+			prefix = iconSelected + " "
+			style = uiSelectedStyle
 		}
 
-		desc := m.styles.dimmed.Render(" " + item.description)
+		desc := uiMutedStyle.Render(" " + item.description)
 		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.name)) + desc
 
 	case setupItemTypeUtility:
 		prefix := "  "
-		style := m.styles.dimmed
+		style := uiMutedStyle
 		if selected {
-			prefix = "> "
-			style = m.styles.selected
+			prefix = iconSelected + " "
+			style = uiSelectedStyle
 		}
 
-		desc := m.styles.dimmed.Render(" " + item.description)
-		return style.Render(fmt.Sprintf("%s• %s", prefix, item.name)) + desc
+		desc := uiMutedStyle.Render(" " + item.description)
+		return style.Render(fmt.Sprintf("%s%s %s", prefix, iconBullet, item.name)) + desc
 	}
 
 	return ""
@@ -916,14 +929,8 @@ func runSetupUI() {
 	m := initialSetupModel()
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
-	finalModel, err := p.Run()
-	if err != nil {
+	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running setup UI: %v\n", err)
 		os.Exit(1)
-	}
-
-	// Check if we need to open skills UI
-	if fm, ok := finalModel.(setupModel); ok && fm.openSkills {
-		runSkillsUI()
 	}
 }

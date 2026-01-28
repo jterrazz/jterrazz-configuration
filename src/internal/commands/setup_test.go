@@ -107,10 +107,11 @@ func TestCheckFunctions(t *testing.T) {
 	}
 }
 
-func TestSetupStylesInitialized(t *testing.T) {
-	// Just verify newSetupStyles doesn't panic
-	styles := newSetupStyles()
-	_ = styles
+func TestUIStylesInitialized(t *testing.T) {
+	// Just verify shared UI styles are accessible
+	_ = uiTitleStyle
+	_ = uiSelectedStyle
+	_ = uiSuccessStyle
 }
 
 func TestSkillsItemIsAction(t *testing.T) {

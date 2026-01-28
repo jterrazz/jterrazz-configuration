@@ -32,40 +32,11 @@ type skillItem struct {
 	actionType  string
 }
 
-type skillStyles struct {
-	selected   lipgloss.Style
-	normal     lipgloss.Style
-	installed  lipgloss.Style
-	notInstall lipgloss.Style
-	header     lipgloss.Style
-	action     lipgloss.Style
-	dimmed     lipgloss.Style
-	repoOpen   lipgloss.Style
-	repoClosed lipgloss.Style
-	indent     lipgloss.Style
-}
-
-func newSkillStyles() skillStyles {
-	return skillStyles{
-		selected:   lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true),
-		normal:     lipgloss.NewStyle().Foreground(lipgloss.Color("252")),
-		installed:  lipgloss.NewStyle().Foreground(lipgloss.Color("42")),
-		notInstall: lipgloss.NewStyle().Foreground(lipgloss.Color("241")),
-		header:     lipgloss.NewStyle().Foreground(lipgloss.Color("99")).Bold(true).MarginTop(1),
-		action:     lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true),
-		dimmed:     lipgloss.NewStyle().Foreground(lipgloss.Color("241")),
-		repoOpen:   lipgloss.NewStyle().Foreground(lipgloss.Color("212")),
-		repoClosed: lipgloss.NewStyle().Foreground(lipgloss.Color("252")),
-		indent:     lipgloss.NewStyle().PaddingLeft(4),
-	}
-}
-
 type skillsModel struct {
 	items      []skillItem
 	cursor     int
 	expanded   map[string]bool // tracks which repos are expanded
 	installed  []string        // list of installed skill names (ordered)
-	styles     skillStyles
 	width      int
 	height     int
 	message    string
@@ -73,12 +44,11 @@ type skillsModel struct {
 	quitting   bool
 }
 
-func initialModel() skillsModel {
+func initialSkillsModel() skillsModel {
 	installed := getInstalledSkills()
 	return skillsModel{
 		expanded:  make(map[string]bool),
 		installed: installed,
-		styles:    newSkillStyles(),
 		width:     80,
 		height:    24,
 	}
@@ -366,15 +336,22 @@ func (m skillsModel) runGlobalAction(actionType string) tea.Cmd {
 }
 
 func (m skillsModel) View() string {
+	return m.viewWithBreadcrumb()
+}
+
+func (m skillsModel) viewWithBreadcrumb(breadcrumbs ...string) string {
 	if m.quitting {
 		return ""
 	}
 
 	var b strings.Builder
 
-	// Title
-	title := m.styles.header.Render("Skills Manager")
-	b.WriteString(title + "\n\n")
+	// Title with optional breadcrumb
+	if len(breadcrumbs) > 0 {
+		b.WriteString(uiRenderBreadcrumb(breadcrumbs...) + "\n\n")
+	} else {
+		b.WriteString(uiTitleStyle.Render("Skills") + "\n\n")
+	}
 
 	items := m.buildItems()
 
@@ -398,17 +375,19 @@ func (m skillsModel) View() string {
 	}
 
 	// Help
-	b.WriteString("\n")
-	help := m.styles.dimmed.Render("↑/↓ navigate • enter select/toggle • q quit")
-	b.WriteString(help)
+	helpText := "↑/↓ navigate • enter select/toggle • q quit"
+	if len(breadcrumbs) > 0 {
+		helpText = "↑/↓ navigate • enter select/toggle • esc back • q quit"
+	}
+	b.WriteString(uiHelpStyle.Render(helpText))
 
 	// Message
 	if m.message != "" {
 		b.WriteString("\n")
 		if m.processing {
-			b.WriteString(m.styles.action.Render(m.message))
+			b.WriteString(uiActionStyle.Render(m.message))
 		} else {
-			b.WriteString(m.styles.installed.Render(m.message))
+			b.WriteString(uiSuccessStyle.Render(m.message))
 		}
 	}
 
@@ -418,51 +397,51 @@ func (m skillsModel) View() string {
 func (m skillsModel) renderItem(item skillItem, selected bool) string {
 	switch item.itemType {
 	case itemTypeHeader:
-		return m.styles.header.Render("─── " + item.description + " ───")
+		return uiRenderSection(item.description)
 
 	case itemTypeAction:
 		prefix := "  "
 		if selected {
-			prefix = "> "
-			return m.styles.selected.Render(prefix + item.description)
+			prefix = iconSelected + " "
+			return uiSelectedStyle.Render(prefix + item.description)
 		}
-		return m.styles.action.Render(prefix + item.description)
+		return uiActionStyle.Render(prefix + item.description)
 
 	case itemTypeRepo:
 		var arrow string
 		if item.expanded {
-			arrow = "▼"
+			arrow = iconArrowDown
 		} else {
-			arrow = "▶"
+			arrow = iconArrowRight
 		}
 
 		prefix := "  "
 		if selected {
-			prefix = "> "
-			return m.styles.selected.Render(fmt.Sprintf("%s%s %s", prefix, arrow, item.repo)) +
-				m.styles.dimmed.Render(fmt.Sprintf(" (%s)", item.description))
+			prefix = iconSelected + " "
+			return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, item.repo)) +
+				uiMutedStyle.Render(fmt.Sprintf(" (%s)", item.description))
 		}
-		return m.styles.repoClosed.Render(fmt.Sprintf("%s%s %s", prefix, arrow, item.repo)) +
-			m.styles.dimmed.Render(fmt.Sprintf(" (%s)", item.description))
+		return uiNormalStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, item.repo)) +
+			uiMutedStyle.Render(fmt.Sprintf(" (%s)", item.description))
 
 	case itemTypeRepoAction:
 		prefix := "      "
 		if selected {
-			prefix = "    > "
-			return m.styles.selected.Render(prefix + item.description)
+			prefix = "    " + iconSelected + " "
+			return uiSelectedStyle.Render(prefix + item.description)
 		}
-		return m.styles.action.Render(prefix + item.description)
+		return uiActionStyle.Render(prefix + item.description)
 
 	case itemTypeSkill:
 		var status string
 		var style lipgloss.Style
 
 		if item.installed {
-			status = "✓"
-			style = m.styles.installed
+			status = iconCheck
+			style = uiSuccessStyle
 		} else {
 			status = "○"
-			style = m.styles.notInstall
+			style = uiMutedStyle
 		}
 
 		// Check if this skill is under an expanded repo (needs indentation)
@@ -473,8 +452,8 @@ func (m skillsModel) renderItem(item skillItem, selected bool) string {
 			// Indented skill under expanded repo
 			prefix := "      "
 			if selected {
-				prefix = "    > "
-				return m.styles.selected.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
+				prefix = "    " + iconSelected + " "
+				return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
 			}
 			return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
 		}
@@ -482,13 +461,13 @@ func (m skillsModel) renderItem(item skillItem, selected bool) string {
 		// Top-level skill (in Installed section)
 		prefix := "  "
 		if selected {
-			prefix = "> "
-			return m.styles.selected.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
+			prefix = iconSelected + " "
+			return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
 		}
 
 		repoInfo := ""
 		if item.repo != "" {
-			repoInfo = m.styles.dimmed.Render(fmt.Sprintf(" (%s)", item.repo))
+			repoInfo = uiMutedStyle.Render(fmt.Sprintf(" (%s)", item.repo))
 		}
 
 		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill)) + repoInfo
@@ -556,7 +535,7 @@ func runSkillsUI() {
 		return
 	}
 
-	m := initialModel()
+	m := initialSkillsModel()
 	m.items = m.buildItems()
 
 	// Skip first header
