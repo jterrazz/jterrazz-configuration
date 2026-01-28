@@ -6,59 +6,18 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
-var setupAll bool
-
 var setupCmd = &cobra.Command{
-	Use:   "setup [item...]",
-	Short: "Setup system configurations",
-	Long: `Setup system configurations.
-
-Examples:
-  j setup --all              Setup all configurations
-  j setup ohmyzsh            Setup Oh My Zsh
-  j setup ssh                Setup SSH key
-  j setup ohmyzsh ssh        Setup specific items
-  j setup                    List available setup items`,
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		suggestions := []string{"dock-reset", "dock-spacer", "ghostty", "gpg", "hushlogin", "java", "ohmyzsh", "ssh", "zed"}
-		var filtered []string
-		for _, s := range suggestions {
-			alreadyUsed := false
-			for _, arg := range args {
-				if arg == s {
-					alreadyUsed = true
-					break
-				}
-			}
-			if !alreadyUsed {
-				filtered = append(filtered, s)
-			}
-		}
-		return filtered, cobra.ShellCompDirectiveNoFileComp
-	},
+	Use:   "setup",
+	Short: "Setup system configurations (interactive)",
 	Run: func(cmd *cobra.Command, args []string) {
-		cyan := color.New(color.FgCyan).SprintFunc()
-
-		if setupAll {
-			fmt.Println(cyan("🚀 Setting up all configurations..."))
-			runSetupItem("ohmyzsh")
-			runSetupItem("ssh")
-			return
-		}
-
-		if len(args) == 0 {
-			listSetupItems()
-			return
-		}
-
-		fmt.Println(cyan("🚀 Setting up selected configurations..."))
-		for _, name := range args {
-			runSetupItem(name)
-		}
+		runSetupUI()
 	},
 }
 
@@ -485,103 +444,14 @@ var setupJavaCmd = &cobra.Command{
 }
 
 func init() {
-	setupCmd.Flags().BoolVarP(&setupAll, "all", "a", false, "Setup all configurations")
 	rootCmd.AddCommand(setupCmd)
 }
 
-func listSetupItems() {
-	cyan := color.New(color.FgCyan).SprintFunc()
-	green := color.New(color.FgGreen).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
-	dim := color.New(color.FgHiBlack).SprintFunc()
-
-	fmt.Println(cyan("Available setup items:"))
-	fmt.Println()
-
-	items := []struct {
-		name        string
-		description string
-		check       func() *bool // nil = action (no state), true = configured, false = not configured
-	}{
-		{"dock-reset", "Reset dock to system defaults", func() *bool { return nil }},
-		{"dock-spacer", "Add a small spacer tile to the dock", func() *bool { return nil }},
-		{"ghostty", "Install Ghostty terminal config", func() *bool {
-			_, err := os.Stat(os.Getenv("HOME") + "/.config/ghostty/config")
-			result := err == nil
-			return &result
-		}},
-		{"gpg", "Generate GPG key for commit signing", func() *bool {
-			out, _ := exec.Command("git", "config", "--global", "commit.gpgsign").Output()
-			result := strings.TrimSpace(string(out)) == "true"
-			return &result
-		}},
-		{"hushlogin", "Silence terminal login message", func() *bool {
-			_, err := os.Stat(os.Getenv("HOME") + "/.hushlogin")
-			result := err == nil
-			return &result
-		}},
-		{"java", "Configure Java runtime symlink for macOS", func() *bool {
-			_, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk")
-			result := err == nil
-			return &result
-		}},
-		{"ohmyzsh", "Install and configure Oh My Zsh", func() *bool {
-			_, err := os.Stat(os.Getenv("HOME") + "/.oh-my-zsh")
-			result := err == nil
-			return &result
-		}},
-		{"ssh", "Generate SSH key with Keychain integration", func() *bool {
-			_, err := os.Stat(os.Getenv("HOME") + "/.ssh/id_ed25519")
-			result := err == nil
-			return &result
-		}},
-		{"zed", "Install Zed editor config", func() *bool {
-			_, err := os.Stat(os.Getenv("HOME") + "/.config/zed/settings.json")
-			result := err == nil
-			return &result
-		}},
-	}
-
-	for _, item := range items {
-		checkResult := item.check()
-		var status string
-		if checkResult == nil {
-			status = dim("•")
-		} else if *checkResult {
-			status = green("✓")
-		} else {
-			status = red("✗")
-		}
-		fmt.Printf("  %s %-14s %s\n", status, item.name, dim(item.description))
-	}
-
-	fmt.Println()
-	fmt.Println(dim("Usage: j setup <item> [item...]"))
-	fmt.Println(dim("       j setup --all"))
-}
-
+// runSetupItem runs a setup item by name (used by install command for SetupCmd)
 func runSetupItem(name string) {
 	switch name {
-	case "dock-reset":
-		setupDockResetCmd.Run(nil, nil)
-	case "dock-spacer":
-		setupDockSpacerCmd.Run(nil, nil)
-	case "ghostty":
-		setupGhosttyCmd.Run(nil, nil)
-	case "gpg":
-		setupGPGCmd.Run(nil, nil)
-	case "hushlogin":
-		setupHushloginCmd.Run(nil, nil)
 	case "java":
 		setupJavaCmd.Run(nil, nil)
-	case "ohmyzsh":
-		setupOhMyZshCmd.Run(nil, nil)
-	case "ssh":
-		setupSSHCmd.Run(nil, nil)
-	case "zed":
-		setupZedCmd.Run(nil, nil)
-	default:
-		printError(fmt.Sprintf("Unknown setup item: %s", name))
 	}
 }
 
@@ -598,4 +468,462 @@ func printError(msg string) {
 func printWarning(msg string) {
 	yellow := color.New(color.FgYellow).SprintFunc()
 	fmt.Printf("%s %s\n", yellow("⚠️ "), msg)
+}
+
+// Setup TUI
+
+type setupUIItem struct {
+	itemType    setupItemType
+	name        string
+	description string
+	isAction    bool
+	configured  *bool
+}
+
+type setupStyles struct {
+	selected   lipgloss.Style
+	configured lipgloss.Style
+	notConfig  lipgloss.Style
+	action     lipgloss.Style
+	dimmed     lipgloss.Style
+	header     lipgloss.Style
+}
+
+func newSetupStyles() setupStyles {
+	return setupStyles{
+		selected:   lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true),
+		configured: lipgloss.NewStyle().Foreground(lipgloss.Color("42")),
+		notConfig:  lipgloss.NewStyle().Foreground(lipgloss.Color("196")),
+		action:     lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true),
+		dimmed:     lipgloss.NewStyle().Foreground(lipgloss.Color("241")),
+		header:     lipgloss.NewStyle().Foreground(lipgloss.Color("99")).Bold(true),
+	}
+}
+
+type setupModel struct {
+	items      []setupUIItem
+	cursor     int
+	styles     setupStyles
+	width      int
+	height     int
+	message    string
+	processing bool
+	quitting   bool
+	openSkills bool
+}
+
+// SetupItemType categorizes setup items
+type setupItemType int
+
+const (
+	setupItemTypeHeader setupItemType = iota
+	setupItemTypeAction
+	setupItemTypeConfig
+	setupItemTypeUtility
+)
+
+type setupItemDef struct {
+	name        string
+	description string
+	checkFn     func() *bool // nil for utilities
+}
+
+var setupConfigItems = []setupItemDef{
+	{"ghostty", "Install Ghostty terminal config", checkGhostty},
+	{"gpg", "Generate GPG key for commit signing", checkGPG},
+	{"hushlogin", "Silence terminal login message", checkHushlogin},
+	{"java", "Configure Java runtime symlink for macOS", checkJava},
+	{"ohmyzsh", "Install and configure Oh My Zsh", checkOhMyZsh},
+	{"ssh", "Generate SSH key with Keychain integration", checkSSH},
+	{"zed", "Install Zed editor config", checkZed},
+}
+
+var setupUtilityItems = []setupItemDef{
+	{"dock-reset", "Reset dock to system defaults", nil},
+	{"dock-spacer", "Add a small spacer tile to the dock", nil},
+	{"skills", "Manage AI agent skills", nil},
+}
+
+func buildSetupItems() []setupUIItem {
+	var items []setupUIItem
+
+	// Actions section
+	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Actions"})
+	items = append(items, setupUIItem{itemType: setupItemTypeAction, name: "setup-missing", description: "Setup all missing"})
+
+	// Separate configured and not configured
+	var configured []setupUIItem
+	var notConfigured []setupUIItem
+
+	for _, def := range setupConfigItems {
+		status := def.checkFn()
+		item := setupUIItem{
+			itemType:    setupItemTypeConfig,
+			name:        def.name,
+			description: def.description,
+			configured:  status,
+		}
+		if status != nil && *status {
+			configured = append(configured, item)
+		} else {
+			notConfigured = append(notConfigured, item)
+		}
+	}
+
+	// Not Configured section
+	if len(notConfigured) > 0 {
+		items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Not Configured"})
+		items = append(items, notConfigured...)
+	}
+
+	// Configured section
+	if len(configured) > 0 {
+		items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Configured"})
+		items = append(items, configured...)
+	}
+
+	// Utilities section
+	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Utilities"})
+	for _, def := range setupUtilityItems {
+		items = append(items, setupUIItem{
+			itemType:    setupItemTypeUtility,
+			name:        def.name,
+			description: def.description,
+			configured:  nil,
+		})
+	}
+
+	return items
+}
+
+// Legacy function for tests
+func getSetupItems() []setupUIItem {
+	var items []setupUIItem
+	for _, def := range setupConfigItems {
+		items = append(items, setupUIItem{
+			name:        def.name,
+			description: def.description,
+			configured:  def.checkFn(),
+		})
+	}
+	for _, def := range setupUtilityItems {
+		items = append(items, setupUIItem{
+			name:        def.name,
+			description: def.description,
+			configured:  nil,
+			isAction:    def.name == "skills",
+		})
+	}
+	return items
+}
+
+func checkGhostty() *bool {
+	_, err := os.Stat(os.Getenv("HOME") + "/.config/ghostty/config")
+	result := err == nil
+	return &result
+}
+
+func checkGPG() *bool {
+	out, _ := exec.Command("git", "config", "--global", "commit.gpgsign").Output()
+	result := strings.TrimSpace(string(out)) == "true"
+	return &result
+}
+
+func checkHushlogin() *bool {
+	_, err := os.Stat(os.Getenv("HOME") + "/.hushlogin")
+	result := err == nil
+	return &result
+}
+
+func checkJava() *bool {
+	_, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk")
+	result := err == nil
+	return &result
+}
+
+func checkOhMyZsh() *bool {
+	_, err := os.Stat(os.Getenv("HOME") + "/.oh-my-zsh")
+	result := err == nil
+	return &result
+}
+
+func checkSSH() *bool {
+	_, err := os.Stat(os.Getenv("HOME") + "/.ssh/id_ed25519")
+	result := err == nil
+	return &result
+}
+
+func checkZed() *bool {
+	_, err := os.Stat(os.Getenv("HOME") + "/.config/zed/settings.json")
+	result := err == nil
+	return &result
+}
+
+func initialSetupModel() setupModel {
+	m := setupModel{
+		items:  buildSetupItems(),
+		styles: newSetupStyles(),
+		width:  80,
+		height: 24,
+	}
+	// Start cursor on first non-header item
+	for i, item := range m.items {
+		if item.itemType != setupItemTypeHeader {
+			m.cursor = i
+			break
+		}
+	}
+	return m
+}
+
+func (m setupModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if m.processing {
+			return m, nil
+		}
+
+		switch {
+		case key.Matches(msg, key.NewBinding(key.WithKeys("q", "esc", "ctrl+c"))):
+			m.quitting = true
+			return m, tea.Quit
+
+		case key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))):
+			m.moveCursor(-1)
+
+		case key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))):
+			m.moveCursor(1)
+
+		case key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))):
+			return m.handleSelect()
+		}
+
+	case setupActionDoneMsg:
+		m.processing = false
+		m.message = msg.message
+		m.items = buildSetupItems()
+		// Adjust cursor if out of bounds
+		if m.cursor >= len(m.items) {
+			m.cursor = len(m.items) - 1
+		}
+		for m.cursor > 0 && m.items[m.cursor].itemType == setupItemTypeHeader {
+			m.cursor--
+		}
+		return m, nil
+
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+	}
+
+	return m, nil
+}
+
+type setupActionDoneMsg struct {
+	message string
+	err     error
+}
+
+func (m *setupModel) moveCursor(delta int) {
+	newCursor := m.cursor + delta
+
+	// Skip headers
+	for newCursor >= 0 && newCursor < len(m.items) && m.items[newCursor].itemType == setupItemTypeHeader {
+		newCursor += delta
+	}
+
+	if newCursor >= 0 && newCursor < len(m.items) {
+		m.cursor = newCursor
+	}
+}
+
+func (m setupModel) handleSelect() (setupModel, tea.Cmd) {
+	if m.cursor < 0 || m.cursor >= len(m.items) {
+		return m, nil
+	}
+
+	item := m.items[m.cursor]
+
+	switch item.itemType {
+	case setupItemTypeHeader:
+		return m, nil
+
+	case setupItemTypeAction:
+		if item.name == "setup-missing" {
+			m.processing = true
+			m.message = "Setting up all missing..."
+			return m, m.runSetupMissing()
+		}
+		return m, nil
+
+	case setupItemTypeUtility:
+		if item.name == "skills" {
+			m.quitting = true
+			m.openSkills = true
+			return m, tea.Quit
+		}
+		m.processing = true
+		m.message = fmt.Sprintf("Running %s...", item.name)
+		return m, m.runSetup(item.name)
+
+	case setupItemTypeConfig:
+		m.processing = true
+		m.message = fmt.Sprintf("Setting up %s...", item.name)
+		return m, m.runSetup(item.name)
+	}
+
+	return m, nil
+}
+
+func (m setupModel) runSetupMissing() tea.Cmd {
+	return func() tea.Msg {
+		count := 0
+		for _, def := range setupConfigItems {
+			status := def.checkFn()
+			if status == nil || !*status {
+				runSetupByName(def.name)
+				count++
+			}
+		}
+		if count == 0 {
+			return setupActionDoneMsg{message: "Everything already configured"}
+		}
+		return setupActionDoneMsg{message: fmt.Sprintf("Configured %d items", count)}
+	}
+}
+
+func runSetupByName(name string) {
+	switch name {
+	case "dock-reset":
+		exec.Command("defaults", "delete", "com.apple.dock").Run()
+		exec.Command("killall", "Dock").Run()
+	case "dock-spacer":
+		exec.Command("defaults", "write", "com.apple.dock", "persistent-apps", "-array-add", `{"tile-type"="small-spacer-tile";}`).Run()
+		exec.Command("killall", "Dock").Run()
+	case "ghostty":
+		setupGhosttyCmd.Run(nil, nil)
+	case "gpg":
+		setupGPGCmd.Run(nil, nil)
+	case "hushlogin":
+		f, _ := os.Create(os.Getenv("HOME") + "/.hushlogin")
+		if f != nil {
+			f.Close()
+		}
+	case "java":
+		setupJavaCmd.Run(nil, nil)
+	case "ohmyzsh":
+		setupOhMyZshCmd.Run(nil, nil)
+	case "ssh":
+		setupSSHCmd.Run(nil, nil)
+	case "zed":
+		setupZedCmd.Run(nil, nil)
+	}
+}
+
+func (m setupModel) runSetup(name string) tea.Cmd {
+	return func() tea.Msg {
+		runSetupByName(name)
+		return setupActionDoneMsg{message: fmt.Sprintf("Completed %s", name)}
+	}
+}
+
+func (m setupModel) View() string {
+	if m.quitting {
+		return ""
+	}
+
+	var b strings.Builder
+
+	title := m.styles.header.Render("Setup")
+	b.WriteString(title + "\n\n")
+
+	for i, item := range m.items {
+		selected := i == m.cursor
+		line := m.renderSetupItem(item, selected)
+		b.WriteString(line + "\n")
+	}
+
+	b.WriteString("\n")
+	help := m.styles.dimmed.Render("↑/↓ navigate • enter select • q quit")
+	b.WriteString(help)
+
+	if m.message != "" {
+		b.WriteString("\n")
+		if m.processing {
+			b.WriteString(m.styles.action.Render(m.message))
+		} else {
+			b.WriteString(m.styles.configured.Render(m.message))
+		}
+	}
+
+	return b.String()
+}
+
+func (m setupModel) renderSetupItem(item setupUIItem, selected bool) string {
+	switch item.itemType {
+	case setupItemTypeHeader:
+		return m.styles.header.Render("─── " + item.description + " ───")
+
+	case setupItemTypeAction:
+		prefix := "  "
+		if selected {
+			prefix = "> "
+			return m.styles.selected.Render(prefix + item.description)
+		}
+		return m.styles.action.Render(prefix + item.description)
+
+	case setupItemTypeConfig:
+		var status string
+		var style lipgloss.Style
+
+		if item.configured != nil && *item.configured {
+			status = "✓"
+			style = m.styles.configured
+		} else {
+			status = "✗"
+			style = m.styles.notConfig
+		}
+
+		prefix := "  "
+		if selected {
+			prefix = "> "
+			style = m.styles.selected
+		}
+
+		desc := m.styles.dimmed.Render(" " + item.description)
+		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.name)) + desc
+
+	case setupItemTypeUtility:
+		prefix := "  "
+		style := m.styles.dimmed
+		if selected {
+			prefix = "> "
+			style = m.styles.selected
+		}
+
+		desc := m.styles.dimmed.Render(" " + item.description)
+		return style.Render(fmt.Sprintf("%s• %s", prefix, item.name)) + desc
+	}
+
+	return ""
+}
+
+func runSetupUI() {
+	m := initialSetupModel()
+
+	p := tea.NewProgram(m, tea.WithAltScreen())
+	finalModel, err := p.Run()
+	if err != nil {
+		fmt.Printf("Error running setup UI: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Check if we need to open skills UI
+	if fm, ok := finalModel.(setupModel); ok && fm.openSkills {
+		runSkillsUI()
+	}
 }
