@@ -16,144 +16,25 @@ var MySkills = []struct {
 
 // SkillRepo represents a repository containing skills
 type SkillRepo struct {
-	Name        string   // Repository name (owner/repo format)
-	Description string   // Brief description
-	Skills      []string // List of skill names in this repo
+	Name        string // Repository name (owner/repo format)
+	Description string // Brief description
 }
 
 // SkillRepos is the list of recommended skill repositories
+// Skills are fetched dynamically when a repo is expanded in the TUI
 var SkillRepos = []SkillRepo{
-	{
-		Name:        "anthropics/skills",
-		Description: "Official Anthropic skills for Claude",
-		Skills: []string{
-			"frontend-design",
-			"skill-creator",
-			"pdf",
-			"pptx",
-			"xlsx",
-			"docx",
-			"canvas-design",
-			"mcp-builder",
-			"web-artifacts-builder",
-			"brand-guidelines",
-			"internal-comms",
-			"theme-factory",
-			"doc-coauthoring",
-			"slack-gif-creator",
-			"template-skill",
-		},
-	},
-	{
-		Name:        "vercel-labs/agent-skills",
-		Description: "Vercel React and web development skills",
-		Skills: []string{
-			"vercel-react-best-practices",
-			"vercel-composition-patterns",
-			"vercel-react-native-skills",
-			"web-design-guidelines",
-		},
-	},
-	{
-		Name:        "expo/skills",
-		Description: "Expo and React Native mobile development",
-		Skills: []string{
-			"building-native-ui",
-			"upgrading-expo",
-			"native-data-fetching",
-			"expo-dev-client",
-			"expo-deployment",
-			"expo-tailwind-setup",
-			"expo-api-routes",
-			"expo-cicd-workflows",
-			"use-dom",
-		},
-	},
-	{
-		Name:        "obra/superpowers",
-		Description: "Development workflow and productivity skills",
-		Skills: []string{
-			"brainstorming",
-			"systematic-debugging",
-			"test-driven-development",
-			"writing-plans",
-			"executing-plans",
-			"subagent-driven-development",
-			"verification-before-completion",
-			"requesting-code-review",
-			"using-superpowers",
-			"writing-skills",
-			"dispatching-parallel-agents",
-			"using-git-worktrees",
-			"receiving-code-review",
-			"finishing-a-development-branch",
-		},
-	},
-	{
-		Name:        "coreyhaines31/marketingskills",
-		Description: "Marketing and SEO skills",
-		Skills: []string{
-			"seo-audit",
-			"copywriting",
-			"marketing-psychology",
-			"programmatic-seo",
-			"pricing-strategy",
-			"social-content",
-			"copy-editing",
-			"launch-strategy",
-			"page-cro",
-			"analytics-tracking",
-			"onboarding-cro",
-			"schema-markup",
-			"competitor-alternatives",
-			"paid-ads",
-			"email-sequence",
-		},
-	},
-	{
-		Name:        "supabase/agent-skills",
-		Description: "Supabase database and backend skills",
-		Skills: []string{
-			"supabase-postgres-best-practices",
-		},
-	},
-	{
-		Name:        "remotion-dev/skills",
-		Description: "Remotion video creation skills",
-		Skills: []string{
-			"remotion-best-practices",
-		},
-	},
-	{
-		Name:        "better-auth/skills",
-		Description: "Authentication best practices",
-		Skills: []string{
-			"better-auth-best-practices",
-			"create-auth-skill",
-		},
-	},
-	{
-		Name:        "code-with-beto/skills",
-		Description: "Beto's development skills",
-		Skills:      []string{},
-	},
-	{
-		Name:        "firecrawl/cli",
-		Description: "Web content extraction for AI agents",
-		Skills:      []string{},
-	},
-	{
-		Name:        "giuseppe-trisciuoglio/developer-kit",
-		Description: "Developer toolkit including shadcn-ui",
-		Skills: []string{
-			"shadcn-ui",
-		},
-	},
-	{
-		Name:        "resend/email-best-practices",
-		Description: "Email development best practices",
-		Skills:      []string{},
-	},
+	{"anthropics/skills", "Official Anthropic skills for Claude"},
+	{"better-auth/skills", "Authentication best practices"},
+	{"code-with-beto/skills", "Beto's development skills"},
+	{"coreyhaines31/marketingskills", "Marketing and SEO skills"},
+	{"expo/skills", "Expo and React Native mobile development"},
+	{"firecrawl/cli", "Web content extraction for AI agents"},
+	{"giuseppe-trisciuoglio/developer-kit", "Developer toolkit including shadcn-ui"},
+	{"obra/superpowers", "Development workflow and productivity skills"},
+	{"remotion-dev/skills", "Remotion video creation skills"},
+	{"resend/email-best-practices", "Email development best practices"},
+	{"supabase/agent-skills", "Supabase database and backend skills"},
+	{"vercel-labs/agent-skills", "Vercel React and web development skills"},
 }
 
 // GetAllSkillRepos returns all skill repositories

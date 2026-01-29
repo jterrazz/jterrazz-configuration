@@ -38,8 +38,10 @@ type skillItem struct {
 type skillsModel struct {
 	items       []skillItem
 	cursor      int
-	expanded    map[string]bool // tracks which repos are expanded
-	installed   []string        // list of installed skill names (ordered)
+	expanded    map[string]bool     // tracks which repos are expanded
+	installed   []string            // list of installed skill names (ordered)
+	repoSkills  map[string][]string // cache of fetched skills per repo
+	loadingRepo string              // repo currently being loaded
 	width       int
 	height      int
 	message     string
@@ -57,20 +59,24 @@ func initialSkillsModel() skillsModel {
 		if len(repo.Name) > maxLen {
 			maxLen = len(repo.Name)
 		}
-		for _, skill := range repo.Skills {
-			if len(skill) > maxLen {
-				maxLen = len(skill)
-			}
-		}
 	}
 
 	return skillsModel{
 		expanded:    make(map[string]bool),
 		installed:   installed,
+		repoSkills:  make(map[string][]string),
 		width:       80,
 		height:      24,
 		maxSkillLen: maxLen,
 	}
+}
+
+// getSkillsForRepo returns cached skills or empty slice if not loaded yet
+func (m *skillsModel) getSkillsForRepo(repoName string) []string {
+	if skills, ok := m.repoSkills[repoName]; ok {
+		return skills
+	}
+	return nil
 }
 
 // isInstalled checks if a skill is in the installed list
@@ -84,12 +90,19 @@ func (m *skillsModel) isInstalled(skill string) bool {
 }
 
 // findRepoForSkill finds which repo a skill belongs to
-func findRepoForSkill(skill string) string {
-	for _, repo := range SkillRepos {
-		for _, s := range repo.Skills {
+func (m *skillsModel) findRepoForSkill(skill string) string {
+	// Check in cached repo skills
+	for repoName, skills := range m.repoSkills {
+		for _, s := range skills {
 			if s == skill {
-				return repo.Name
+				return repoName
 			}
+		}
+	}
+	// Check in MySkills as fallback
+	for _, s := range MySkills {
+		if s.Skill == skill {
+			return s.Repo
 		}
 	}
 	return ""
@@ -134,7 +147,7 @@ func (m *skillsModel) buildItems() []skillItem {
 	if len(otherInstalled) > 0 {
 		items = append(items, skillItem{itemType: itemTypeHeader, description: "Installed"})
 		for _, skill := range otherInstalled {
-			repo := findRepoForSkill(skill)
+			repo := m.findRepoForSkill(skill)
 			items = append(items, skillItem{
 				itemType:  itemTypeSkill,
 				repo:      repo,
@@ -148,20 +161,24 @@ func (m *skillsModel) buildItems() []skillItem {
 	items = append(items, skillItem{itemType: itemTypeHeader, description: "Browse"})
 	for _, repo := range SkillRepos {
 		expanded := m.expanded[repo.Name]
+		repoSkills := m.getSkillsForRepo(repo.Name)
+		isLoading := m.loadingRepo == repo.Name
 
 		// Count installed vs total
 		installedCount := 0
-		for _, skill := range repo.Skills {
+		for _, skill := range repoSkills {
 			if m.isInstalled(skill) {
 				installedCount++
 			}
 		}
 
 		desc := repo.Description
-		if len(repo.Skills) > 0 {
-			desc = fmt.Sprintf("%d skills", len(repo.Skills))
+		if isLoading {
+			desc = "Loading..."
+		} else if repoSkills != nil && len(repoSkills) > 0 {
+			desc = fmt.Sprintf("%d skills", len(repoSkills))
 			if installedCount > 0 {
-				desc = fmt.Sprintf("%d/%d installed", installedCount, len(repo.Skills))
+				desc = fmt.Sprintf("%d/%d installed", installedCount, len(repoSkills))
 			}
 		}
 
@@ -173,7 +190,7 @@ func (m *skillsModel) buildItems() []skillItem {
 		})
 
 		// If expanded, show repo actions and skills
-		if expanded {
+		if expanded && repoSkills != nil {
 			items = append(items, skillItem{
 				itemType:    itemTypeRepoAction,
 				repo:        repo.Name,
@@ -181,7 +198,7 @@ func (m *skillsModel) buildItems() []skillItem {
 				actionType:  "install-repo",
 			})
 
-			for _, skill := range repo.Skills {
+			for _, skill := range repoSkills {
 				isInstalled := m.isInstalled(skill)
 				items = append(items, skillItem{
 					itemType:  itemTypeSkill,
@@ -238,6 +255,22 @@ func (m skillsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case repoSkillsFetchedMsg:
+		m.loadingRepo = ""
+		if msg.err == nil {
+			m.repoSkills[msg.repo] = msg.skills
+			// Update maxSkillLen if needed
+			for _, skill := range msg.skills {
+				if len(skill) > m.maxSkillLen {
+					m.maxSkillLen = len(skill)
+				}
+			}
+		} else {
+			m.message = fmt.Sprintf("Failed to fetch skills for %s", msg.repo)
+			m.repoSkills[msg.repo] = []string{} // Cache empty to avoid retrying
+		}
+		return m, nil
+
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -274,7 +307,17 @@ func (m skillsModel) handleSelect() (skillsModel, tea.Cmd) {
 
 	case itemTypeRepo:
 		// Toggle expand/collapse
-		m.expanded[item.repo] = !m.expanded[item.repo]
+		if m.expanded[item.repo] {
+			// Collapse
+			m.expanded[item.repo] = false
+		} else {
+			// Expand - fetch skills if not cached
+			m.expanded[item.repo] = true
+			if m.getSkillsForRepo(item.repo) == nil {
+				m.loadingRepo = item.repo
+				return m, m.fetchRepoSkills(item.repo)
+			}
+		}
 		return m, nil
 
 	case itemTypeAction:
@@ -304,6 +347,84 @@ func (m skillsModel) handleSelect() (skillsModel, tea.Cmd) {
 type skillActionDoneMsg struct {
 	message string
 	err     error
+}
+
+type repoSkillsFetchedMsg struct {
+	repo   string
+	skills []string
+	err    error
+}
+
+func (m skillsModel) fetchRepoSkills(repo string) tea.Cmd {
+	return func() tea.Msg {
+		cmd := exec.Command("skills", "add", repo, "--list")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return repoSkillsFetchedMsg{repo: repo, skills: []string{}, err: err}
+		}
+
+		// Parse the output to extract skill names
+		skills := parseSkillsListOutput(string(output))
+		return repoSkillsFetchedMsg{repo: repo, skills: skills, err: nil}
+	}
+}
+
+func parseSkillsListOutput(output string) []string {
+	var skills []string
+	cleanOutput := stripAnsi(output)
+	lines := strings.Split(cleanOutput, "\n")
+
+	// Skills appear after "Available Skills" line, indented with spaces
+	// Format:
+	//   skill-name
+	//
+	//     description...
+	inSkillsSection := false
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		if strings.Contains(line, "Available Skills") {
+			inSkillsSection = true
+			continue
+		}
+
+		if !inSkillsSection {
+			continue
+		}
+
+		// Stop at "Use --skill" line
+		if strings.HasPrefix(trimmed, "Use --skill") {
+			break
+		}
+
+		// Skip empty lines and description lines (descriptions are more indented)
+		if trimmed == "" {
+			continue
+		}
+
+		// Skill names are single words without spaces at the start of the trimmed line
+		// and the original line starts with some spaces but not too many
+		if !strings.Contains(trimmed, " ") && len(trimmed) > 0 {
+			// Check it looks like a skill name (lowercase, may have hyphens)
+			if isValidSkillName(trimmed) {
+				skills = append(skills, trimmed)
+			}
+		}
+	}
+
+	return skills
+}
+
+func isValidSkillName(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for _, c := range s {
+		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_') {
+			return false
+		}
+	}
+	return true
 }
 
 func (m skillsModel) installSkill(repo, skill string) tea.Cmd {
