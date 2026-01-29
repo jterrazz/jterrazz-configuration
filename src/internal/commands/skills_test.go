@@ -177,17 +177,17 @@ func TestSkillsModelBuildItems(t *testing.T) {
 		t.Error("Missing 'Remove All' action")
 	}
 
-	// Should have My Skills header if MySkills is not empty
+	// Should have Favorites header if MySkills is not empty
 	if len(MySkills) > 0 {
-		hasMySkillsHeader := false
+		hasFavoritesHeader := false
 		for _, item := range items {
-			if item.itemType == itemTypeHeader && item.description == "My Skills" {
-				hasMySkillsHeader = true
+			if item.itemType == itemTypeHeader && item.description == "Favorites" {
+				hasFavoritesHeader = true
 				break
 			}
 		}
-		if !hasMySkillsHeader {
-			t.Error("Missing 'My Skills' header")
+		if !hasFavoritesHeader {
+			t.Error("Missing 'Favorites' header")
 		}
 	}
 
@@ -205,7 +205,7 @@ func TestSkillsModelBuildItems(t *testing.T) {
 }
 
 func TestSkillsModelBuildItemsWithInstalled(t *testing.T) {
-	// Test with a skill that's in MySkills - should show in My Skills section
+	// Test with a skill that's in MySkills - should show in Favorites section
 	m := &skillsModel{
 		expanded:   make(map[string]bool),
 		installed:  []string{"frontend-design"},
@@ -215,18 +215,18 @@ func TestSkillsModelBuildItemsWithInstalled(t *testing.T) {
 	items := m.buildItems()
 
 	// frontend-design is in MySkills, so it should show there as installed
-	hasMySkillsHeader := false
+	hasFavoritesHeader := false
 	hasInstalledSkill := false
 	for _, item := range items {
-		if item.itemType == itemTypeHeader && item.description == "My Skills" {
-			hasMySkillsHeader = true
+		if item.itemType == itemTypeHeader && item.description == "Favorites" {
+			hasFavoritesHeader = true
 		}
 		if item.itemType == itemTypeSkill && item.skill == "frontend-design" && item.installed {
 			hasInstalledSkill = true
 		}
 	}
-	if !hasMySkillsHeader {
-		t.Error("Missing 'My Skills' header")
+	if !hasFavoritesHeader {
+		t.Error("Missing 'Favorites' header")
 	}
 	if !hasInstalledSkill {
 		t.Error("Installed skill 'frontend-design' not found in items")

@@ -113,12 +113,12 @@ func (m *skillsModel) buildItems() []skillItem {
 
 	// Actions section
 	items = append(items, skillItem{itemType: itemTypeHeader, description: "Actions"})
-	items = append(items, skillItem{itemType: itemTypeAction, description: "Install my skills", actionType: "install-my-skills"})
+	items = append(items, skillItem{itemType: itemTypeAction, description: "Install favorites", actionType: "install-my-skills"})
 	items = append(items, skillItem{itemType: itemTypeAction, description: "Remove all skills", actionType: "remove-all"})
 
-	// My Skills section
+	// Favorites section
 	if len(MySkills) > 0 {
-		items = append(items, skillItem{itemType: itemTypeHeader, description: "My Skills"})
+		items = append(items, skillItem{itemType: itemTypeHeader, description: "Favorites"})
 		for _, s := range MySkills {
 			items = append(items, skillItem{
 				itemType:  itemTypeSkill,
@@ -130,17 +130,17 @@ func (m *skillsModel) buildItems() []skillItem {
 		}
 	}
 
-	// Other installed section (skills not in My Skills)
+	// Installed section (skills not in Favorites)
 	var otherInstalled []string
 	for _, skill := range m.installed {
-		isMySkill := false
+		isFavorite := false
 		for _, s := range MySkills {
 			if s.Skill == skill {
-				isMySkill = true
+				isFavorite = true
 				break
 			}
 		}
-		if !isMySkill {
+		if !isFavorite {
 			otherInstalled = append(otherInstalled, skill)
 		}
 	}
@@ -477,7 +477,7 @@ func (m skillsModel) runGlobalAction(actionType string) tea.Cmd {
 				cmd := exec.Command("skills", "add", s.Repo, "-g", "-y", "--skill", s.Skill)
 				cmd.Run()
 			}
-			return skillActionDoneMsg{message: fmt.Sprintf("Installed %d skills from My Skills", len(MySkills))}
+			return skillActionDoneMsg{message: fmt.Sprintf("Installed %d favorites", len(MySkills))}
 		case "remove-all":
 			cmd := exec.Command("skills", "remove", "-g", "-y", "--all")
 			cmd.Run()
