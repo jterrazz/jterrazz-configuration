@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/fatih/color"
+	"github.com/jterrazz/jterrazz-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -867,7 +868,7 @@ func (m setupModel) View() string {
 	var b strings.Builder
 
 	// Title
-	b.WriteString(uiTitleStyle.Render("Setup") + "\n\n")
+	b.WriteString(ui.TitleStyle.Render("Setup") + "\n\n")
 
 	for i, item := range m.items {
 		selected := i == m.cursor
@@ -876,15 +877,15 @@ func (m setupModel) View() string {
 	}
 
 	// Help
-	b.WriteString(uiHelpStyle.Render("↑/↓ navigate • enter select • q quit"))
+	b.WriteString(ui.HelpStyle.Render("↑/↓ navigate • enter select • q quit"))
 
 	// Message
 	if m.message != "" {
 		b.WriteString("\n")
 		if m.processing {
-			b.WriteString(uiActionStyle.Render(m.message))
+			b.WriteString(ui.ActionStyle.Render(m.message))
 		} else {
-			b.WriteString(uiSuccessStyle.Render(m.message))
+			b.WriteString(ui.SuccessStyle.Render(m.message))
 		}
 	}
 
@@ -894,51 +895,51 @@ func (m setupModel) View() string {
 func (m setupModel) renderSetupItem(item setupUIItem, selected bool) string {
 	switch item.itemType {
 	case setupItemTypeHeader:
-		return uiRenderSection(item.description)
+		return ui.RenderSection(item.description)
 
 	case setupItemTypeAction:
 		prefix := "  "
 		if selected {
-			prefix = iconSelected + " "
-			return uiSelectedStyle.Render(prefix + item.description)
+			prefix = ui.IconSelected + " "
+			return ui.SelectedStyle.Render(prefix + item.description)
 		}
-		return uiActionStyle.Render(prefix + item.description)
+		return ui.ActionStyle.Render(prefix + item.description)
 
 	case setupItemTypeConfig:
 		var status string
 		var style lipgloss.Style
 
 		if item.configured != nil && *item.configured {
-			status = iconCheck
-			style = uiSuccessStyle
+			status = ui.IconCheck
+			style = ui.SuccessStyle
 		} else {
-			status = iconCross
-			style = uiDangerStyle
+			status = ui.IconCross
+			style = ui.DangerStyle
 		}
 
 		prefix := "  "
 		if selected {
-			prefix = iconSelected + " "
-			style = uiSelectedStyle
+			prefix = ui.IconSelected + " "
+			style = ui.SelectedStyle
 		}
 
 		// Pad name to align descriptions
 		paddedName := fmt.Sprintf("%-*s", m.maxNameLen, item.name)
-		desc := uiMutedStyle.Render("  " + item.description)
+		desc := ui.MutedStyle.Render("  " + item.description)
 		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedName)) + desc
 
 	case setupItemTypeUtility:
 		prefix := "  "
-		style := uiMutedStyle
+		style := ui.MutedStyle
 		if selected {
-			prefix = iconSelected + " "
-			style = uiSelectedStyle
+			prefix = ui.IconSelected + " "
+			style = ui.SelectedStyle
 		}
 
 		// Pad name to align descriptions
 		paddedName := fmt.Sprintf("%-*s", m.maxNameLen, item.name)
-		desc := uiMutedStyle.Render("  " + item.description)
-		return style.Render(fmt.Sprintf("%s%s %s", prefix, iconBullet, paddedName)) + desc
+		desc := ui.MutedStyle.Render("  " + item.description)
+		return style.Render(fmt.Sprintf("%s%s %s", prefix, ui.IconBullet, paddedName)) + desc
 	}
 
 	return ""

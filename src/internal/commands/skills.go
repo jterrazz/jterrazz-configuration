@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/fatih/color"
+	"github.com/jterrazz/jterrazz-cli/internal/ui"
 )
 
 // Item types
@@ -368,9 +369,9 @@ func (m skillsModel) viewWithBreadcrumb(breadcrumbs ...string) string {
 
 	// Title with optional breadcrumb
 	if len(breadcrumbs) > 0 {
-		b.WriteString(uiRenderBreadcrumb(breadcrumbs...) + "\n\n")
+		b.WriteString(ui.RenderBreadcrumb(breadcrumbs...) + "\n\n")
 	} else {
-		b.WriteString(uiTitleStyle.Render("Skills") + "\n\n")
+		b.WriteString(ui.TitleStyle.Render("Skills") + "\n\n")
 	}
 
 	items := m.buildItems()
@@ -399,15 +400,15 @@ func (m skillsModel) viewWithBreadcrumb(breadcrumbs ...string) string {
 	if len(breadcrumbs) > 0 {
 		helpText = "↑/↓ navigate • enter select/toggle • esc back • q quit"
 	}
-	b.WriteString(uiHelpStyle.Render(helpText))
+	b.WriteString(ui.HelpStyle.Render(helpText))
 
 	// Message
 	if m.message != "" {
 		b.WriteString("\n")
 		if m.processing {
-			b.WriteString(uiActionStyle.Render(m.message))
+			b.WriteString(ui.ActionStyle.Render(m.message))
 		} else {
-			b.WriteString(uiSuccessStyle.Render(m.message))
+			b.WriteString(ui.SuccessStyle.Render(m.message))
 		}
 	}
 
@@ -417,60 +418,60 @@ func (m skillsModel) viewWithBreadcrumb(breadcrumbs ...string) string {
 func (m skillsModel) renderItem(item skillItem, selected bool) string {
 	switch item.itemType {
 	case itemTypeHeader:
-		return uiRenderSection(item.description)
+		return ui.RenderSection(item.description)
 
 	case itemTypeAction:
 		prefix := "  "
 		if selected {
-			prefix = iconSelected + " "
-			return uiSelectedStyle.Render(prefix + item.description)
+			prefix = ui.IconSelected + " "
+			return ui.SelectedStyle.Render(prefix + item.description)
 		}
-		return uiActionStyle.Render(prefix + item.description)
+		return ui.ActionStyle.Render(prefix + item.description)
 
 	case itemTypeRepo:
 		var arrow string
 		if item.expanded {
-			arrow = iconArrowDown
+			arrow = ui.IconArrowDown
 		} else {
-			arrow = iconArrowRight
+			arrow = ui.IconArrowRight
 		}
 
 		prefix := "  "
 		paddedRepo := fmt.Sprintf("%-*s", m.maxSkillLen, item.repo)
 		if selected {
-			prefix = iconSelected + " "
-			return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedRepo)) +
-				uiMutedStyle.Render(fmt.Sprintf("  %s", item.description))
+			prefix = ui.IconSelected + " "
+			return ui.SelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedRepo)) +
+				ui.MutedStyle.Render(fmt.Sprintf("  %s", item.description))
 		}
-		return uiNormalStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedRepo)) +
-			uiMutedStyle.Render(fmt.Sprintf("  %s", item.description))
+		return ui.NormalStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedRepo)) +
+			ui.MutedStyle.Render(fmt.Sprintf("  %s", item.description))
 
 	case itemTypeRepoAction:
 		prefix := "      "
 		if selected {
-			prefix = "    " + iconSelected + " "
-			return uiSelectedStyle.Render(prefix + item.description)
+			prefix = "    " + ui.IconSelected + " "
+			return ui.SelectedStyle.Render(prefix + item.description)
 		}
-		return uiActionStyle.Render(prefix + item.description)
+		return ui.ActionStyle.Render(prefix + item.description)
 
 	case itemTypeSkill:
 		var status string
 		var style lipgloss.Style
 
 		if item.installed {
-			status = iconCheck
-			style = uiSuccessStyle
+			status = ui.IconCheck
+			style = ui.SuccessStyle
 		} else {
 			status = "○"
-			style = uiMutedStyle
+			style = ui.MutedStyle
 		}
 
 		// Nested skill under expanded repo
 		if item.isNested {
 			prefix := "      "
 			if selected {
-				prefix = "    " + iconSelected + " "
-				return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
+				prefix = "    " + ui.IconSelected + " "
+				return ui.SelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
 			}
 			return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
 		}
@@ -479,26 +480,26 @@ func (m skillsModel) renderItem(item skillItem, selected bool) string {
 		prefix := "  "
 		paddedSkill := fmt.Sprintf("%-*s", m.maxSkillLen, item.skill)
 		if selected {
-			prefix = iconSelected + " "
+			prefix = ui.IconSelected + " "
 		}
 
 		// My Skills section: don't show repo name
 		if item.isMySkill {
 			if selected {
-				return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
+				return ui.SelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
 			}
 			return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
 		}
 
 		// Installed section: show repo name aligned
 		if selected {
-			return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedSkill)) +
-				uiMutedStyle.Render(fmt.Sprintf("  %s", item.repo))
+			return ui.SelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedSkill)) +
+				ui.MutedStyle.Render(fmt.Sprintf("  %s", item.repo))
 		}
 
 		repoInfo := ""
 		if item.repo != "" {
-			repoInfo = uiMutedStyle.Render(fmt.Sprintf("  %s", item.repo))
+			repoInfo = ui.MutedStyle.Render(fmt.Sprintf("  %s", item.repo))
 		}
 
 		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedSkill)) + repoInfo

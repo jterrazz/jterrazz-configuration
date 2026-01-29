@@ -2,6 +2,8 @@ package commands
 
 import (
 	"testing"
+
+	"github.com/jterrazz/jterrazz-cli/internal/ui"
 )
 
 func TestSetupCommandDefined(t *testing.T) {
@@ -47,7 +49,6 @@ func TestGetSetupItemsContainsExpectedItems(t *testing.T) {
 		"hushlogin",
 		"java",
 		"ohmyzsh",
-		"skills",
 		"ssh",
 		"zed",
 	}
@@ -109,24 +110,23 @@ func TestCheckFunctions(t *testing.T) {
 
 func TestUIStylesInitialized(t *testing.T) {
 	// Just verify shared UI styles are accessible
-	_ = uiTitleStyle
-	_ = uiSelectedStyle
-	_ = uiSuccessStyle
+	_ = ui.TitleStyle
+	_ = ui.SelectedStyle
+	_ = ui.SuccessStyle
 }
 
-func TestSkillsItemIsAction(t *testing.T) {
-	items := getSetupItems()
+func TestSkillsInNavigation(t *testing.T) {
+	// skills is now in Navigation section (buildSetupItems), not in getSetupItems
+	m := initialSetupModel()
 
-	for _, item := range items {
+	foundSkills := false
+	for _, item := range m.items {
 		if item.name == "skills" {
-			if !item.isAction {
-				t.Error("skills item should have isAction=true")
-			}
-			if item.configured != nil {
-				t.Error("skills item should have configured=nil")
-			}
-			return
+			foundSkills = true
+			break
 		}
 	}
-	t.Error("skills item not found in setup items")
+	if !foundSkills {
+		t.Error("skills should be in setup items (Navigation section)")
+	}
 }

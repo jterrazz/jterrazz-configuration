@@ -148,7 +148,7 @@ func TestSkillsModelBuildItems(t *testing.T) {
 
 	items := m.buildItems()
 
-	// Should have at least: Actions header + 2 actions + My Skills header + skills + Repositories header + repos
+	// Should have at least: Actions header + 2 actions + My Skills header + skills + Browse header + repos
 	if len(items) < 4 {
 		t.Errorf("buildItems() returned %d items, expected at least 4", len(items))
 	}
@@ -190,10 +190,10 @@ func TestSkillsModelBuildItems(t *testing.T) {
 		}
 	}
 
-	// Should have Repositories header
+	// Should have Browse header
 	hasReposHeader := false
 	for _, item := range items {
-		if item.itemType == itemTypeHeader && item.description == "Repositories" {
+		if item.itemType == itemTypeHeader && item.description == "Browse" {
 			hasReposHeader = true
 			break
 		}
@@ -245,7 +245,7 @@ func TestSkillsModelBuildItemsWithOtherInstalled(t *testing.T) {
 	hasOtherInstalledHeader := false
 	hasInstalledSkill := false
 	for _, item := range items {
-		if item.itemType == itemTypeHeader && item.description == "Other Installed" {
+		if item.itemType == itemTypeHeader && item.description == "Installed" {
 			hasOtherInstalledHeader = true
 		}
 		if item.itemType == itemTypeSkill && item.skill == "remotion-best-practices" && item.installed {
