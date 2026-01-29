@@ -537,7 +537,9 @@ func buildSetupItems() []setupUIItem {
 	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Actions"})
 	items = append(items, setupUIItem{itemType: setupItemTypeAction, name: "setup-missing", description: "Setup all missing"})
 
-	// Separate configured and not configured
+	// Configuration section - pending items first, then configured
+	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Configuration"})
+
 	var configured []setupUIItem
 	var notConfigured []setupUIItem
 
@@ -556,20 +558,12 @@ func buildSetupItems() []setupUIItem {
 		}
 	}
 
-	// Pending section
-	if len(notConfigured) > 0 {
-		items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Pending"})
-		items = append(items, notConfigured...)
-	}
+	// Add pending items first, then configured
+	items = append(items, notConfigured...)
+	items = append(items, configured...)
 
-	// Done section
-	if len(configured) > 0 {
-		items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Done"})
-		items = append(items, configured...)
-	}
-
-	// Tools section
-	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Tools"})
+	// Scripts section
+	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Scripts"})
 	for _, def := range setupUtilityItems {
 		items = append(items, setupUIItem{
 			itemType:    setupItemTypeUtility,
