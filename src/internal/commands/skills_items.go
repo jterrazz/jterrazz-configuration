@@ -7,7 +7,11 @@ var MySkills = []struct {
 	Skill string // Skill name
 }{
 	{"anthropics/skills", "frontend-design"},
+	{"expo/skills", "upgrading-expo"},
+	{"giuseppe-trisciuoglio/developer-kit", "shadcn-ui"},
 	{"sickn33/antigravity-awesome-skills", "last30days"},
+	{"vercel-labs/agent-skills", "vercel-react-best-practices"},
+	{"vercel-labs/agent-skills", "vercel-react-native-skills"},
 }
 
 // SkillRepo represents a repository containing skills
@@ -127,6 +131,28 @@ var SkillRepos = []SkillRepo{
 			"better-auth-best-practices",
 			"create-auth-skill",
 		},
+	},
+	{
+		Name:        "code-with-beto/skills",
+		Description: "Beto's development skills",
+		Skills:      []string{},
+	},
+	{
+		Name:        "firecrawl/cli",
+		Description: "Web content extraction for AI agents",
+		Skills:      []string{},
+	},
+	{
+		Name:        "giuseppe-trisciuoglio/developer-kit",
+		Description: "Developer toolkit including shadcn-ui",
+		Skills: []string{
+			"shadcn-ui",
+		},
+	},
+	{
+		Name:        "resend/email-best-practices",
+		Description: "Email development best practices",
+		Skills:      []string{},
 	},
 }
 
