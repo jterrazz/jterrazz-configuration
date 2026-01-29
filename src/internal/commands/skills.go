@@ -30,27 +30,45 @@ type skillItem struct {
 	installed   bool
 	expanded    bool
 	actionType  string
+	isMySkill   bool // true if this skill is from "My Skills" section
+	isNested    bool // true if this skill is under an expanded repo
 }
 
 type skillsModel struct {
-	items      []skillItem
-	cursor     int
-	expanded   map[string]bool // tracks which repos are expanded
-	installed  []string        // list of installed skill names (ordered)
-	width      int
-	height     int
-	message    string
-	processing bool
-	quitting   bool
+	items       []skillItem
+	cursor      int
+	expanded    map[string]bool // tracks which repos are expanded
+	installed   []string        // list of installed skill names (ordered)
+	width       int
+	height      int
+	message     string
+	processing  bool
+	quitting    bool
+	maxSkillLen int // for aligning descriptions
 }
 
 func initialSkillsModel() skillsModel {
 	installed := getInstalledSkills()
+
+	// Calculate max skill name length for alignment
+	maxLen := 0
+	for _, repo := range SkillRepos {
+		if len(repo.Name) > maxLen {
+			maxLen = len(repo.Name)
+		}
+		for _, skill := range repo.Skills {
+			if len(skill) > maxLen {
+				maxLen = len(skill)
+			}
+		}
+	}
+
 	return skillsModel{
-		expanded:  make(map[string]bool),
-		installed: installed,
-		width:     80,
-		height:    24,
+		expanded:    make(map[string]bool),
+		installed:   installed,
+		width:       80,
+		height:      24,
+		maxSkillLen: maxLen,
 	}
 }
 
@@ -93,11 +111,12 @@ func (m *skillsModel) buildItems() []skillItem {
 				repo:      s.Repo,
 				skill:     s.Skill,
 				installed: m.isInstalled(s.Skill),
+				isMySkill: true,
 			})
 		}
 	}
 
-	// Installed section (skills not in My Skills)
+	// Other installed section (skills not in My Skills)
 	var otherInstalled []string
 	for _, skill := range m.installed {
 		isMySkill := false
@@ -112,7 +131,7 @@ func (m *skillsModel) buildItems() []skillItem {
 		}
 	}
 	if len(otherInstalled) > 0 {
-		items = append(items, skillItem{itemType: itemTypeHeader, description: "Other Installed"})
+		items = append(items, skillItem{itemType: itemTypeHeader, description: "Installed"})
 		for _, skill := range otherInstalled {
 			repo := findRepoForSkill(skill)
 			items = append(items, skillItem{
@@ -124,8 +143,8 @@ func (m *skillsModel) buildItems() []skillItem {
 		}
 	}
 
-	// Repositories section
-	items = append(items, skillItem{itemType: itemTypeHeader, description: "Repositories"})
+	// Browse section
+	items = append(items, skillItem{itemType: itemTypeHeader, description: "Browse"})
 	for _, repo := range SkillRepos {
 		expanded := m.expanded[repo.Name]
 
@@ -168,6 +187,7 @@ func (m *skillsModel) buildItems() []skillItem {
 					repo:      repo.Name,
 					skill:     skill,
 					installed: isInstalled,
+					isNested:  true,
 				})
 			}
 		}
@@ -416,13 +436,14 @@ func (m skillsModel) renderItem(item skillItem, selected bool) string {
 		}
 
 		prefix := "  "
+		paddedRepo := fmt.Sprintf("%-*s", m.maxSkillLen, item.repo)
 		if selected {
 			prefix = iconSelected + " "
-			return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, item.repo)) +
-				uiMutedStyle.Render(fmt.Sprintf(" (%s)", item.description))
+			return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedRepo)) +
+				uiMutedStyle.Render(fmt.Sprintf("  %s", item.description))
 		}
-		return uiNormalStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, item.repo)) +
-			uiMutedStyle.Render(fmt.Sprintf(" (%s)", item.description))
+		return uiNormalStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedRepo)) +
+			uiMutedStyle.Render(fmt.Sprintf("  %s", item.description))
 
 	case itemTypeRepoAction:
 		prefix := "      "
@@ -444,12 +465,8 @@ func (m skillsModel) renderItem(item skillItem, selected bool) string {
 			style = uiMutedStyle
 		}
 
-		// Check if this skill is under an expanded repo (needs indentation)
-		// Skills in the "Installed" section at top level don't get indented
-		isUnderExpandedRepo := m.expanded[item.repo]
-
-		if isUnderExpandedRepo {
-			// Indented skill under expanded repo
+		// Nested skill under expanded repo
+		if item.isNested {
 			prefix := "      "
 			if selected {
 				prefix = "    " + iconSelected + " "
@@ -458,19 +475,33 @@ func (m skillsModel) renderItem(item skillItem, selected bool) string {
 			return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
 		}
 
-		// Top-level skill (in Installed section)
+		// Top-level skill (in My Skills or Installed section)
 		prefix := "  "
+		paddedSkill := fmt.Sprintf("%-*s", m.maxSkillLen, item.skill)
 		if selected {
 			prefix = iconSelected + " "
-			return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
+		}
+
+		// My Skills section: don't show repo name
+		if item.isMySkill {
+			if selected {
+				return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
+			}
+			return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
+		}
+
+		// Installed section: show repo name aligned
+		if selected {
+			return uiSelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedSkill)) +
+				uiMutedStyle.Render(fmt.Sprintf("  %s", item.repo))
 		}
 
 		repoInfo := ""
 		if item.repo != "" {
-			repoInfo = uiMutedStyle.Render(fmt.Sprintf(" (%s)", item.repo))
+			repoInfo = uiMutedStyle.Render(fmt.Sprintf("  %s", item.repo))
 		}
 
-		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill)) + repoInfo
+		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedSkill)) + repoInfo
 	}
 
 	return ""

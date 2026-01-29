@@ -488,6 +488,7 @@ type setupModel struct {
 	message    string
 	processing bool
 	quitting   bool
+	maxNameLen int // for aligning descriptions
 	// Skills sub-view
 	showSkills  bool
 	skillsModel *skillsModel
@@ -522,11 +523,14 @@ var setupConfigItems = []setupItemDef{
 var setupUtilityItems = []setupItemDef{
 	{"dock-reset", "Reset dock to system defaults", nil},
 	{"dock-spacer", "Add a small spacer tile to the dock", nil},
-	{"skills", "Manage AI agent skills", nil},
 }
 
 func buildSetupItems() []setupUIItem {
 	var items []setupUIItem
+
+	// Navigation section
+	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Navigation"})
+	items = append(items, setupUIItem{itemType: setupItemTypeUtility, name: "skills", description: "Manage AI agent skills"})
 
 	// Actions section
 	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Actions"})
@@ -551,20 +555,20 @@ func buildSetupItems() []setupUIItem {
 		}
 	}
 
-	// Not Configured section
+	// Pending section
 	if len(notConfigured) > 0 {
-		items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Not Configured"})
+		items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Pending"})
 		items = append(items, notConfigured...)
 	}
 
-	// Configured section
+	// Done section
 	if len(configured) > 0 {
-		items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Configured"})
+		items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Done"})
 		items = append(items, configured...)
 	}
 
-	// Utilities section
-	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Utilities"})
+	// Tools section
+	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Tools"})
 	for _, def := range setupUtilityItems {
 		items = append(items, setupUIItem{
 			itemType:    setupItemTypeUtility,
@@ -641,10 +645,21 @@ func checkZed() *bool {
 }
 
 func initialSetupModel() setupModel {
+	items := buildSetupItems()
+
+	// Calculate max name length for alignment
+	maxLen := 0
+	for _, item := range items {
+		if len(item.name) > maxLen {
+			maxLen = len(item.name)
+		}
+	}
+
 	m := setupModel{
-		items:  buildSetupItems(),
-		width:  80,
-		height: 24,
+		items:      items,
+		width:      80,
+		height:     24,
+		maxNameLen: maxLen,
 	}
 	// Start cursor on first non-header item
 	for i, item := range m.items {
@@ -907,8 +922,10 @@ func (m setupModel) renderSetupItem(item setupUIItem, selected bool) string {
 			style = uiSelectedStyle
 		}
 
-		desc := uiMutedStyle.Render(" " + item.description)
-		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.name)) + desc
+		// Pad name to align descriptions
+		paddedName := fmt.Sprintf("%-*s", m.maxNameLen, item.name)
+		desc := uiMutedStyle.Render("  " + item.description)
+		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedName)) + desc
 
 	case setupItemTypeUtility:
 		prefix := "  "
@@ -918,8 +935,10 @@ func (m setupModel) renderSetupItem(item setupUIItem, selected bool) string {
 			style = uiSelectedStyle
 		}
 
-		desc := uiMutedStyle.Render(" " + item.description)
-		return style.Render(fmt.Sprintf("%s%s %s", prefix, iconBullet, item.name)) + desc
+		// Pad name to align descriptions
+		paddedName := fmt.Sprintf("%-*s", m.maxNameLen, item.name)
+		desc := uiMutedStyle.Render("  " + item.description)
+		return style.Render(fmt.Sprintf("%s%s %s", prefix, iconBullet, paddedName)) + desc
 	}
 
 	return ""

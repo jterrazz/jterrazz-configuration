@@ -18,8 +18,7 @@ var (
 	// Title style
 	uiTitleStyle = lipgloss.NewStyle().
 			Foreground(uiColorSecondary).
-			Bold(true).
-			MarginBottom(1)
+			Bold(true)
 
 	// Section header style
 	uiSectionStyle = lipgloss.NewStyle().
@@ -63,7 +62,7 @@ var (
 				Foreground(uiColorMuted)
 
 	uiBreadcrumbActiveStyle = lipgloss.NewStyle().
-				Foreground(uiColorText).
+				Foreground(uiColorSecondary).
 				Bold(true)
 )
 
