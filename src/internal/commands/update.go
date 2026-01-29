@@ -140,8 +140,8 @@ func updateBrewPackages() {
 		return
 	}
 	fmt.Println(cyan("🍺 Updating Homebrew packages..."))
-	runCommand("brew", "update")
-	runCommand("brew", "upgrade")
+	runBrewCommand("update")
+	runBrewCommand("upgrade")
 	fmt.Println(green("  ✅ Homebrew update completed"))
 }
 
@@ -184,7 +184,7 @@ func updatePackageByName(name string) {
 				return
 			}
 			fmt.Printf("  📥 Updating %s...\n", name)
-			runCommand("brew", "upgrade", pkg.Formula)
+			runBrewCommand("upgrade", pkg.Formula)
 			fmt.Printf("  %s %s updated\n", green("✓"), name)
 			return
 		case InstallBrewCask:
@@ -193,7 +193,7 @@ func updatePackageByName(name string) {
 				return
 			}
 			fmt.Printf("  📥 Updating %s...\n", name)
-			runCommand("brew", "upgrade", "--cask", pkg.Formula)
+			runBrewCommand("upgrade", "--cask", pkg.Formula)
 			fmt.Printf("  %s %s updated\n", green("✓"), name)
 			return
 		case InstallNpm:
@@ -211,7 +211,7 @@ func updatePackageByName(name string) {
 	// Try as a direct brew package name
 	if commandExists("brew") {
 		fmt.Printf("  📥 Updating %s...\n", name)
-		runCommand("brew", "upgrade", name)
+		runBrewCommand("upgrade", name)
 		fmt.Printf("  %s %s updated\n", green("✓"), name)
 		return
 	}

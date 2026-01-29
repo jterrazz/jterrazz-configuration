@@ -551,6 +551,15 @@ func CheckPackage(pkg Package) (installed bool, version string, extra string) {
 	return true, version, ""
 }
 
+// runBrewCommand runs a brew command with ARM architecture forced
+func runBrewCommand(args ...string) error {
+	cmd := exec.Command("arch", append([]string{"-arm64", "brew"}, args...)...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
+}
+
 // InstallPackage installs a package
 func InstallPackage(pkg Package) error {
 	// Use custom install function if provided
@@ -560,9 +569,9 @@ func InstallPackage(pkg Package) error {
 
 	switch pkg.Method {
 	case InstallBrewFormula:
-		return runCommand("brew", "install", pkg.Formula)
+		return runBrewCommand("install", pkg.Formula)
 	case InstallBrewCask:
-		return runCommand("brew", "install", "--cask", pkg.Formula)
+		return runBrewCommand("install", "--cask", pkg.Formula)
 	case InstallNpm:
 		return runCommand("npm", "install", "-g", pkg.Formula)
 	default:
