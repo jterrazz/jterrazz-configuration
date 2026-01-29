@@ -374,15 +374,13 @@ func parseSkillsListOutput(output string) []string {
 	cleanOutput := stripAnsi(output)
 	lines := strings.Split(cleanOutput, "\n")
 
-	// Skills appear after "Available Skills" line, indented with spaces
-	// Format:
-	//   skill-name
-	//
-	//     description...
+	// Skills appear after "Available Skills" line
+	// Format (with box-drawing characters):
+	// │    skill-name
+	// │
+	// │      Description text...
 	inSkillsSection := false
 	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-
 		if strings.Contains(line, "Available Skills") {
 			inSkillsSection = true
 			continue
@@ -393,19 +391,31 @@ func parseSkillsListOutput(output string) []string {
 		}
 
 		// Stop at "Use --skill" line
-		if strings.HasPrefix(trimmed, "Use --skill") {
+		if strings.Contains(line, "Use --skill") {
 			break
 		}
 
-		// Skip empty lines and description lines (descriptions are more indented)
+		// Remove box-drawing characters and trim
+		// The line format is: "│    skill-name" or "│      description"
+		cleaned := line
+		cleaned = strings.ReplaceAll(cleaned, "│", "")
+		cleaned = strings.ReplaceAll(cleaned, "├", "")
+		cleaned = strings.ReplaceAll(cleaned, "└", "")
+		cleaned = strings.ReplaceAll(cleaned, "┌", "")
+		cleaned = strings.ReplaceAll(cleaned, "◇", "")
+
+		// Count leading spaces before trimming
+		leadingSpaces := len(cleaned) - len(strings.TrimLeft(cleaned, " "))
+		trimmed := strings.TrimSpace(cleaned)
+
+		// Skip empty lines
 		if trimmed == "" {
 			continue
 		}
 
-		// Skill names are single words without spaces at the start of the trimmed line
-		// and the original line starts with some spaces but not too many
-		if !strings.Contains(trimmed, " ") && len(trimmed) > 0 {
-			// Check it looks like a skill name (lowercase, may have hyphens)
+		// Skill names have ~4 leading spaces, descriptions have more (~6)
+		// Skill names are single words (no spaces)
+		if leadingSpaces <= 5 && !strings.Contains(trimmed, " ") && len(trimmed) > 0 {
 			if isValidSkillName(trimmed) {
 				skills = append(skills, trimmed)
 			}

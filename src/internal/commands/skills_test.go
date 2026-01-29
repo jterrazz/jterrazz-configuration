@@ -10,29 +10,13 @@ func TestMySkillsNotEmpty(t *testing.T) {
 	}
 }
 
-func TestMySkillsHaveValidRepos(t *testing.T) {
+func TestMySkillsHaveValidFields(t *testing.T) {
 	for _, s := range MySkills {
 		if s.Repo == "" {
 			t.Errorf("MySkill %q has empty repo", s.Skill)
 		}
 		if s.Skill == "" {
 			t.Errorf("MySkill in repo %q has empty skill name", s.Repo)
-		}
-		// Verify the skill exists in the corresponding repo
-		repo := GetSkillRepoByName(s.Repo)
-		if repo == nil {
-			t.Errorf("MySkill %q references unknown repo %q", s.Skill, s.Repo)
-			continue
-		}
-		found := false
-		for _, skill := range repo.Skills {
-			if skill == s.Skill {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Errorf("MySkill %q not found in repo %q skills list", s.Skill, s.Repo)
 		}
 	}
 }
@@ -51,9 +35,6 @@ func TestSkillReposHaveRequiredFields(t *testing.T) {
 		}
 		if repo.Description == "" {
 			t.Errorf("SkillRepo %s should have a description", repo.Name)
-		}
-		if len(repo.Skills) == 0 {
-			t.Errorf("SkillRepo %s should have at least one skill", repo.Name)
 		}
 	}
 }
@@ -97,25 +78,6 @@ func TestGetSkillRepoByName(t *testing.T) {
 	}
 }
 
-func TestFindRepoForSkill(t *testing.T) {
-	tests := []struct {
-		skill    string
-		expected string
-	}{
-		{"frontend-design", "anthropics/skills"},
-		{"vercel-react-best-practices", "vercel-labs/agent-skills"},
-		{"remotion-best-practices", "remotion-dev/skills"},
-		{"nonexistent-skill", ""},
-	}
-
-	for _, tt := range tests {
-		repo := findRepoForSkill(tt.skill)
-		if repo != tt.expected {
-			t.Errorf("findRepoForSkill(%q) = %q, expected %q", tt.skill, repo, tt.expected)
-		}
-	}
-}
-
 func TestSkillsModelIsInstalled(t *testing.T) {
 	m := &skillsModel{
 		installed: []string{"skill-a", "skill-b", "skill-c"},
@@ -140,10 +102,49 @@ func TestSkillsModelIsInstalled(t *testing.T) {
 	}
 }
 
+func TestSkillsModelFindRepoForSkill(t *testing.T) {
+	m := &skillsModel{
+		repoSkills: map[string][]string{
+			"anthropics/skills":        {"frontend-design", "skill-creator"},
+			"vercel-labs/agent-skills": {"vercel-react-best-practices"},
+		},
+	}
+
+	tests := []struct {
+		skill    string
+		expected string
+	}{
+		{"frontend-design", "anthropics/skills"},
+		{"vercel-react-best-practices", "vercel-labs/agent-skills"},
+		{"nonexistent-skill", ""},
+	}
+
+	for _, tt := range tests {
+		repo := m.findRepoForSkill(tt.skill)
+		if repo != tt.expected {
+			t.Errorf("findRepoForSkill(%q) = %q, expected %q", tt.skill, repo, tt.expected)
+		}
+	}
+}
+
+func TestSkillsModelFindRepoForSkillFromMySkills(t *testing.T) {
+	// When skill is in MySkills but not in cached repoSkills
+	m := &skillsModel{
+		repoSkills: map[string][]string{},
+	}
+
+	// frontend-design is in MySkills with repo "anthropics/skills"
+	repo := m.findRepoForSkill("frontend-design")
+	if repo != "anthropics/skills" {
+		t.Errorf("findRepoForSkill('frontend-design') = %q, expected 'anthropics/skills'", repo)
+	}
+}
+
 func TestSkillsModelBuildItems(t *testing.T) {
 	m := &skillsModel{
-		expanded:  make(map[string]bool),
-		installed: []string{},
+		expanded:   make(map[string]bool),
+		installed:  []string{},
+		repoSkills: make(map[string][]string),
 	}
 
 	items := m.buildItems()
@@ -191,24 +192,24 @@ func TestSkillsModelBuildItems(t *testing.T) {
 	}
 
 	// Should have Browse header
-	hasReposHeader := false
+	hasBrowseHeader := false
 	for _, item := range items {
 		if item.itemType == itemTypeHeader && item.description == "Browse" {
-			hasReposHeader = true
+			hasBrowseHeader = true
 			break
 		}
 	}
-	if !hasReposHeader {
-		t.Error("Missing 'Repositories' header")
+	if !hasBrowseHeader {
+		t.Error("Missing 'Browse' header")
 	}
 }
 
 func TestSkillsModelBuildItemsWithInstalled(t *testing.T) {
 	// Test with a skill that's in MySkills - should show in My Skills section
 	m := &skillsModel{
-		expanded:  make(map[string]bool),
-		installed: []string{"frontend-design"},
-		
+		expanded:   make(map[string]bool),
+		installed:  []string{"frontend-design"},
+		repoSkills: make(map[string][]string),
 	}
 
 	items := m.buildItems()
@@ -233,30 +234,30 @@ func TestSkillsModelBuildItemsWithInstalled(t *testing.T) {
 }
 
 func TestSkillsModelBuildItemsWithOtherInstalled(t *testing.T) {
-	// Test with a skill NOT in MySkills - should show in Other Installed section
+	// Test with a skill NOT in MySkills - should show in Installed section
 	m := &skillsModel{
-		expanded:  make(map[string]bool),
-		installed: []string{"remotion-best-practices"}, // Not in MySkills
-		
+		expanded:   make(map[string]bool),
+		installed:  []string{"some-other-skill"},
+		repoSkills: make(map[string][]string),
 	}
 
 	items := m.buildItems()
 
-	hasOtherInstalledHeader := false
+	hasInstalledHeader := false
 	hasInstalledSkill := false
 	for _, item := range items {
 		if item.itemType == itemTypeHeader && item.description == "Installed" {
-			hasOtherInstalledHeader = true
+			hasInstalledHeader = true
 		}
-		if item.itemType == itemTypeSkill && item.skill == "remotion-best-practices" && item.installed {
+		if item.itemType == itemTypeSkill && item.skill == "some-other-skill" && item.installed {
 			hasInstalledSkill = true
 		}
 	}
-	if !hasOtherInstalledHeader {
-		t.Error("Missing 'Other Installed' header when non-MySkills are installed")
+	if !hasInstalledHeader {
+		t.Error("Missing 'Installed' header when non-MySkills are installed")
 	}
 	if !hasInstalledSkill {
-		t.Error("Installed skill 'remotion-best-practices' not found in items")
+		t.Error("Installed skill 'some-other-skill' not found in items")
 	}
 }
 
@@ -264,7 +265,9 @@ func TestSkillsModelBuildItemsWithExpanded(t *testing.T) {
 	m := &skillsModel{
 		expanded:  map[string]bool{"anthropics/skills": true},
 		installed: []string{},
-		
+		repoSkills: map[string][]string{
+			"anthropics/skills": {"frontend-design", "skill-creator"},
+		},
 	}
 
 	items := m.buildItems()
@@ -276,7 +279,7 @@ func TestSkillsModelBuildItemsWithExpanded(t *testing.T) {
 		if item.itemType == itemTypeRepoAction && item.repo == "anthropics/skills" {
 			hasRepoAction = true
 		}
-		if item.itemType == itemTypeSkill && item.repo == "anthropics/skills" {
+		if item.itemType == itemTypeSkill && item.repo == "anthropics/skills" && item.isNested {
 			hasSkillsFromRepo = true
 		}
 	}
@@ -285,6 +288,100 @@ func TestSkillsModelBuildItemsWithExpanded(t *testing.T) {
 	}
 	if !hasSkillsFromRepo {
 		t.Error("Missing skills from expanded repo")
+	}
+}
+
+func TestSkillsModelBuildItemsExpandedWithoutCache(t *testing.T) {
+	// When repo is expanded but skills not yet fetched (nil cache)
+	m := &skillsModel{
+		expanded:   map[string]bool{"anthropics/skills": true},
+		installed:  []string{},
+		repoSkills: make(map[string][]string), // Empty cache, nil for this repo
+	}
+
+	items := m.buildItems()
+
+	// Should NOT have skills listed (they're not loaded yet)
+	hasSkillsFromRepo := false
+	for _, item := range items {
+		if item.itemType == itemTypeSkill && item.repo == "anthropics/skills" && item.isNested {
+			hasSkillsFromRepo = true
+		}
+	}
+	if hasSkillsFromRepo {
+		t.Error("Should not show skills from repo when not yet cached")
+	}
+}
+
+func TestParseSkillsListOutput(t *testing.T) {
+	// Sample output similar to what skills CLI produces
+	output := `
+◇  Available Skills
+│
+│    building-native-ui
+│
+│      Complete guide for building beautiful apps
+│
+│    expo-api-routes
+│
+│      Guidelines for creating API routes
+│
+│    expo-dev-client
+│
+│      Build and distribute development clients
+│
+└  Use --skill <name> to install specific skills
+`
+
+	skills := parseSkillsListOutput(output)
+
+	expected := []string{"building-native-ui", "expo-api-routes", "expo-dev-client"}
+	if len(skills) != len(expected) {
+		t.Errorf("parseSkillsListOutput() returned %d skills, expected %d: %v", len(skills), len(expected), skills)
+		return
+	}
+
+	for i, skill := range expected {
+		if skills[i] != skill {
+			t.Errorf("parseSkillsListOutput()[%d] = %q, expected %q", i, skills[i], skill)
+		}
+	}
+}
+
+func TestParseSkillsListOutputEmpty(t *testing.T) {
+	output := `
+◇  Available Skills
+│
+└  Use --skill <name> to install specific skills
+`
+	skills := parseSkillsListOutput(output)
+	if len(skills) != 0 {
+		t.Errorf("parseSkillsListOutput() returned %d skills for empty output, expected 0", len(skills))
+	}
+}
+
+func TestIsValidSkillName(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected bool
+	}{
+		{"frontend-design", true},
+		{"skill-creator", true},
+		{"expo-api-routes", true},
+		{"valid_skill", true},
+		{"skill123", true},
+		{"Invalid", false},   // uppercase
+		{"has space", false}, // space
+		{"has.dot", false},   // dot
+		{"", false},          // empty
+		{"has/slash", false}, // slash
+	}
+
+	for _, tt := range tests {
+		result := isValidSkillName(tt.name)
+		if result != tt.expected {
+			t.Errorf("isValidSkillName(%q) = %v, expected %v", tt.name, result, tt.expected)
+		}
 	}
 }
 

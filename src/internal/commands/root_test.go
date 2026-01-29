@@ -19,17 +19,17 @@ func TestCommandStructure(t *testing.T) {
 	// Verify expected subcommands are registered
 	expectedCommands := []string{
 		"status",
+		"install",
 		"update",
 		"clean",
 		"setup",
-		"git",
-		"docker",
+		"run",
 	}
 
 	commands := rootCmd.Commands()
 	commandNames := make(map[string]bool)
 	for _, cmd := range commands {
-		commandNames[cmd.Use] = true
+		commandNames[cmd.Name()] = true
 	}
 
 	for _, expected := range expectedCommands {
@@ -39,53 +39,61 @@ func TestCommandStructure(t *testing.T) {
 	}
 }
 
-func TestSetupSubcommands(t *testing.T) {
-	var setupCmd *cobra.Command
+func TestRunSubcommands(t *testing.T) {
+	var runCmd *cobra.Command
 	for _, cmd := range rootCmd.Commands() {
-		if cmd.Use == "setup" {
-			setupCmd = cmd
+		if cmd.Name() == "run" {
+			runCmd = cmd
 			break
 		}
 	}
 
-	if setupCmd == nil {
-		t.Fatal("setup command not found")
+	if runCmd == nil {
+		t.Fatal("run command not found")
 	}
 
 	expectedSubcommands := []string{
-		"all",
-		"brew",
-		"ohmyzsh",
-		"nvm",
-		"git-ssh",
-		"dock-spacer",
-		"dock-reset",
+		"git",
+		"docker",
 	}
 
-	subcommands := setupCmd.Commands()
+	subcommands := runCmd.Commands()
 	subcommandNames := make(map[string]bool)
 	for _, cmd := range subcommands {
-		subcommandNames[cmd.Use] = true
+		subcommandNames[cmd.Name()] = true
 	}
 
 	for _, expected := range expectedSubcommands {
 		if !subcommandNames[expected] {
-			t.Errorf("setup missing subcommand: %s", expected)
+			t.Errorf("run missing subcommand: %s", expected)
 		}
 	}
 }
 
 func TestGitSubcommands(t *testing.T) {
-	var gitCmd *cobra.Command
+	// Find run -> git
+	var runCmd *cobra.Command
 	for _, cmd := range rootCmd.Commands() {
-		if cmd.Use == "git" {
+		if cmd.Name() == "run" {
+			runCmd = cmd
+			break
+		}
+	}
+
+	if runCmd == nil {
+		t.Fatal("run command not found")
+	}
+
+	var gitCmd *cobra.Command
+	for _, cmd := range runCmd.Commands() {
+		if cmd.Name() == "git" {
 			gitCmd = cmd
 			break
 		}
 	}
 
 	if gitCmd == nil {
-		t.Fatal("git command not found")
+		t.Fatal("git command not found under run")
 	}
 
 	expectedSubcommands := []string{
@@ -96,6 +104,9 @@ func TestGitSubcommands(t *testing.T) {
 		"sync",
 		"wip",
 		"unwip",
+		"status",
+		"log",
+		"branches",
 	}
 
 	subcommands := gitCmd.Commands()
@@ -112,16 +123,29 @@ func TestGitSubcommands(t *testing.T) {
 }
 
 func TestDockerSubcommands(t *testing.T) {
-	var dockerCmd *cobra.Command
+	// Find run -> docker
+	var runCmd *cobra.Command
 	for _, cmd := range rootCmd.Commands() {
-		if cmd.Use == "docker" {
+		if cmd.Name() == "run" {
+			runCmd = cmd
+			break
+		}
+	}
+
+	if runCmd == nil {
+		t.Fatal("run command not found")
+	}
+
+	var dockerCmd *cobra.Command
+	for _, cmd := range runCmd.Commands() {
+		if cmd.Name() == "docker" {
 			dockerCmd = cmd
 			break
 		}
 	}
 
 	if dockerCmd == nil {
-		t.Fatal("docker command not found")
+		t.Fatal("docker command not found under run")
 	}
 
 	expectedSubcommands := []string{
@@ -134,7 +158,7 @@ func TestDockerSubcommands(t *testing.T) {
 	subcommands := dockerCmd.Commands()
 	subcommandNames := make(map[string]bool)
 	for _, cmd := range subcommands {
-		subcommandNames[cmd.Use] = true
+		subcommandNames[cmd.Name()] = true
 	}
 
 	for _, expected := range expectedSubcommands {
