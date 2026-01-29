@@ -7,6 +7,7 @@ var MySkills = []struct {
 	Skill string // Skill name
 }{
 	{"anthropics/skills", "frontend-design"},
+	{"sickn33/antigravity-awesome-skills", "last30days"},
 }
 
 // SkillRepo represents a repository containing skills
