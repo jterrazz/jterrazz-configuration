@@ -10,6 +10,7 @@ var MySkills = []struct {
 	{"expo/skills", "upgrading-expo"},
 	{"giuseppe-trisciuoglio/developer-kit", "shadcn-ui"},
 	{"sickn33/antigravity-awesome-skills", "last30days"},
+	{"tobi/qmd", "qmd"},
 	{"vercel-labs/agent-skills", "vercel-react-best-practices"},
 	{"vercel-labs/agent-skills", "vercel-react-native-skills"},
 }
@@ -34,6 +35,7 @@ var SkillRepos = []SkillRepo{
 	{"remotion-dev/skills", "Remotion video creation skills"},
 	{"resend/email-best-practices", "Email development best practices"},
 	{"supabase/agent-skills", "Supabase database and backend skills"},
+	{"tobi/qmd", "Local search engine for docs and knowledge bases"},
 	{"vercel-labs/agent-skills", "Vercel React and web development skills"},
 }
 

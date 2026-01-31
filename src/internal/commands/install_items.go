@@ -353,6 +353,28 @@ var Packages = []Package{
 		VersionParser: trimVersion,
 	},
 	{
+		Name:         "qmd",
+		Command:      "qmd",
+		Method:       InstallManual,
+		Category:     CategoryAI,
+		Dependencies: []string{"bun"},
+		CheckFn: func() (bool, string, string) {
+			if _, err := exec.LookPath("qmd"); err != nil {
+				return false, "", ""
+			}
+			out, _ := exec.Command("qmd", "--version").Output()
+			version := trimVersion(string(out))
+			return true, version, ""
+		},
+		InstallFn: func() error {
+			cmd := exec.Command("bun", "install", "-g", "https://github.com/tobi/qmd")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Stdin = os.Stdin
+			return cmd.Run()
+		},
+	},
+	{
 		Name:          "skills",
 		Command:       "skills",
 		Formula:       "skills",

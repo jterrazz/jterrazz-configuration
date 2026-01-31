@@ -215,7 +215,7 @@ func (m *skillsModel) buildItems() []skillItem {
 }
 
 func (m skillsModel) Init() tea.Cmd {
-	return nil
+	return tea.WindowSize()
 }
 
 func (m skillsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -508,7 +508,11 @@ func (m skillsModel) viewWithBreadcrumb(breadcrumbs ...string) string {
 	items := m.buildItems()
 
 	// Calculate visible range
-	visibleHeight := m.height - 6 // Account for title, help, message
+	// Account for: title (1 line) + blank line (1) + help (1) + message (1) = 4 lines
+	visibleHeight := m.height - 4
+	if visibleHeight < 1 {
+		visibleHeight = 1
+	}
 	startIdx := 0
 	if m.cursor > visibleHeight-3 {
 		startIdx = m.cursor - visibleHeight + 3

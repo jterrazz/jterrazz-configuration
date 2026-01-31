@@ -667,7 +667,7 @@ func initialSetupModel() setupModel {
 }
 
 func (m setupModel) Init() tea.Cmd {
-	return nil
+	return tea.WindowSize()
 }
 
 func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -780,6 +780,8 @@ func (m setupModel) handleSelect() (setupModel, tea.Cmd) {
 	case setupItemTypeUtility:
 		if item.name == "skills" {
 			sm := initialSkillsModel()
+			sm.width = m.width
+			sm.height = m.height
 			m.skillsModel = &sm
 			m.showSkills = true
 			return m, nil
