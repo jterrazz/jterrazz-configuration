@@ -8,7 +8,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/fatih/color"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
 	"github.com/spf13/cobra"
@@ -473,37 +472,22 @@ func printWarning(msg string) {
 
 // Setup TUI
 
-type setupUIItem struct {
-	itemType    setupItemType
-	name        string
-	description string
-	isAction    bool
-	configured  *bool
+// setupItemData holds domain-specific data for each setup item
+type setupItemData struct {
+	name       string
+	configured *bool
 }
 
 type setupModel struct {
-	items      []setupUIItem
-	cursor     int
-	width      int
-	height     int
-	message    string
+	list       *ui.List
+	page       *ui.Page
+	itemData   []setupItemData
 	processing bool
 	quitting   bool
-	maxNameLen int // for aligning descriptions
 	// Skills sub-view
 	showSkills  bool
 	skillsModel *skillsModel
 }
-
-// SetupItemType categorizes setup items
-type setupItemType int
-
-const (
-	setupItemTypeHeader setupItemType = iota
-	setupItemTypeAction
-	setupItemTypeConfig
-	setupItemTypeUtility
-)
 
 type setupItemDef struct {
 	name        string
@@ -526,75 +510,105 @@ var setupUtilityItems = []setupItemDef{
 	{"dock-spacer", "Add a small spacer tile to the dock", nil},
 }
 
-func buildSetupItems() []setupUIItem {
-	var items []setupUIItem
+func (m *setupModel) buildItems() ([]ui.Item, []setupItemData) {
+	var items []ui.Item
+	var data []setupItemData
 
 	// Navigation section
-	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Navigation"})
-	items = append(items, setupUIItem{itemType: setupItemTypeUtility, name: "skills", description: "Manage AI agent skills"})
+	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Navigation"})
+	data = append(data, setupItemData{})
+
+	items = append(items, ui.Item{Kind: ui.KindAction, Label: "skills", Description: "Manage AI agent skills"})
+	data = append(data, setupItemData{name: "skills"})
 
 	// Actions section
-	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Actions"})
-	items = append(items, setupUIItem{itemType: setupItemTypeAction, name: "setup-missing", description: "Setup all missing"})
+	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Actions"})
+	data = append(data, setupItemData{})
+
+	items = append(items, ui.Item{Kind: ui.KindAction, Label: "Setup all missing"})
+	data = append(data, setupItemData{name: "setup-missing"})
 
 	// Configuration section - pending items first, then configured
-	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Configuration"})
+	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Configuration"})
+	data = append(data, setupItemData{})
 
-	var configured []setupUIItem
-	var notConfigured []setupUIItem
+	var configuredItems []struct {
+		item ui.Item
+		data setupItemData
+	}
+	var notConfiguredItems []struct {
+		item ui.Item
+		data setupItemData
+	}
 
 	for _, def := range setupConfigItems {
 		status := def.checkFn()
-		item := setupUIItem{
-			itemType:    setupItemTypeConfig,
-			name:        def.name,
-			description: def.description,
-			configured:  status,
+		state := ui.StateUnchecked
+		if status != nil && *status {
+			state = ui.StateChecked
+		}
+		entry := struct {
+			item ui.Item
+			data setupItemData
+		}{
+			item: ui.Item{
+				Kind:        ui.KindToggle,
+				Label:       def.name,
+				Description: def.description,
+				State:       state,
+			},
+			data: setupItemData{name: def.name, configured: status},
 		}
 		if status != nil && *status {
-			configured = append(configured, item)
+			configuredItems = append(configuredItems, entry)
 		} else {
-			notConfigured = append(notConfigured, item)
+			notConfiguredItems = append(notConfiguredItems, entry)
 		}
 	}
 
 	// Add pending items first, then configured
-	items = append(items, notConfigured...)
-	items = append(items, configured...)
+	for _, entry := range notConfiguredItems {
+		items = append(items, entry.item)
+		data = append(data, entry.data)
+	}
+	for _, entry := range configuredItems {
+		items = append(items, entry.item)
+		data = append(data, entry.data)
+	}
 
 	// Scripts section
-	items = append(items, setupUIItem{itemType: setupItemTypeHeader, description: "Scripts"})
+	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Scripts"})
+	data = append(data, setupItemData{})
+
 	for _, def := range setupUtilityItems {
-		items = append(items, setupUIItem{
-			itemType:    setupItemTypeUtility,
-			name:        def.name,
-			description: def.description,
-			configured:  nil,
+		items = append(items, ui.Item{
+			Kind:        ui.KindAction,
+			Label:       def.name,
+			Description: def.description,
 		})
+		data = append(data, setupItemData{name: def.name})
 	}
 
-	return items
+	return items, data
 }
 
-// Legacy function for tests
-func getSetupItems() []setupUIItem {
-	var items []setupUIItem
-	for _, def := range setupConfigItems {
-		items = append(items, setupUIItem{
-			name:        def.name,
-			description: def.description,
-			configured:  def.checkFn(),
-		})
+func (m *setupModel) rebuildItems() {
+	cursor := m.list.Cursor
+	items, data := m.buildItems()
+	m.list = ui.NewList(items)
+	m.list.CalculateLabelWidth()
+	m.itemData = data
+
+	// Restore cursor position
+	if cursor >= len(items) {
+		cursor = len(items) - 1
 	}
-	for _, def := range setupUtilityItems {
-		items = append(items, setupUIItem{
-			name:        def.name,
-			description: def.description,
-			configured:  nil,
-			isAction:    def.name == "skills",
-		})
+	m.list.SetCursor(cursor)
+
+	// Skip headers if cursor landed on one
+	for m.list.Cursor > 0 && !m.list.Items[m.list.Cursor].Selectable() {
+		m.list.Cursor--
 	}
-	return items
 }
 
 func checkGhostty() *bool {
@@ -640,29 +654,15 @@ func checkZed() *bool {
 }
 
 func initialSetupModel() setupModel {
-	items := buildSetupItems()
-
-	// Calculate max name length for alignment
-	maxLen := 0
-	for _, item := range items {
-		if len(item.name) > maxLen {
-			maxLen = len(item.name)
-		}
-	}
-
 	m := setupModel{
-		items:      items,
-		width:      80,
-		height:     24,
-		maxNameLen: maxLen,
+		page: ui.NewPage("Setup"),
 	}
-	// Start cursor on first non-header item
-	for i, item := range m.items {
-		if item.itemType != setupItemTypeHeader {
-			m.cursor = i
-			break
-		}
-	}
+
+	items, data := m.buildItems()
+	m.list = ui.NewList(items)
+	m.list.CalculateLabelWidth()
+	m.itemData = data
+
 	return m
 }
 
@@ -686,10 +686,10 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		case tea.WindowSizeMsg:
-			m.width = msg.Width
-			m.height = msg.Height
-			m.skillsModel.width = msg.Width
-			m.skillsModel.height = msg.Height
+			m.list.SetSize(msg.Width, msg.Height)
+			m.page.SetSize(msg.Width, msg.Height)
+			m.skillsModel.list.SetSize(msg.Width, msg.Height)
+			m.skillsModel.page.SetSize(msg.Width, msg.Height)
 		}
 		newModel, cmd := m.skillsModel.Update(msg)
 		if sm, ok := newModel.(skillsModel); ok {
@@ -710,10 +710,10 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))):
-			m.moveCursor(-1)
+			m.list.Up()
 
 		case key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))):
-			m.moveCursor(1)
+			m.list.Down()
 
 		case key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))):
 			return m.handleSelect()
@@ -721,20 +721,14 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case setupActionDoneMsg:
 		m.processing = false
-		m.message = msg.message
-		m.items = buildSetupItems()
-		// Adjust cursor if out of bounds
-		if m.cursor >= len(m.items) {
-			m.cursor = len(m.items) - 1
-		}
-		for m.cursor > 0 && m.items[m.cursor].itemType == setupItemTypeHeader {
-			m.cursor--
-		}
+		m.page.Message = msg.message
+		m.page.Processing = false
+		m.rebuildItems()
 		return m, nil
 
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+		m.list.SetSize(msg.Width, msg.Height)
+		m.page.SetSize(msg.Width, msg.Height)
 	}
 
 	return m, nil
@@ -745,58 +739,41 @@ type setupActionDoneMsg struct {
 	err     error
 }
 
-func (m *setupModel) moveCursor(delta int) {
-	newCursor := m.cursor + delta
-
-	// Skip headers
-	for newCursor >= 0 && newCursor < len(m.items) && m.items[newCursor].itemType == setupItemTypeHeader {
-		newCursor += delta
-	}
-
-	if newCursor >= 0 && newCursor < len(m.items) {
-		m.cursor = newCursor
-	}
-}
-
 func (m setupModel) handleSelect() (setupModel, tea.Cmd) {
-	if m.cursor < 0 || m.cursor >= len(m.items) {
+	idx := m.list.SelectedIndex()
+	if idx < 0 || idx >= len(m.itemData) {
 		return m, nil
 	}
 
-	item := m.items[m.cursor]
+	item := m.list.Selected()
+	data := m.itemData[idx]
 
-	switch item.itemType {
-	case setupItemTypeHeader:
+	if item.Kind == ui.KindHeader {
 		return m, nil
-
-	case setupItemTypeAction:
-		if item.name == "setup-missing" {
-			m.processing = true
-			m.message = "Setting up all missing..."
-			return m, m.runSetupMissing()
-		}
-		return m, nil
-
-	case setupItemTypeUtility:
-		if item.name == "skills" {
-			sm := initialSkillsModel()
-			sm.width = m.width
-			sm.height = m.height
-			m.skillsModel = &sm
-			m.showSkills = true
-			return m, nil
-		}
-		m.processing = true
-		m.message = fmt.Sprintf("Running %s...", item.name)
-		return m, m.runSetup(item.name)
-
-	case setupItemTypeConfig:
-		m.processing = true
-		m.message = fmt.Sprintf("Setting up %s...", item.name)
-		return m, m.runSetup(item.name)
 	}
 
-	return m, nil
+	switch data.name {
+	case "skills":
+		sm := initialSkillsModel()
+		sm.list.SetSize(m.page.Width, m.page.Height)
+		sm.page.SetSize(m.page.Width, m.page.Height)
+		m.skillsModel = &sm
+		m.showSkills = true
+		return m, nil
+
+	case "setup-missing":
+		m.processing = true
+		m.page.Processing = true
+		m.page.Message = "Setting up all missing..."
+		return m, m.runSetupMissing()
+
+	default:
+		// Config item or utility
+		m.processing = true
+		m.page.Processing = true
+		m.page.Message = fmt.Sprintf("Running %s...", data.name)
+		return m, m.runSetup(data.name)
+	}
 }
 
 func (m setupModel) runSetupMissing() tea.Cmd {
@@ -861,84 +838,10 @@ func (m setupModel) View() string {
 		return m.skillsModel.viewWithBreadcrumb("Setup", "Skills")
 	}
 
-	var b strings.Builder
+	m.page.Help = ui.DefaultHelp()
+	m.page.Content = m.list.Render(m.page.ContentHeight())
 
-	// Title
-	b.WriteString(ui.TitleStyle.Render("Setup") + "\n\n")
-
-	for i, item := range m.items {
-		selected := i == m.cursor
-		line := m.renderSetupItem(item, selected)
-		b.WriteString(line + "\n")
-	}
-
-	// Help
-	b.WriteString(ui.HelpStyle.Render("↑/↓ navigate • enter select • q quit"))
-
-	// Message
-	if m.message != "" {
-		b.WriteString("\n")
-		if m.processing {
-			b.WriteString(ui.ActionStyle.Render(m.message))
-		} else {
-			b.WriteString(ui.SuccessStyle.Render(m.message))
-		}
-	}
-
-	return b.String()
-}
-
-func (m setupModel) renderSetupItem(item setupUIItem, selected bool) string {
-	switch item.itemType {
-	case setupItemTypeHeader:
-		return ui.RenderSection(item.description)
-
-	case setupItemTypeAction:
-		prefix := "  "
-		if selected {
-			prefix = ui.IconSelected + " "
-			return ui.SelectedStyle.Render(prefix + item.description)
-		}
-		return ui.ActionStyle.Render(prefix + item.description)
-
-	case setupItemTypeConfig:
-		var status string
-		var style lipgloss.Style
-
-		if item.configured != nil && *item.configured {
-			status = ui.IconCheck
-			style = ui.SuccessStyle
-		} else {
-			status = ui.IconCross
-			style = ui.DangerStyle
-		}
-
-		prefix := "  "
-		if selected {
-			prefix = ui.IconSelected + " "
-			style = ui.SelectedStyle
-		}
-
-		// Pad name to align descriptions
-		paddedName := fmt.Sprintf("%-*s", m.maxNameLen, item.name)
-		desc := ui.MutedStyle.Render("  " + item.description)
-		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedName)) + desc
-
-	case setupItemTypeUtility:
-		prefix := "  "
-		style := ui.MutedStyle
-		if selected {
-			prefix = ui.IconSelected + " "
-			style = ui.SelectedStyle
-		}
-
-		// Pad name to align descriptions
-		paddedName := fmt.Sprintf("%-*s", m.maxNameLen, item.name)
-		desc := ui.MutedStyle.Render("  " + item.description)
-		return style.Render(fmt.Sprintf("%s%s %s", prefix, ui.IconBullet, paddedName)) + desc
-	}
-
-	return ""
+	return m.page.Render()
 }
 
 func runSetupUI() {

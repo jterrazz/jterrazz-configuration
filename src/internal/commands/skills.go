@@ -8,75 +8,46 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/fatih/color"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
 )
 
-// Item types
-const (
-	itemTypeAction     = "action"
-	itemTypeHeader     = "header"
-	itemTypeSkill      = "skill"
-	itemTypeRepo       = "repo"
-	itemTypeRepoAction = "repo-action"
-)
-
-// skillItem represents a selectable item in the TUI
-type skillItem struct {
-	itemType    string
-	repo        string
-	skill       string
-	description string
-	installed   bool
-	expanded    bool
-	actionType  string
-	isMySkill   bool // true if this skill is from "My Skills" section
-	isNested    bool // true if this skill is under an expanded repo
+// skillItemData holds domain-specific data for each item
+type skillItemData struct {
+	repo       string
+	skill      string
+	actionType string
+	isMySkill  bool
 }
 
 type skillsModel struct {
-	items       []skillItem
-	cursor      int
+	list        *ui.List
+	page        *ui.Page
+	itemData    []skillItemData     // Domain data parallel to list.Items
 	expanded    map[string]bool     // tracks which repos are expanded
 	installed   []string            // list of installed skill names (ordered)
 	repoSkills  map[string][]string // cache of fetched skills per repo
 	loadingRepo string              // repo currently being loaded
-	width       int
-	height      int
-	message     string
 	processing  bool
 	quitting    bool
-	maxSkillLen int // for aligning descriptions
 }
 
 func initialSkillsModel() skillsModel {
 	installed := getInstalledSkills()
 
-	// Calculate max skill name length for alignment
-	maxLen := 0
-	for _, repo := range SkillRepos {
-		if len(repo.Name) > maxLen {
-			maxLen = len(repo.Name)
-		}
+	m := skillsModel{
+		expanded:   make(map[string]bool),
+		installed:  installed,
+		repoSkills: make(map[string][]string),
+		page:       ui.NewPage("Skills"),
 	}
 
-	return skillsModel{
-		expanded:    make(map[string]bool),
-		installed:   installed,
-		repoSkills:  make(map[string][]string),
-		width:       80,
-		height:      24,
-		maxSkillLen: maxLen,
-	}
-}
+	items, data := m.buildItems()
+	m.list = ui.NewList(items)
+	m.list.CalculateLabelWidth()
+	m.itemData = data
 
-// getSkillsForRepo returns cached skills or empty slice if not loaded yet
-func (m *skillsModel) getSkillsForRepo(repoName string) []string {
-	if skills, ok := m.repoSkills[repoName]; ok {
-		return skills
-	}
-	return nil
+	return m
 }
 
 // isInstalled checks if a skill is in the installed list
@@ -89,9 +60,16 @@ func (m *skillsModel) isInstalled(skill string) bool {
 	return false
 }
 
+// getSkillsForRepo returns cached skills or nil if not loaded yet
+func (m *skillsModel) getSkillsForRepo(repoName string) []string {
+	if skills, ok := m.repoSkills[repoName]; ok {
+		return skills
+	}
+	return nil
+}
+
 // findRepoForSkill finds which repo a skill belongs to
 func (m *skillsModel) findRepoForSkill(skill string) string {
-	// Check in cached repo skills
 	for repoName, skills := range m.repoSkills {
 		for _, s := range skills {
 			if s == skill {
@@ -99,7 +77,6 @@ func (m *skillsModel) findRepoForSkill(skill string) string {
 			}
 		}
 	}
-	// Check in MySkills as fallback
 	for _, s := range MySkills {
 		if s.Skill == skill {
 			return s.Repo
@@ -108,25 +85,36 @@ func (m *skillsModel) findRepoForSkill(skill string) string {
 	return ""
 }
 
-func (m *skillsModel) buildItems() []skillItem {
-	var items []skillItem
+func (m *skillsModel) buildItems() ([]ui.Item, []skillItemData) {
+	var items []ui.Item
+	var data []skillItemData
 
 	// Actions section
-	items = append(items, skillItem{itemType: itemTypeHeader, description: "Actions"})
-	items = append(items, skillItem{itemType: itemTypeAction, description: "Install favorites", actionType: "install-my-skills"})
-	items = append(items, skillItem{itemType: itemTypeAction, description: "Remove all skills", actionType: "remove-all"})
+	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Actions"})
+	data = append(data, skillItemData{actionType: "install-my-skills"})
+
+	items = append(items, ui.Item{Kind: ui.KindAction, Label: "Install favorites"})
+	data = append(data, skillItemData{actionType: "install-my-skills"})
+
+	items = append(items, ui.Item{Kind: ui.KindAction, Label: "Remove all skills"})
+	data = append(data, skillItemData{actionType: "remove-all"})
 
 	// Favorites section
 	if len(MySkills) > 0 {
-		items = append(items, skillItem{itemType: itemTypeHeader, description: "Favorites"})
+		items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Favorites"})
+		data = append(data, skillItemData{})
+
 		for _, s := range MySkills {
-			items = append(items, skillItem{
-				itemType:  itemTypeSkill,
-				repo:      s.Repo,
-				skill:     s.Skill,
-				installed: m.isInstalled(s.Skill),
-				isMySkill: true,
+			state := ui.StateUnchecked
+			if m.isInstalled(s.Skill) {
+				state = ui.StateChecked
+			}
+			items = append(items, ui.Item{
+				Kind:  ui.KindToggle,
+				Label: s.Skill,
+				State: state,
 			})
+			data = append(data, skillItemData{repo: s.Repo, skill: s.Skill, isMySkill: true})
 		}
 	}
 
@@ -145,73 +133,100 @@ func (m *skillsModel) buildItems() []skillItem {
 		}
 	}
 	if len(otherInstalled) > 0 {
-		items = append(items, skillItem{itemType: itemTypeHeader, description: "Installed"})
+		items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Installed"})
+		data = append(data, skillItemData{})
+
 		for _, skill := range otherInstalled {
 			repo := m.findRepoForSkill(skill)
-			items = append(items, skillItem{
-				itemType:  itemTypeSkill,
-				repo:      repo,
-				skill:     skill,
-				installed: true,
+			items = append(items, ui.Item{
+				Kind:        ui.KindToggle,
+				Label:       skill,
+				Description: repo,
+				State:       ui.StateChecked,
 			})
+			data = append(data, skillItemData{repo: repo, skill: skill})
 		}
 	}
 
 	// Browse section
-	items = append(items, skillItem{itemType: itemTypeHeader, description: "Browse"})
+	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Browse"})
+	data = append(data, skillItemData{})
+
 	for _, repo := range SkillRepos {
 		expanded := m.expanded[repo.Name]
 		repoSkills := m.getSkillsForRepo(repo.Name)
 		isLoading := m.loadingRepo == repo.Name
 
-		// Count installed vs total
-		installedCount := 0
-		for _, skill := range repoSkills {
-			if m.isInstalled(skill) {
-				installedCount++
-			}
-		}
-
+		// Build description
 		desc := repo.Description
 		if isLoading {
 			desc = "Loading..."
 		} else if repoSkills != nil && len(repoSkills) > 0 {
+			installedCount := 0
+			for _, skill := range repoSkills {
+				if m.isInstalled(skill) {
+					installedCount++
+				}
+			}
 			desc = fmt.Sprintf("%d skills", len(repoSkills))
 			if installedCount > 0 {
 				desc = fmt.Sprintf("%d/%d installed", installedCount, len(repoSkills))
 			}
 		}
 
-		items = append(items, skillItem{
-			itemType:    itemTypeRepo,
-			repo:        repo.Name,
-			description: desc,
-			expanded:    expanded,
+		items = append(items, ui.Item{
+			Kind:        ui.KindExpandable,
+			Label:       repo.Name,
+			Description: desc,
+			Expanded:    expanded,
 		})
+		data = append(data, skillItemData{repo: repo.Name})
 
 		// If expanded, show repo actions and skills
 		if expanded && repoSkills != nil {
-			items = append(items, skillItem{
-				itemType:    itemTypeRepoAction,
-				repo:        repo.Name,
-				description: "Install all",
-				actionType:  "install-repo",
+			items = append(items, ui.Item{
+				Kind:   ui.KindAction,
+				Label:  "Install all",
+				Indent: 1,
 			})
+			data = append(data, skillItemData{repo: repo.Name, actionType: "install-repo"})
 
 			for _, skill := range repoSkills {
-				isInstalled := m.isInstalled(skill)
-				items = append(items, skillItem{
-					itemType:  itemTypeSkill,
-					repo:      repo.Name,
-					skill:     skill,
-					installed: isInstalled,
-					isNested:  true,
+				state := ui.StateUnchecked
+				if m.isInstalled(skill) {
+					state = ui.StateChecked
+				}
+				items = append(items, ui.Item{
+					Kind:   ui.KindToggle,
+					Label:  skill,
+					State:  state,
+					Indent: 1,
 				})
+				data = append(data, skillItemData{repo: repo.Name, skill: skill})
 			}
 		}
 	}
 
-	return items
+	return items, data
+}
+
+func (m *skillsModel) rebuildItems() {
+	items, data := m.buildItems()
+	cursor := m.list.Cursor
+	m.list = ui.NewList(items)
+	m.list.CalculateLabelWidth()
+	m.itemData = data
+
+	// Restore cursor position
+	if cursor >= len(items) {
+		cursor = len(items) - 1
+	}
+	m.list.SetCursor(cursor)
+
+	// Skip headers if cursor landed on one
+	for m.list.Cursor > 0 && !m.list.Items[m.list.Cursor].Selectable() {
+		m.list.Cursor--
+	}
 }
 
 func (m skillsModel) Init() tea.Cmd {
@@ -231,113 +246,90 @@ func (m skillsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))):
-			m.moveCursor(-1)
+			m.list.Up()
 
 		case key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))):
-			m.moveCursor(1)
+			m.list.Down()
 
 		case key.Matches(msg, key.NewBinding(key.WithKeys("enter", " "))):
-			newModel, cmd := m.handleSelect()
-			return newModel, cmd
+			return m.handleSelect()
 		}
 
 	case skillActionDoneMsg:
 		m.processing = false
-		m.message = msg.message
+		m.page.Message = msg.message
+		m.page.Processing = false
 		m.installed = getInstalledSkills()
-		// Adjust cursor if it's now out of bounds or on a header
-		items := m.buildItems()
-		if m.cursor >= len(items) {
-			m.cursor = len(items) - 1
-		}
-		for m.cursor > 0 && items[m.cursor].itemType == itemTypeHeader {
-			m.cursor--
-		}
+		m.rebuildItems()
 		return m, nil
 
 	case repoSkillsFetchedMsg:
 		m.loadingRepo = ""
 		if msg.err == nil {
 			m.repoSkills[msg.repo] = msg.skills
-			// Update maxSkillLen if needed
-			for _, skill := range msg.skills {
-				if len(skill) > m.maxSkillLen {
-					m.maxSkillLen = len(skill)
-				}
-			}
 		} else {
-			m.message = fmt.Sprintf("Failed to fetch skills for %s", msg.repo)
-			m.repoSkills[msg.repo] = []string{} // Cache empty to avoid retrying
+			m.page.Message = fmt.Sprintf("Failed to fetch skills for %s", msg.repo)
+			m.repoSkills[msg.repo] = []string{}
 		}
+		m.rebuildItems()
 		return m, nil
 
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+		m.list.SetSize(msg.Width, msg.Height)
+		m.page.SetSize(msg.Width, msg.Height)
 	}
 
 	return m, nil
 }
 
-func (m *skillsModel) moveCursor(delta int) {
-	items := m.buildItems()
-	newCursor := m.cursor + delta
-
-	// Skip headers
-	for newCursor >= 0 && newCursor < len(items) && items[newCursor].itemType == itemTypeHeader {
-		newCursor += delta
-	}
-
-	if newCursor >= 0 && newCursor < len(items) {
-		m.cursor = newCursor
-	}
-}
-
 func (m skillsModel) handleSelect() (skillsModel, tea.Cmd) {
-	items := m.buildItems()
-	if m.cursor < 0 || m.cursor >= len(items) {
+	idx := m.list.SelectedIndex()
+	if idx < 0 || idx >= len(m.itemData) {
 		return m, nil
 	}
 
-	item := items[m.cursor]
+	item := m.list.Selected()
+	data := m.itemData[idx]
 
-	switch item.itemType {
-	case itemTypeHeader:
+	switch item.Kind {
+	case ui.KindHeader:
 		return m, nil
 
-	case itemTypeRepo:
+	case ui.KindExpandable:
 		// Toggle expand/collapse
-		if m.expanded[item.repo] {
-			// Collapse
-			m.expanded[item.repo] = false
+		if m.expanded[data.repo] {
+			m.expanded[data.repo] = false
+			m.rebuildItems()
 		} else {
-			// Expand - fetch skills if not cached
-			m.expanded[item.repo] = true
-			if m.getSkillsForRepo(item.repo) == nil {
-				m.loadingRepo = item.repo
-				return m, m.fetchRepoSkills(item.repo)
+			m.expanded[data.repo] = true
+			if m.getSkillsForRepo(data.repo) == nil {
+				m.loadingRepo = data.repo
+				m.rebuildItems()
+				return m, m.fetchRepoSkills(data.repo)
 			}
+			m.rebuildItems()
 		}
 		return m, nil
 
-	case itemTypeAction:
+	case ui.KindAction:
 		m.processing = true
-		m.message = "Processing..."
-		return m, m.runGlobalAction(item.actionType)
+		m.page.Processing = true
+		if data.actionType == "install-repo" {
+			m.page.Message = fmt.Sprintf("Installing all from %s...", data.repo)
+			return m, m.installRepo(data.repo)
+		}
+		m.page.Message = "Processing..."
+		return m, m.runGlobalAction(data.actionType)
 
-	case itemTypeRepoAction:
+	case ui.KindToggle:
 		m.processing = true
-		m.message = fmt.Sprintf("Installing all from %s...", item.repo)
-		return m, m.installRepo(item.repo)
-
-	case itemTypeSkill:
-		m.processing = true
-		if item.installed {
-			m.message = fmt.Sprintf("Removing %s...", item.skill)
-			return m, m.removeSkill(item.skill)
+		m.page.Processing = true
+		if item.State == ui.StateChecked {
+			m.page.Message = fmt.Sprintf("Removing %s...", data.skill)
+			return m, m.removeSkill(data.skill)
 		} else {
-			m.message = fmt.Sprintf("Installing %s...", item.skill)
-			return m, m.installSkill(item.repo, item.skill)
+			m.page.Message = fmt.Sprintf("Installing %s...", data.skill)
+			return m, m.installSkill(data.repo, data.skill)
 		}
 	}
 
@@ -362,8 +354,6 @@ func (m skillsModel) fetchRepoSkills(repo string) tea.Cmd {
 		if err != nil {
 			return repoSkillsFetchedMsg{repo: repo, skills: []string{}, err: err}
 		}
-
-		// Parse the output to extract skill names
 		skills := parseSkillsListOutput(string(output))
 		return repoSkillsFetchedMsg{repo: repo, skills: skills, err: nil}
 	}
@@ -374,11 +364,6 @@ func parseSkillsListOutput(output string) []string {
 	cleanOutput := stripAnsi(output)
 	lines := strings.Split(cleanOutput, "\n")
 
-	// Skills appear after "Available Skills" line
-	// Format (with box-drawing characters):
-	// │    skill-name
-	// │
-	// │      Description text...
 	inSkillsSection := false
 	for _, line := range lines {
 		if strings.Contains(line, "Available Skills") {
@@ -390,13 +375,10 @@ func parseSkillsListOutput(output string) []string {
 			continue
 		}
 
-		// Stop at "Use --skill" line
 		if strings.Contains(line, "Use --skill") {
 			break
 		}
 
-		// Remove box-drawing characters and trim
-		// The line format is: "│    skill-name" or "│      description"
 		cleaned := line
 		cleaned = strings.ReplaceAll(cleaned, "│", "")
 		cleaned = strings.ReplaceAll(cleaned, "├", "")
@@ -404,17 +386,13 @@ func parseSkillsListOutput(output string) []string {
 		cleaned = strings.ReplaceAll(cleaned, "┌", "")
 		cleaned = strings.ReplaceAll(cleaned, "◇", "")
 
-		// Count leading spaces before trimming
 		leadingSpaces := len(cleaned) - len(strings.TrimLeft(cleaned, " "))
 		trimmed := strings.TrimSpace(cleaned)
 
-		// Skip empty lines
 		if trimmed == "" {
 			continue
 		}
 
-		// Skill names have ~4 leading spaces, descriptions have more (~6)
-		// Skill names are single words (no spaces)
 		if leadingSpaces <= 5 && !strings.Contains(trimmed, " ") && len(trimmed) > 0 {
 			if isValidSkillName(trimmed) {
 				skills = append(skills, trimmed)
@@ -496,151 +474,16 @@ func (m skillsModel) viewWithBreadcrumb(breadcrumbs ...string) string {
 		return ""
 	}
 
-	var b strings.Builder
-
-	// Title with optional breadcrumb
+	m.page.Breadcrumbs = breadcrumbs
 	if len(breadcrumbs) > 0 {
-		b.WriteString(ui.RenderBreadcrumb(breadcrumbs...) + "\n\n")
+		m.page.Help = ui.DefaultHelpWithBack()
 	} else {
-		b.WriteString(ui.TitleStyle.Render("Skills") + "\n\n")
+		m.page.Help = ui.DefaultHelp()
 	}
 
-	items := m.buildItems()
+	m.page.Content = m.list.Render(m.page.ContentHeight())
 
-	// Calculate visible range
-	// Account for: title (1 line) + blank line (1) + help (1) + message (1) = 4 lines
-	visibleHeight := m.height - 4
-	if visibleHeight < 1 {
-		visibleHeight = 1
-	}
-	startIdx := 0
-	if m.cursor > visibleHeight-3 {
-		startIdx = m.cursor - visibleHeight + 3
-	}
-	endIdx := startIdx + visibleHeight
-	if endIdx > len(items) {
-		endIdx = len(items)
-	}
-
-	for i := startIdx; i < endIdx; i++ {
-		item := items[i]
-		selected := i == m.cursor
-
-		line := m.renderItem(item, selected)
-		b.WriteString(line + "\n")
-	}
-
-	// Help
-	helpText := "↑/↓ navigate • enter select/toggle • q quit"
-	if len(breadcrumbs) > 0 {
-		helpText = "↑/↓ navigate • enter select/toggle • esc back • q quit"
-	}
-	b.WriteString(ui.HelpStyle.Render(helpText))
-
-	// Message
-	if m.message != "" {
-		b.WriteString("\n")
-		if m.processing {
-			b.WriteString(ui.ActionStyle.Render(m.message))
-		} else {
-			b.WriteString(ui.SuccessStyle.Render(m.message))
-		}
-	}
-
-	return b.String()
-}
-
-func (m skillsModel) renderItem(item skillItem, selected bool) string {
-	switch item.itemType {
-	case itemTypeHeader:
-		return ui.RenderSection(item.description)
-
-	case itemTypeAction:
-		prefix := "  "
-		if selected {
-			prefix = ui.IconSelected + " "
-			return ui.SelectedStyle.Render(prefix + item.description)
-		}
-		return ui.ActionStyle.Render(prefix + item.description)
-
-	case itemTypeRepo:
-		var arrow string
-		if item.expanded {
-			arrow = ui.IconArrowDown
-		} else {
-			arrow = ui.IconArrowRight
-		}
-
-		prefix := "  "
-		paddedRepo := fmt.Sprintf("%-*s", m.maxSkillLen, item.repo)
-		if selected {
-			prefix = ui.IconSelected + " "
-			return ui.SelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedRepo)) +
-				ui.MutedStyle.Render(fmt.Sprintf("  %s", item.description))
-		}
-		return ui.NormalStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedRepo)) +
-			ui.MutedStyle.Render(fmt.Sprintf("  %s", item.description))
-
-	case itemTypeRepoAction:
-		prefix := "      "
-		if selected {
-			prefix = "    " + ui.IconSelected + " "
-			return ui.SelectedStyle.Render(prefix + item.description)
-		}
-		return ui.ActionStyle.Render(prefix + item.description)
-
-	case itemTypeSkill:
-		var status string
-		var style lipgloss.Style
-
-		if item.installed {
-			status = ui.IconCheck
-			style = ui.SuccessStyle
-		} else {
-			status = "○"
-			style = ui.MutedStyle
-		}
-
-		// Nested skill under expanded repo
-		if item.isNested {
-			prefix := "      "
-			if selected {
-				prefix = "    " + ui.IconSelected + " "
-				return ui.SelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
-			}
-			return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
-		}
-
-		// Top-level skill (in My Skills or Installed section)
-		prefix := "  "
-		paddedSkill := fmt.Sprintf("%-*s", m.maxSkillLen, item.skill)
-		if selected {
-			prefix = ui.IconSelected + " "
-		}
-
-		// My Skills section: don't show repo name
-		if item.isMySkill {
-			if selected {
-				return ui.SelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
-			}
-			return style.Render(fmt.Sprintf("%s%s %s", prefix, status, item.skill))
-		}
-
-		// Installed section: show repo name aligned
-		if selected {
-			return ui.SelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedSkill)) +
-				ui.MutedStyle.Render(fmt.Sprintf("  %s", item.repo))
-		}
-
-		repoInfo := ""
-		if item.repo != "" {
-			repoInfo = ui.MutedStyle.Render(fmt.Sprintf("  %s", item.repo))
-		}
-
-		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedSkill)) + repoInfo
-	}
-
-	return ""
+	return m.page.Render()
 }
 
 func getInstalledSkills() []string {
@@ -652,22 +495,15 @@ func getInstalledSkills() []string {
 		return installed
 	}
 
-	// Strip ANSI escape codes and parse output format:
-	// Global Skills
-	//
-	// skill-name ~/.agents/skills/skill-name
-	//   Agents: ...
 	cleanOutput := stripAnsi(string(output))
 	lines := strings.Split(cleanOutput, "\n")
 	for _, line := range lines {
-		// Skip lines that start with whitespace (agent info lines)
 		if len(line) > 0 && (line[0] == ' ' || line[0] == '\t') {
 			continue
 		}
 
 		line = strings.TrimSpace(line)
 
-		// Skip empty lines, headers, and info messages
 		if line == "" ||
 			strings.Contains(line, "No global skills") ||
 			strings.Contains(line, "Global") ||
@@ -676,12 +512,9 @@ func getInstalledSkills() []string {
 			continue
 		}
 
-		// Format: "skill-name ~/.agents/skills/skill-name"
-		// First word is the skill name
 		parts := strings.Fields(line)
 		if len(parts) >= 1 {
 			skillName := parts[0]
-			// Validate it looks like a skill name (not a path, not a header)
 			if !strings.HasPrefix(skillName, "/") &&
 				!strings.HasPrefix(skillName, "~") &&
 				!strings.Contains(skillName, ":") &&
@@ -695,7 +528,6 @@ func getInstalledSkills() []string {
 }
 
 func runSkillsUI() {
-	// Check if skills CLI is installed
 	if _, err := exec.LookPath("skills"); err != nil {
 		red := color.New(color.FgRed).SprintFunc()
 		fmt.Printf("%s skills CLI not installed. Run: npm install -g skills\n", red("❌"))
@@ -703,10 +535,6 @@ func runSkillsUI() {
 	}
 
 	m := initialSkillsModel()
-	m.items = m.buildItems()
-
-	// Skip first header
-	m.cursor = 1
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {

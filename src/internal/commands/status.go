@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/jterrazz/jterrazz-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -24,34 +25,8 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 }
 
-// Styles
-var (
-	subtle     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	highlight  = lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
-	special    = lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
-	success    = lipgloss.NewStyle().Foreground(lipgloss.Color("82"))
-	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
-	warning    = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
-
-	titleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("212")).
-			MarginTop(1)
-
-	sectionStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("99"))
-
-	subSectionStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
-			Italic(true)
-
-	dimStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241"))
-)
-
 func showStatus() {
-	fmt.Println(titleStyle.Render("j status"))
+	fmt.Println(ui.TitleStyle.MarginTop(1).Render("j status"))
 	fmt.Println()
 
 	printSystemInfo()
@@ -67,24 +42,24 @@ func printSystemInfo() {
 	user := os.Getenv("USER")
 	shell := filepath.Base(os.Getenv("SHELL"))
 
-	fmt.Printf("%s • %s\n", special.Render(osInfo), dimStyle.Render(arch))
-	fmt.Printf("%s • %s • %s\n\n", dimStyle.Render(hostname), dimStyle.Render(user), dimStyle.Render(shell))
+	fmt.Printf("%s • %s\n", ui.SpecialStyle.Render(osInfo), ui.MutedStyle.Render(arch))
+	fmt.Printf("%s • %s • %s\n\n", ui.MutedStyle.Render(hostname), ui.MutedStyle.Render(user), ui.MutedStyle.Render(shell))
 }
 
 func printSystemSection() {
-	fmt.Println(sectionStyle.Render("System"))
+	fmt.Println(ui.SectionStyle.Render("System"))
 	fmt.Println()
 
 	// Setup subsection
-	fmt.Println(subSectionStyle.Render("Setup"))
+	fmt.Println(ui.SubSectionStyle.Render("Setup"))
 	printSetupTable()
 
 	// macOS Security subsection
-	fmt.Println(subSectionStyle.Render("macOS Security"))
+	fmt.Println(ui.SubSectionStyle.Render("macOS Security"))
 	printMacOSSecurityTable()
 
 	// Identity subsection
-	fmt.Println(subSectionStyle.Render("Identity"))
+	fmt.Println(ui.SubSectionStyle.Render("Identity"))
 	printIdentityTable()
 }
 
@@ -94,20 +69,20 @@ func printSetupTable() {
 	for _, item := range SetupItems {
 		installed, detail := item.CheckFn()
 		if installed {
-			rows = append(rows, []string{item.Name, detail, success.Render("✓")})
+			rows = append(rows, []string{item.Name, detail, ui.SuccessStyle.Render("✓")})
 		} else {
-			rows = append(rows, []string{item.Name, "", errorStyle.Render("✗")})
+			rows = append(rows, []string{item.Name, "", ui.DangerStyle.Render("✗")})
 		}
 	}
 
 	t := table.New().
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+		BorderStyle(ui.BorderStyle).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			if col == 0 {
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("212")).PaddingLeft(1).PaddingRight(1).Width(14)
+				return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorPrimary)).PaddingLeft(1).PaddingRight(1).Width(14)
 			}
-			return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1)
+			return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorMuted)).PaddingLeft(1).PaddingRight(1)
 		}).
 		Rows(rows...)
 
@@ -128,24 +103,24 @@ func printSecurityCheckTable(checks []securityCheck) {
 		ok, detail := check.checkFn()
 		var status string
 		if ok == check.goodWhen {
-			status = success.Render("✓")
+			status = ui.SuccessStyle.Render("✓")
 		} else {
-			status = warning.Render("!")
+			status = ui.WarningStyle.Render("!")
 		}
 		rows = append(rows, []string{check.name, check.description, detail, status})
 	}
 
 	t := table.New().
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+		BorderStyle(ui.BorderStyle).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch col {
 			case 0:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("212")).PaddingLeft(1).PaddingRight(1).Width(16)
+				return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorPrimary)).PaddingLeft(1).PaddingRight(1).Width(16)
 			case 1:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1).Width(30)
+				return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorMuted)).PaddingLeft(1).PaddingRight(1).Width(30)
 			case 2:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("86")).PaddingLeft(1).PaddingRight(1)
+				return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorSpecial)).PaddingLeft(1).PaddingRight(1)
 			default:
 				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 			}
@@ -277,7 +252,7 @@ func printNetworkTable() {
 	for _, line := range strings.Split(string(wifiOut), "\n") {
 		if strings.Contains(line, " SSID:") {
 			ssid := strings.TrimSpace(strings.TrimPrefix(line, " SSID:"))
-			rows = append(rows, []string{"wifi", special.Render(ssid)})
+			rows = append(rows, []string{"wifi", ui.SpecialStyle.Render(ssid)})
 			break
 		}
 	}
@@ -286,16 +261,16 @@ func printNetworkTable() {
 	vpnOut, _ := exec.Command("scutil", "--nc", "list").Output()
 	vpnConnected := strings.Contains(string(vpnOut), "(Connected)")
 	if vpnConnected {
-		rows = append(rows, []string{"vpn", success.Render("connected")})
+		rows = append(rows, []string{"vpn", ui.SuccessStyle.Render("connected")})
 	} else {
-		rows = append(rows, []string{"vpn", dimStyle.Render("disconnected")})
+		rows = append(rows, []string{"vpn", ui.MutedStyle.Render("disconnected")})
 	}
 
 	// Local IP
 	ifconfigOut, _ := exec.Command("ipconfig", "getifaddr", "en0").Output()
 	localIP := strings.TrimSpace(string(ifconfigOut))
 	if localIP != "" {
-		rows = append(rows, []string{"local ip", dimStyle.Render(localIP)})
+		rows = append(rows, []string{"local ip", ui.MutedStyle.Render(localIP)})
 	}
 
 	// Public IP (with timeout, prefer IPv4)
@@ -305,7 +280,7 @@ func printNetworkTable() {
 		publicIP = strings.TrimSpace(string(out))
 	}
 	if publicIP != "" {
-		rows = append(rows, []string{"public ip", dimStyle.Render(publicIP)})
+		rows = append(rows, []string{"public ip", ui.MutedStyle.Render(publicIP)})
 	}
 
 	// DNS servers (only show valid IPs)
@@ -340,7 +315,7 @@ func printNetworkTable() {
 		}
 	}
 	if len(dnsServers) > 0 {
-		rows = append(rows, []string{"dns", dimStyle.Render(strings.Join(dnsServers, ", "))})
+		rows = append(rows, []string{"dns", ui.MutedStyle.Render(strings.Join(dnsServers, ", "))})
 	}
 
 	// Listening ports count
@@ -351,9 +326,9 @@ func printNetworkTable() {
 		listenCount = len(listenLines) - 1 // subtract header
 	}
 	if listenCount > 0 {
-		rows = append(rows, []string{"listening", warning.Render(fmt.Sprintf("%d ports", listenCount))})
+		rows = append(rows, []string{"listening", ui.WarningStyle.Render(fmt.Sprintf("%d ports", listenCount))})
 	} else {
-		rows = append(rows, []string{"listening", dimStyle.Render("0 ports")})
+		rows = append(rows, []string{"listening", ui.MutedStyle.Render("0 ports")})
 	}
 
 	// Active connections count
@@ -364,15 +339,15 @@ func printNetworkTable() {
 			establishedCount++
 		}
 	}
-	rows = append(rows, []string{"connections", dimStyle.Render(fmt.Sprintf("%d active", establishedCount))})
+	rows = append(rows, []string{"connections", ui.MutedStyle.Render(fmt.Sprintf("%d active", establishedCount))})
 
 	if len(rows) > 0 {
 		t := table.New().
 			Border(lipgloss.RoundedBorder()).
-			BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+			BorderStyle(ui.BorderStyle).
 			StyleFunc(func(row, col int) lipgloss.Style {
 				if col == 0 {
-					return lipgloss.NewStyle().Foreground(lipgloss.Color("212")).PaddingLeft(1).PaddingRight(1).Width(14)
+					return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorPrimary)).PaddingLeft(1).PaddingRight(1).Width(14)
 				}
 				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 			}).
@@ -392,34 +367,34 @@ func printDiskTable() {
 	// Developer folder
 	developerPath := home + "/Developer"
 	if size := getDirSize(developerPath); size > 0 {
-		mainRows = append(mainRows, []string{"~/Developer", special.Render(formatBytes(size))})
+		mainRows = append(mainRows, []string{"~/Developer", ui.SpecialStyle.Render(formatBytes(size))})
 	}
 
 	// Applications
 	appsPath := "/Applications"
 	if size := getDirSize(appsPath); size > 0 {
-		mainRows = append(mainRows, []string{"/Applications", dimStyle.Render(formatBytes(size))})
+		mainRows = append(mainRows, []string{"/Applications", ui.MutedStyle.Render(formatBytes(size))})
 	}
 
 	// Documents
 	documentsPath := home + "/Documents"
 	if size := getDirSize(documentsPath); size > 0 {
-		mainRows = append(mainRows, []string{"~/Documents", dimStyle.Render(formatBytes(size))})
+		mainRows = append(mainRows, []string{"~/Documents", ui.MutedStyle.Render(formatBytes(size))})
 	}
 
 	// Downloads
 	downloadsPath := home + "/Downloads"
 	if size := getDirSize(downloadsPath); size > 0 {
-		mainRows = append(mainRows, []string{"~/Downloads", warning.Render(formatBytes(size))})
+		mainRows = append(mainRows, []string{"~/Downloads", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	if len(mainRows) > 0 {
 		t := table.New().
 			Border(lipgloss.RoundedBorder()).
-			BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+			BorderStyle(ui.BorderStyle).
 			StyleFunc(func(row, col int) lipgloss.Style {
 				if col == 0 {
-					return lipgloss.NewStyle().Foreground(lipgloss.Color("212")).PaddingLeft(1).PaddingRight(1).Width(18)
+					return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorPrimary)).PaddingLeft(1).PaddingRight(1).Width(18)
 				}
 				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 			}).
@@ -429,7 +404,7 @@ func printDiskTable() {
 	}
 
 	// Caches & cleanable section
-	fmt.Println(subSectionStyle.Render("Caches & Cleanable"))
+	fmt.Println(ui.SubSectionStyle.Render("Caches & Cleanable"))
 	cacheRows := [][]string{}
 
 	// Docker
@@ -437,112 +412,112 @@ func printDiskTable() {
 		out, _ := exec.Command("docker", "system", "df", "--format", "{{.Size}}").Output()
 		dockerLines := strings.Split(strings.TrimSpace(string(out)), "\n")
 		if len(dockerLines) > 0 && dockerLines[0] != "" {
-			cacheRows = append(cacheRows, []string{"docker", warning.Render(strings.Join(dockerLines, " + "))})
+			cacheRows = append(cacheRows, []string{"docker", ui.WarningStyle.Render(strings.Join(dockerLines, " + "))})
 		}
 	}
 
 	// Xcode derived data
 	xcodeDerivedData := home + "/Library/Developer/Xcode/DerivedData"
 	if size := getDirSize(xcodeDerivedData); size > 0 {
-		cacheRows = append(cacheRows, []string{"xcode derived", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"xcode derived", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// Xcode archives
 	xcodeArchives := home + "/Library/Developer/Xcode/Archives"
 	if size := getDirSize(xcodeArchives); size > 0 {
-		cacheRows = append(cacheRows, []string{"xcode archives", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"xcode archives", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// iOS Device Support
 	iosDeviceSupport := home + "/Library/Developer/Xcode/iOS DeviceSupport"
 	if size := getDirSize(iosDeviceSupport); size > 0 {
-		cacheRows = append(cacheRows, []string{"ios device support", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"ios device support", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// CocoaPods cache
 	cocoapodsCache := home + "/Library/Caches/CocoaPods"
 	if size := getDirSize(cocoapodsCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"cocoapods cache", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"cocoapods cache", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// Homebrew cache
 	brewCache := home + "/Library/Caches/Homebrew"
 	if size := getDirSize(brewCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"homebrew cache", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"homebrew cache", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// Multipass
 	if commandExists("multipass") {
 		multipassData := home + "/Library/Application Support/multipassd"
 		if size := getDirSize(multipassData); size > 0 {
-			cacheRows = append(cacheRows, []string{"multipass", warning.Render(formatBytes(size))})
+			cacheRows = append(cacheRows, []string{"multipass", ui.WarningStyle.Render(formatBytes(size))})
 		}
 	}
 
 	// npm cache
 	npmCache := home + "/.npm"
 	if size := getDirSize(npmCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"npm cache", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"npm cache", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// pnpm cache
 	pnpmCache := home + "/Library/pnpm"
 	if size := getDirSize(pnpmCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"pnpm cache", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"pnpm cache", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// Yarn cache
 	yarnCache := home + "/Library/Caches/Yarn"
 	if size := getDirSize(yarnCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"yarn cache", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"yarn cache", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// Go module cache
 	goCache := home + "/go/pkg/mod"
 	if size := getDirSize(goCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"go modules", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"go modules", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// Gradle cache
 	gradleCache := home + "/.gradle/caches"
 	if size := getDirSize(gradleCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"gradle cache", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"gradle cache", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// System logs
 	systemLogs := "/var/log"
 	if size := getDirSize(systemLogs); size > 0 {
-		cacheRows = append(cacheRows, []string{"system logs", dimStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"system logs", ui.MutedStyle.Render(formatBytes(size))})
 	}
 
 	// User logs
 	userLogs := home + "/Library/Logs"
 	if size := getDirSize(userLogs); size > 0 {
-		cacheRows = append(cacheRows, []string{"user logs", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"user logs", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	// Trash
 	trashPath := home + "/.Trash"
 	if size := getDirSize(trashPath); size > 0 {
-		cacheRows = append(cacheRows, []string{"trash", warning.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"trash", ui.WarningStyle.Render(formatBytes(size))})
 	}
 
 	if len(cacheRows) > 0 {
 		t := table.New().
 			Border(lipgloss.RoundedBorder()).
-			BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+			BorderStyle(ui.BorderStyle).
 			StyleFunc(func(row, col int) lipgloss.Style {
 				if col == 0 {
-					return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1).Width(20)
+					return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorMuted)).PaddingLeft(1).PaddingRight(1).Width(20)
 				}
 				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 			}).
 			Rows(cacheRows...)
 
 		fmt.Println(t.Render())
-		fmt.Printf("%s %s", dimStyle.Render("run"), special.Render("j clean"))
+		fmt.Printf("%s %s", ui.MutedStyle.Render("run"), ui.SpecialStyle.Render("j clean"))
 		if commandExists("mo") {
-			fmt.Printf(" %s %s", dimStyle.Render("or"), special.Render("mo clean"))
+			fmt.Printf(" %s %s", ui.MutedStyle.Render("or"), ui.SpecialStyle.Render("mo clean"))
 		}
 		fmt.Println()
 	}
@@ -550,7 +525,7 @@ func printDiskTable() {
 }
 
 func printToolsSection() {
-	fmt.Println(sectionStyle.Render("Tools"))
+	fmt.Println(ui.SectionStyle.Render("Tools"))
 	fmt.Println()
 
 	categories := []PackageCategory{
@@ -568,21 +543,21 @@ func printToolsSection() {
 			continue
 		}
 
-		fmt.Println(subSectionStyle.Render(string(category)))
+		fmt.Println(ui.SubSectionStyle.Render(string(category)))
 		printPackageTable(packages)
 	}
 }
 
 func printResourcesSection() {
-	fmt.Println(sectionStyle.Render("Resources"))
+	fmt.Println(ui.SectionStyle.Render("Resources"))
 	fmt.Println()
 
 	// Network subsection
-	fmt.Println(subSectionStyle.Render("Network"))
+	fmt.Println(ui.SubSectionStyle.Render("Network"))
 	printNetworkTable()
 
 	// Disk Usage subsection
-	fmt.Println(subSectionStyle.Render("Disk Usage"))
+	fmt.Println(ui.SubSectionStyle.Render("Disk Usage"))
 	printDiskTable()
 }
 
@@ -593,16 +568,16 @@ func printPackageTable(packages []Package) {
 
 		var status string
 		if installed {
-			status = success.Render("✓")
+			status = ui.SuccessStyle.Render("✓")
 			if extra != "" {
 				if extra == "running" {
-					status += " " + success.Render(extra)
+					status += " " + ui.SuccessStyle.Render(extra)
 				} else {
-					status += " " + warning.Render(extra)
+					status += " " + ui.WarningStyle.Render(extra)
 				}
 			}
 		} else {
-			status = errorStyle.Render("✗")
+			status = ui.DangerStyle.Render("✗")
 		}
 
 		rows = append(rows, []string{pkg.Name, version, pkg.Method.String(), status})
@@ -610,15 +585,15 @@ func printPackageTable(packages []Package) {
 
 	t := table.New().
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+		BorderStyle(ui.BorderStyle).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch col {
 			case 0:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("212")).PaddingLeft(1).PaddingRight(1).Width(14)
+				return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorPrimary)).PaddingLeft(1).PaddingRight(1).Width(14)
 			case 1:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1).Width(14)
+				return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorMuted)).PaddingLeft(1).PaddingRight(1).Width(14)
 			case 2:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).PaddingLeft(1).PaddingRight(1).Width(8)
+				return lipgloss.NewStyle().Foreground(lipgloss.Color(ui.ColorMuted)).PaddingLeft(1).PaddingRight(1).Width(8)
 			default:
 				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 			}
