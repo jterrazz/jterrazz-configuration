@@ -455,13 +455,18 @@ var Tools = []Tool{
 	},
 	{
 		Name:         "ghostty",
-		Command:      "ghostty",
 		Formula:      "ghostty",
 		Method:       InstallBrewCask,
 		Category:     CategoryApps,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"ghostty-config"},
-		VersionFn:    tool.VersionFromBrewCask("ghostty"),
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Ghostty.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromBrewCask("ghostty")()
+			return CheckResult{Installed: true, Version: version}
+		},
 	},
 	{
 		Name:         "gpg",
@@ -498,13 +503,18 @@ var Tools = []Tool{
 	{
 		Name:         "zed",
 		Description:  "Zed code editor",
-		Command:      "zed",
 		Formula:      "zed",
 		Method:       InstallBrewCask,
 		Category:     CategoryApps,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"zed-config"},
-		VersionFn:    tool.VersionFromBrewCask("zed"),
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Zed.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromBrewCask("zed")()
+			return CheckResult{Installed: true, Version: version}
+		},
 	},
 
 	// ==========================================================================

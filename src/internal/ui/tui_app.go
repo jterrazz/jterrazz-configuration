@@ -27,13 +27,25 @@ type ActionDoneMsg struct {
 // RefreshMsg signals that items should be rebuilt
 type RefreshMsg struct{}
 
+// NavigateMsg signals navigation to a new page
+type NavigateMsg struct {
+	Config   AppConfig
+	InitFunc func() // Optional initialization function to run before navigation
+}
+
+// NavigateBackMsg signals to go back to previous page
+type NavigateBackMsg struct{}
+
 // App is a generic TUI application model
 type App struct {
-	config     AppConfig
-	list       *List
-	page       *Page
-	processing bool
-	quitting   bool
+	config      AppConfig
+	configStack []AppConfig // Stack for navigation history
+	list        *List
+	page        *Page
+	processing  bool
+	quitting    bool
+	width       int
+	height      int
 }
 
 // NewApp creates a new TUI application
@@ -61,19 +73,30 @@ func (a *App) Init() tea.Cmd {
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Always allow quit with ctrl+c
+		if key.Matches(msg, key.NewBinding(key.WithKeys("ctrl+c"))) {
+			a.quitting = true
+			return a, tea.Quit
+		}
+
 		if a.processing {
 			return a, nil
 		}
 
 		switch {
 		case key.Matches(msg, key.NewBinding(key.WithKeys("esc"))):
+			// First try custom OnBack handler
 			if a.config.OnBack != nil && a.config.OnBack() {
+				return a, nil
+			}
+			// Then try navigation stack
+			if a.navigateBack() {
 				return a, nil
 			}
 			a.quitting = true
 			return a, tea.Quit
 
-		case key.Matches(msg, key.NewBinding(key.WithKeys("q", "ctrl+c"))):
+		case key.Matches(msg, key.NewBinding(key.WithKeys("q"))):
 			a.quitting = true
 			return a, tea.Quit
 
@@ -95,10 +118,30 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case RefreshMsg:
+		a.processing = false
+		a.page.Processing = false
 		a.rebuildItems()
 		return a, nil
 
+	case NavigateMsg:
+		a.processing = false
+		a.page.Processing = false
+		if msg.InitFunc != nil {
+			msg.InitFunc()
+		}
+		a.navigateTo(msg.Config)
+		return a, tea.WindowSize()
+
+	case NavigateBackMsg:
+		if a.navigateBack() {
+			return a, nil
+		}
+		a.quitting = true
+		return a, tea.Quit
+
 	case tea.WindowSizeMsg:
+		a.width = msg.Width
+		a.height = msg.Height
 		a.list.SetSize(msg.Width, msg.Height)
 		a.page.SetSize(msg.Width, msg.Height)
 
@@ -106,6 +149,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Custom message handler
 		if a.config.OnMessage != nil {
 			cmd := a.config.OnMessage(msg)
+			a.processing = false
+			a.page.Processing = false
 			a.rebuildItems()
 			return a, cmd
 		}
@@ -167,6 +212,68 @@ func (a *App) rebuildItems() {
 	for a.list.Cursor > 0 && !a.list.Items[a.list.Cursor].Selectable() {
 		a.list.Cursor--
 	}
+
+	if a.width > 0 && a.height > 0 {
+		a.list.SetSize(a.width, a.height)
+	}
+}
+
+func (a *App) navigateTo(config AppConfig) {
+	// Push current config to stack
+	a.configStack = append(a.configStack, a.config)
+
+	// Build breadcrumbs from stack
+	var breadcrumbs []string
+	for _, c := range a.configStack {
+		breadcrumbs = append(breadcrumbs, c.Title)
+	}
+	config.Breadcrumbs = breadcrumbs
+
+	// Switch to new config
+	a.config = config
+	a.page = NewPage(config.Title)
+	a.page.Breadcrumbs = breadcrumbs
+
+	// Build new list with cursor at top
+	items := a.config.BuildItems()
+	a.list = NewList(items)
+	a.list.CalculateLabelWidth()
+
+	if a.width > 0 && a.height > 0 {
+		a.list.SetSize(a.width, a.height)
+		a.page.SetSize(a.width, a.height)
+	}
+}
+
+func (a *App) navigateBack() bool {
+	if len(a.configStack) == 0 {
+		return false
+	}
+
+	// Pop from stack
+	a.config = a.configStack[len(a.configStack)-1]
+	a.configStack = a.configStack[:len(a.configStack)-1]
+
+	// Rebuild breadcrumbs
+	var breadcrumbs []string
+	for _, c := range a.configStack {
+		breadcrumbs = append(breadcrumbs, c.Title)
+	}
+
+	a.page = NewPage(a.config.Title)
+	a.page.Breadcrumbs = breadcrumbs
+
+	// Build new list with cursor at top
+	items := a.config.BuildItems()
+	a.list = NewList(items)
+	a.list.CalculateLabelWidth()
+
+	if a.width > 0 && a.height > 0 {
+		a.list.SetSize(a.width, a.height)
+		a.page.SetSize(a.width, a.height)
+	}
+
+	return true
 }
 
 // SetMessage sets a status message

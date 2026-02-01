@@ -1,9 +1,8 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/jterrazz/jterrazz-cli/internal/config"
+	"github.com/jterrazz/jterrazz-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -37,13 +36,13 @@ func createSubcommand(sub config.RunSubcommand) *cobra.Command {
 		Short: sub.Description,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := sub.RunFn(args); err != nil {
-				fmt.Printf("Error: %v\n", err)
+				ui.PrintError(err.Error())
 			}
 		},
 	}
 
 	if sub.MinArgs > 0 {
-		cmd.Use = fmt.Sprintf("%s [args]", sub.Name)
+		cmd.Use = sub.Name + " [args]"
 		cmd.Args = cobra.MinimumNArgs(sub.MinArgs)
 	}
 

@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/tool"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
@@ -33,11 +31,11 @@ Examples:
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if cleanAll {
-			fmt.Println(ui.Cyan("🧹 Cleaning everything..."))
+			ui.PrintAction("🧹", "Cleaning everything...")
 			for _, c := range config.Cleanables {
 				runCleanable(c)
 			}
-			fmt.Println(ui.Green("✅ System cleanup completed"))
+			ui.PrintDone("System cleanup completed")
 			return
 		}
 
@@ -46,16 +44,16 @@ Examples:
 			return
 		}
 
-		fmt.Println(ui.Cyan("🧹 Cleaning selected items..."))
+		ui.PrintAction("🧹", "Cleaning selected items...")
 		for _, name := range args {
 			c := config.GetCleanableByName(name)
 			if c == nil {
-				ui.PrintError(fmt.Sprintf("Unknown clean item: %s", name))
+				ui.PrintError("Unknown clean item: " + name)
 				continue
 			}
 			runCleanable(*c)
 		}
-		fmt.Println(ui.Green("✅ Cleanup completed"))
+		ui.PrintDone("Cleanup completed")
 	},
 }
 
@@ -65,32 +63,30 @@ func init() {
 }
 
 func listCleanItems() {
-	fmt.Println(ui.Cyan("Available clean items:"))
-	fmt.Println()
+	ui.PrintInfo("Available clean items:")
+	ui.PrintEmpty()
 
 	for _, c := range config.Cleanables {
 		available := c.RequiresCmd == "" || config.CommandExists(c.RequiresCmd)
-		status := ui.Red("✗")
-		if available {
-			status = ui.Green("✓")
-		}
-		fmt.Printf("  %s %-14s %s\n", status, c.Name, ui.Dim(c.Description))
+		ui.PrintRow(available, c.Name, c.Description)
 	}
 
-	fmt.Println()
-	fmt.Println(ui.Dim("Usage: j clean <item> [item...]"))
-	fmt.Println(ui.Dim("       j clean --all"))
+	ui.PrintEmpty()
+	ui.PrintUsage(
+		"Usage: j clean <item> [item...]",
+		"       j clean --all",
+	)
 }
 
 func runCleanable(c config.Cleanable) {
 	if c.RequiresCmd != "" && !config.CommandExists(c.RequiresCmd) {
-		ui.PrintWarning(fmt.Sprintf("%s not found, skipping", c.RequiresCmd))
+		ui.PrintWarning(c.RequiresCmd + " not found, skipping")
 		return
 	}
 
-	fmt.Println(ui.Cyan(fmt.Sprintf("🧹 %s...", c.Description)))
+	ui.PrintAction("🧹", c.Description+"...")
 	if c.CleanFn != nil {
 		c.CleanFn()
 	}
-	fmt.Println(ui.Green(fmt.Sprintf("  ✅ %s completed", c.Name)))
+	ui.PrintRow(true, c.Name, "completed")
 }

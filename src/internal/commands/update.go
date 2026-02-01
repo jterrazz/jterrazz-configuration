@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/tool"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
@@ -37,9 +35,9 @@ Examples:
 		// Check for --all flag
 		allFlag, _ := cmd.Flags().GetBool("all")
 		if allFlag {
-			fmt.Println(ui.Cyan("🔄 Updating all packages..."))
+			ui.PrintAction("🔄", "Updating all packages...")
 			config.UpdateAll()
-			fmt.Println(ui.Green("✅ All updates completed"))
+			ui.PrintDone("All updates completed")
 			return
 		}
 
@@ -52,19 +50,19 @@ Examples:
 			}
 		}
 		if anyFlagSet {
-			fmt.Println(ui.Green("✅ Updates completed"))
+			ui.PrintDone("Updates completed")
 			return
 		}
 
 		// If specific package names provided
 		if len(args) > 0 {
-			fmt.Println(ui.Cyan("🔄 Updating selected packages..."))
+			ui.PrintAction("🔄", "Updating selected packages...")
 			for _, name := range args {
 				if err := config.UpdatePackageByName(name); err != nil {
 					ui.PrintError(err.Error())
 				}
 			}
-			fmt.Println(ui.Green("✅ Updates completed"))
+			ui.PrintDone("Updates completed")
 			return
 		}
 
@@ -80,27 +78,25 @@ func init() {
 	for _, pm := range config.PackageManagers {
 		flagPtr := new(bool)
 		updateFlags[pm.Flag] = flagPtr
-		updateCmd.Flags().BoolVar(flagPtr, pm.Flag, false, fmt.Sprintf("Update %s packages", pm.Name))
+		updateCmd.Flags().BoolVar(flagPtr, pm.Flag, false, "Update "+pm.Name+" packages")
 	}
 
 	rootCmd.AddCommand(updateCmd)
 }
 
 func listUpdateOptions() {
-	fmt.Println(ui.Cyan("Available update targets:"))
-	fmt.Println()
+	ui.PrintInfo("Available update targets:")
+	ui.PrintEmpty()
 
 	for _, pm := range config.PackageManagers {
 		available := config.CommandExists(pm.RequiresCmd)
-		status := ui.Red("✗")
-		if available {
-			status = ui.Green("✓")
-		}
-		fmt.Printf("  %s %-12s %s\n", status, pm.Name, ui.Dim("--"+pm.Flag))
+		ui.PrintRow(available, pm.Name, "--"+pm.Flag)
 	}
 
-	fmt.Println()
-	fmt.Println(ui.Dim("Usage: j update <package> [package...]"))
-	fmt.Println(ui.Dim("       j update --brew --npm"))
-	fmt.Println(ui.Dim("       j update --all"))
+	ui.PrintEmpty()
+	ui.PrintUsage(
+		"Usage: j update <package> [package...]",
+		"       j update --brew --npm",
+		"       j update --all",
+	)
 }

@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"fmt"
+	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
@@ -13,6 +13,13 @@ import (
 // Skills State
 // =============================================================================
 
+// skillAction represents action items in skills UI
+type skillAction string
+
+const (
+	skillActionInstallRepo skillAction = "install-repo"
+)
+
 type skillsState struct {
 	expanded    map[string]bool
 	installed   []string
@@ -22,9 +29,9 @@ type skillsState struct {
 }
 
 type skillItemData struct {
-	repo       string
-	skill      string
-	actionType string
+	repo   string
+	skill  string
+	action skillAction
 }
 
 var skills skillsState
@@ -45,16 +52,6 @@ func initSkillsState() {
 func buildSkillsItems() []ui.Item {
 	var items []ui.Item
 	skills.itemData = nil
-
-	// Actions section
-	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Actions"})
-	skills.itemData = append(skills.itemData, skillItemData{actionType: "install-favorites"})
-
-	items = append(items, ui.Item{Kind: ui.KindAction, Label: "Install favorites"})
-	skills.itemData = append(skills.itemData, skillItemData{actionType: "install-favorites"})
-
-	items = append(items, ui.Item{Kind: ui.KindAction, Label: "Remove all skills"})
-	skills.itemData = append(skills.itemData, skillItemData{actionType: "remove-all"})
 
 	// Favorites section
 	favorites := config.GetFavoriteSkills()
@@ -118,9 +115,9 @@ func buildSkillsItems() []ui.Item {
 					installedCount++
 				}
 			}
-			desc = fmt.Sprintf("%d skills", len(repoSkills))
+			desc = strconv.Itoa(len(repoSkills)) + " skills"
 			if installedCount > 0 {
-				desc = fmt.Sprintf("%d/%d installed", installedCount, len(repoSkills))
+				desc = strconv.Itoa(installedCount) + "/" + strconv.Itoa(len(repoSkills)) + " installed"
 			}
 		}
 
@@ -138,7 +135,7 @@ func buildSkillsItems() []ui.Item {
 				Label:  "Install all",
 				Indent: 1,
 			})
-			skills.itemData = append(skills.itemData, skillItemData{repo: repo.Name, actionType: "install-repo"})
+			skills.itemData = append(skills.itemData, skillItemData{repo: repo.Name, action: skillActionInstallRepo})
 
 			for _, s := range repoSkills {
 				state := ui.StateUnchecked
@@ -202,23 +199,19 @@ func handleSkillsSelect(index int, item ui.Item) tea.Cmd {
 	case ui.KindExpandable:
 		if skills.expanded[data.repo] {
 			skills.expanded[data.repo] = false
+			return func() tea.Msg { return ui.RefreshMsg{} }
 		} else {
 			skills.expanded[data.repo] = true
 			if skills.repoSkills[data.repo] == nil {
 				skills.loadingRepo = data.repo
 				return fetchSkillsCmd(data.repo)
 			}
+			return func() tea.Msg { return ui.RefreshMsg{} }
 		}
-		return nil
 
 	case ui.KindAction:
-		switch data.actionType {
-		case "install-repo":
+		if data.action == skillActionInstallRepo {
 			return installRepoCmd(data.repo)
-		case "install-favorites":
-			return installFavoritesCmd()
-		case "remove-all":
-			return removeAllSkillsCmd()
 		}
 
 	case ui.KindToggle:
@@ -273,71 +266,49 @@ func fetchSkillsCmd(repo string) tea.Cmd {
 func installSkillCmd(repo, name string) tea.Cmd {
 	return func() tea.Msg {
 		if err := skill.Install(repo, name); err != nil {
-			return ui.ActionDoneMsg{Message: fmt.Sprintf("Error: %s", err), Err: err}
+			return ui.ActionDoneMsg{Message: "Error: " + err.Error(), Err: err}
 		}
-		return ui.ActionDoneMsg{Message: fmt.Sprintf("Installed %s", name)}
+		return ui.ActionDoneMsg{Message: "Installed " + name}
 	}
 }
 
 func installRepoCmd(repo string) tea.Cmd {
 	return func() tea.Msg {
 		if err := skill.InstallAll(repo); err != nil {
-			return ui.ActionDoneMsg{Message: fmt.Sprintf("Error: %s", err), Err: err}
+			return ui.ActionDoneMsg{Message: "Error: " + err.Error(), Err: err}
 		}
-		return ui.ActionDoneMsg{Message: fmt.Sprintf("Installed all from %s", repo)}
-	}
-}
-
-func installFavoritesCmd() tea.Cmd {
-	return func() tea.Msg {
-		favorites := config.GetFavoriteSkills()
-		installed := 0
-		for _, s := range favorites {
-			if err := skill.Install(s.Repo, s.Skill); err == nil {
-				installed++
-			}
-		}
-		if installed < len(favorites) {
-			return ui.ActionDoneMsg{Message: fmt.Sprintf("Installed %d/%d favorites", installed, len(favorites))}
-		}
-		return ui.ActionDoneMsg{Message: fmt.Sprintf("Installed %d favorites", installed)}
+		return ui.ActionDoneMsg{Message: "Installed all from " + repo}
 	}
 }
 
 func removeSkillCmd(name string) tea.Cmd {
 	return func() tea.Msg {
 		if err := skill.Remove(name); err != nil {
-			return ui.ActionDoneMsg{Message: fmt.Sprintf("Error: %v", err), Err: err}
+			return ui.ActionDoneMsg{Message: "Error: " + err.Error(), Err: err}
 		}
-		return ui.ActionDoneMsg{Message: fmt.Sprintf("Removed %s", name)}
-	}
-}
-
-func removeAllSkillsCmd() tea.Cmd {
-	return func() tea.Msg {
-		if err := skill.RemoveAll(); err != nil {
-			return ui.ActionDoneMsg{Message: "Failed to remove skills", Err: err}
-		}
-		return ui.ActionDoneMsg{Message: "Removed all skills"}
+		return ui.ActionDoneMsg{Message: "Removed " + name}
 	}
 }
 
 // =============================================================================
-// Skills Runner
+// Skills Config
 // =============================================================================
 
-func runSkillsUI() {
-	if !skill.IsInstalled() {
-		fmt.Printf("%s skills CLI not installed. Run: npm install -g skills\n", ui.Red("❌"))
-		return
-	}
-
+func skillsConfig() ui.AppConfig {
 	initSkillsState()
-
-	ui.RunOrExit(ui.AppConfig{
+	return ui.AppConfig{
 		Title:      "Skills",
 		BuildItems: buildSkillsItems,
 		OnSelect:   handleSkillsSelect,
 		OnMessage:  handleSkillsMessage,
-	})
+	}
+}
+
+func runSkillsUI() {
+	if !skill.IsInstalled() {
+		ui.PrintError("skills CLI not installed. Run: npm install -g skills")
+		return
+	}
+
+	ui.RunOrExit(skillsConfig())
 }

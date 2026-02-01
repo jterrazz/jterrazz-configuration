@@ -40,7 +40,7 @@ func RenderTable(rows [][]string, columns []ColumnConfig) string {
 var (
 	// StatusTableColumns is for tables with name, detail, status
 	StatusTableColumns = []ColumnConfig{
-		{Width: 14, Color: ColorPrimary},
+		{Width: 18, Color: ColorPrimary},
 		{Width: 0, Color: ColorMuted},
 		{Width: 0, Color: ""},
 	}

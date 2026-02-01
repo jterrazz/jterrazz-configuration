@@ -1,6 +1,10 @@
 package ui
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"fmt"
+
+	"github.com/charmbracelet/lipgloss"
+)
 
 // Shared color palette for TUI
 const (
@@ -76,6 +80,7 @@ const (
 	IconSelected   = "›"
 	IconCheck      = "✓"
 	IconCross      = "✗"
+	IconWarning    = "!"
 	IconBullet     = "•"
 	IconArrowRight = "▶"
 	IconArrowDown  = "▼"
@@ -105,4 +110,66 @@ func RenderBreadcrumb(parts ...string) string {
 		}
 	}
 	return result
+}
+
+// =============================================================================
+// Status Indicators
+// =============================================================================
+
+// Status represents the state of an item (installed, missing, warning, etc.)
+type Status int
+
+const (
+	StatusSuccess Status = iota // Installed, configured, running
+	StatusDanger                // Not installed, error
+	StatusWarning               // Needs attention
+	StatusMuted                 // Neutral/informational
+)
+
+// StatusIcon returns the icon for a status
+func StatusIcon(s Status) string {
+	switch s {
+	case StatusSuccess:
+		return SuccessStyle.Render(IconCheck)
+	case StatusDanger:
+		return DangerStyle.Render(IconCross)
+	case StatusWarning:
+		return WarningStyle.Render(IconWarning)
+	default:
+		return MutedStyle.Render(IconBullet)
+	}
+}
+
+// StatusFromBool returns StatusSuccess if true, StatusDanger if false
+func StatusFromBool(ok bool) Status {
+	if ok {
+		return StatusSuccess
+	}
+	return StatusDanger
+}
+
+// =============================================================================
+// Row Renderers for CLI output
+// =============================================================================
+
+// Row represents a styled output row
+type Row struct {
+	Status Status
+	Label  string
+	Detail string
+	Extra  string
+}
+
+// Render renders a row with status icon
+func (r Row) Render() string {
+	icon := StatusIcon(r.Status)
+	if r.Detail != "" {
+		return fmt.Sprintf("  %s %-14s %s", icon, r.Label, MutedStyle.Render(r.Detail))
+	}
+	return fmt.Sprintf("  %s %s", icon, r.Label)
+}
+
+// RenderRow is a convenience function for quick row rendering
+func RenderRow(ok bool, label string, detail string) string {
+	return Row{Status: StatusFromBool(ok), Label: label, Detail: detail}.Render()
 }

@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
@@ -28,17 +26,17 @@ func init() {
 func runScript(name string) {
 	script := config.GetScriptByName(name)
 	if script == nil {
-		ui.PrintError(fmt.Sprintf("Unknown script: %s", name))
+		ui.PrintError("Unknown script: " + name)
 		return
 	}
 
 	if script.RunFn == nil {
-		ui.PrintError(fmt.Sprintf("No runner for script: %s", name))
+		ui.PrintError("No runner for script: " + name)
 		return
 	}
 
 	if err := script.RunFn(); err != nil {
-		ui.PrintError(fmt.Sprintf("Failed to run %s: %v", name, err))
+		ui.PrintError("Failed to run " + name + ": " + err.Error())
 	}
 }
 
@@ -50,6 +48,13 @@ func runSetupItem(name string) {
 // =============================================================================
 // Setup Data
 // =============================================================================
+
+// setupAction represents navigation/action items in setup
+type setupAction string
+
+const (
+	setupActionSkills setupAction = "skills"
+)
 
 // setupItemNames maps list indices to script/action names
 var setupItemNames []string
@@ -63,14 +68,7 @@ func buildSetupItems() []ui.Item {
 	setupItemNames = append(setupItemNames, "")
 
 	items = append(items, ui.Item{Kind: ui.KindAction, Label: "skills", Description: "Manage AI agent skills"})
-	setupItemNames = append(setupItemNames, "skills")
-
-	// Actions section
-	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Actions"})
-	setupItemNames = append(setupItemNames, "")
-
-	items = append(items, ui.Item{Kind: ui.KindAction, Label: "Setup all missing"})
-	setupItemNames = append(setupItemNames, "setup-missing")
+	setupItemNames = append(setupItemNames, string(setupActionSkills))
 
 	// Configuration section - from config.Scripts with CheckFn
 	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Configuration"})
@@ -145,33 +143,24 @@ func handleSetupSelect(index int, item ui.Item) tea.Cmd {
 	}
 	name := setupItemNames[index]
 
-	switch name {
-	case "skills":
-		// Open skills sub-view - handled specially
-		return nil
-
-	case "setup-missing":
+	switch setupAction(name) {
+	case setupActionSkills:
 		return func() tea.Msg {
-			count := 0
-			for _, script := range config.Scripts {
-				if script.CheckFn != nil {
-					result := script.CheckFn()
-					if !result.Installed {
-						runScript(script.Name)
-						count++
-					}
-				}
+			return ui.NavigateMsg{
+				InitFunc: initSkillsState,
+				Config: ui.AppConfig{
+					Title:      "Skills",
+					BuildItems: buildSkillsItems,
+					OnSelect:   handleSkillsSelect,
+					OnMessage:  handleSkillsMessage,
+				},
 			}
-			if count == 0 {
-				return ui.ActionDoneMsg{Message: "Everything already configured"}
-			}
-			return ui.ActionDoneMsg{Message: fmt.Sprintf("Configured %d items", count)}
 		}
 
 	default:
 		return func() tea.Msg {
 			runScript(name)
-			return ui.ActionDoneMsg{Message: fmt.Sprintf("Completed %s", name)}
+			return ui.ActionDoneMsg{Message: "Completed " + name}
 		}
 	}
 }
