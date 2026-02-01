@@ -3,198 +3,145 @@ package commands
 import (
 	"fmt"
 
-	"github.com/fatih/color"
+	"github.com/jterrazz/jterrazz-cli/internal/config"
+	"github.com/jterrazz/jterrazz-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
 var installAll bool
 
 var installCmd = &cobra.Command{
-	Use:   "install [package...]",
-	Short: "Install development packages",
-	Long: `Install development packages.
+	Use:   "install [tool...]",
+	Short: "Install development tools",
+	Long: `Install development tools.
 
 Examples:
-  j install --all           Install all packages
-  j install brew            Install Homebrew
+  j install --all           Install all tools
+  j install homebrew        Install Homebrew
   j install nvm             Install NVM
-  j install go python node  Install specific packages
-  j install                  List available packages`,
+  j install go python node  Install specific tools
+  j install                 List available tools`,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		var suggestions []string
-		for _, pkg := range Packages {
-			// Don't suggest already-specified packages
-			alreadyUsed := false
-			for _, arg := range args {
-				if arg == pkg.Name {
-					alreadyUsed = true
-					break
-				}
-			}
-			if !alreadyUsed {
-				suggestions = append(suggestions, pkg.Name)
-			}
+		var all []string
+		for _, tool := range config.Tools {
+			all = append(all, tool.Name)
 		}
-		return suggestions, cobra.ShellCompDirectiveNoFileComp
+		return filterUsedArgs(all, args), cobra.ShellCompDirectiveNoFileComp
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		cyan := color.New(color.FgCyan).SprintFunc()
-		green := color.New(color.FgGreen).SprintFunc()
-
-		// If --all flag, install everything
 		if installAll {
-			fmt.Println(cyan("🚀 Installing all development tools..."))
-			installHomebrew()
-			installAllPackages()
+			fmt.Println(ui.Cyan("🚀 Installing all development tools..."))
+			installAllTools()
 			return
 		}
 
-		// If no args, list available packages
 		if len(args) == 0 {
-			listAvailablePackages()
+			listAvailableTools()
 			return
 		}
 
-		// Install specific packages
-		fmt.Println(cyan("📦 Installing selected packages..."))
+		fmt.Println(ui.Cyan("📦 Installing selected tools..."))
 		for _, name := range args {
-			installPackageByName(name)
+			installToolByName(name)
 		}
-		fmt.Println(green("✅ Done"))
+		fmt.Println(ui.Green("✅ Done"))
 	},
 }
 
 func init() {
-	installCmd.Flags().BoolVarP(&installAll, "all", "a", false, "Install all packages")
+	installCmd.Flags().BoolVarP(&installAll, "all", "a", false, "Install all tools")
 	rootCmd.AddCommand(installCmd)
 }
 
-func listAvailablePackages() {
-	cyan := color.New(color.FgCyan).SprintFunc()
-	green := color.New(color.FgGreen).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
-	dim := color.New(color.FgHiBlack).SprintFunc()
-
-	fmt.Println(cyan("Available packages:"))
+func listAvailableTools() {
+	fmt.Println(ui.Cyan("Available tools:"))
 	fmt.Println()
 
-	currentCategory := PackageCategory("")
-	for _, pkg := range Packages {
-		if pkg.Category != currentCategory {
-			currentCategory = pkg.Category
-			fmt.Printf("%s\n", dim(string(currentCategory)))
+	currentCategory := config.ToolCategory("")
+	for _, tool := range config.Tools {
+		if tool.Category != currentCategory {
+			currentCategory = tool.Category
+			fmt.Printf("%s\n", ui.Dim(string(currentCategory)))
 		}
 
-		installed, _, _ := CheckPackage(pkg)
-		status := red("✗")
-		if installed {
-			status = green("✓")
+		result := tool.Check()
+		status := ui.Red("✗")
+		if result.Installed {
+			status = ui.Green("✓")
 		}
 
-		fmt.Printf("  %s %-14s %s\n", status, pkg.Name, dim(pkg.Method.String()))
+		fmt.Printf("  %s %-14s %s\n", status, tool.Name, ui.Dim(tool.Method.String()))
 	}
 
 	fmt.Println()
-	fmt.Println(dim("Usage: j install <package> [package...]"))
-	fmt.Println(dim("       j install --all"))
+	fmt.Println(ui.Dim("Usage: j install <tool> [tool...]"))
+	fmt.Println(ui.Dim("       j install --all"))
 }
 
-func installPackageByName(name string) {
-	green := color.New(color.FgGreen).SprintFunc()
+func installToolByName(name string) {
+	// Handle "brew" as alias for "homebrew"
+	if name == "brew" {
+		name = "homebrew"
+	}
 
-	// Special case for brew
-	if name == "brew" || name == "homebrew" {
-		installHomebrew()
+	tool := config.GetToolByName(name)
+	if tool == nil {
+		ui.PrintError(fmt.Sprintf("Unknown tool: %s", name))
 		return
 	}
 
-	// Find package
-	pkg := GetPackageByName(name)
-	if pkg == nil {
-		printError(fmt.Sprintf("Unknown package: %s", name))
+	result := tool.Check()
+	if result.Installed {
+		fmt.Printf("  %s %s already installed\n", ui.Green("✓"), tool.Name)
 		return
 	}
 
-	installed, _, _ := CheckPackage(*pkg)
-	if installed {
-		fmt.Printf("  %s %s already installed\n", green("✓"), pkg.Name)
-		return
-	}
-
-	// Check dependencies using the Dependencies field
-	for _, depName := range pkg.Dependencies {
-		depPkg := GetPackageByName(depName)
-		if depPkg == nil {
+	// Check dependencies
+	for _, depName := range tool.Dependencies {
+		depTool := config.GetToolByName(depName)
+		if depTool == nil {
 			continue
 		}
-		depInstalled, _, _ := CheckPackage(*depPkg)
-		if !depInstalled {
-			printError(fmt.Sprintf("%s required for %s. Run: j install %s", depName, pkg.Name, depName))
+		depResult := depTool.Check()
+		if !depResult.Installed {
+			ui.PrintError(fmt.Sprintf("%s required for %s. Run: j install %s", depName, tool.Name, depName))
 			return
 		}
 	}
 
-	fmt.Printf("  📥 Installing %s...\n", pkg.Name)
-	if err := InstallPackage(*pkg); err != nil {
-		printError(fmt.Sprintf("Failed to install %s: %v", pkg.Name, err))
+	fmt.Printf("  📥 Installing %s...\n", tool.Name)
+	if err := tool.Install(); err != nil {
+		ui.PrintError(fmt.Sprintf("Failed to install %s: %v", tool.Name, err))
 	} else {
-		fmt.Printf("  %s %s installed\n", green("✓"), pkg.Name)
-		// Run setup command if defined
-		if pkg.SetupCmd != "" {
-			runSetupItem(pkg.SetupCmd)
+		fmt.Printf("  %s %s installed\n", ui.Green("✓"), tool.Name)
+		// Run post-install scripts
+		for _, scriptName := range tool.Scripts {
+			runSetupItem(scriptName)
 		}
 	}
 }
 
-func installHomebrew() {
-	green := color.New(color.FgGreen).SprintFunc()
+func installAllTools() {
+	// Get tools in dependency order (topological sort)
+	tools := config.GetToolsInDependencyOrder()
 
-	for _, pkg := range Packages {
-		if pkg.Name == "homebrew" {
-			installed, _, _ := CheckPackage(pkg)
-			if installed {
-				fmt.Printf("  %s Homebrew already installed\n", green("✓"))
-				return
-			}
-			if pkg.InstallFn != nil {
-				fmt.Println("  📥 Installing Homebrew...")
-				if err := pkg.InstallFn(); err != nil {
-					printError(fmt.Sprintf("Failed to install Homebrew: %v", err))
-				}
-			}
-			return
-		}
-	}
-}
-
-func installAllPackages() {
-	green := color.New(color.FgGreen).SprintFunc()
-
-	// Get packages in dependency order (topological sort)
-	packages := GetPackagesInDependencyOrder()
-
-	for _, pkg := range packages {
-		// Skip homebrew (handled separately before this function)
-		if pkg.Name == "homebrew" {
-			continue
-		}
-
-		installed, _, _ := CheckPackage(pkg)
-		if installed {
-			fmt.Printf("  %s %s already installed\n", green("✓"), pkg.Name)
+	for _, tool := range tools {
+		result := tool.Check()
+		if result.Installed {
+			fmt.Printf("  %s %s already installed\n", ui.Green("✓"), tool.Name)
 			continue
 		}
 
 		// Check if all dependencies are satisfied
 		depsMissing := false
-		for _, depName := range pkg.Dependencies {
-			depPkg := GetPackageByName(depName)
-			if depPkg == nil {
+		for _, depName := range tool.Dependencies {
+			depTool := config.GetToolByName(depName)
+			if depTool == nil {
 				continue
 			}
-			depInstalled, _, _ := CheckPackage(*depPkg)
-			if !depInstalled {
-				printWarning(fmt.Sprintf("Skipping %s (%s not installed)", pkg.Name, depName))
+			depResult := depTool.Check()
+			if !depResult.Installed {
+				ui.PrintWarning(fmt.Sprintf("Skipping %s (%s not installed)", tool.Name, depName))
 				depsMissing = true
 				break
 			}
@@ -203,23 +150,23 @@ func installAllPackages() {
 			continue
 		}
 
-		// Special handling for nvm packages (need manual installation)
-		if pkg.Method == InstallNvm {
-			fmt.Printf("  📥 Installing %s (via nvm)...\n", pkg.Name)
-			printWarning(fmt.Sprintf("Run 'nvm install stable' to install %s", pkg.Name))
+		// Special handling for nvm tools (need manual installation)
+		if tool.Method == config.InstallNvm {
+			fmt.Printf("  📥 Installing %s (via nvm)...\n", tool.Name)
+			ui.PrintWarning(fmt.Sprintf("Run 'nvm install stable' to install %s", tool.Name))
 			continue
 		}
 
-		fmt.Printf("  📥 Installing %s...\n", pkg.Name)
-		if err := InstallPackage(pkg); err != nil {
-			printError(fmt.Sprintf("Failed to install %s: %v", pkg.Name, err))
+		fmt.Printf("  📥 Installing %s...\n", tool.Name)
+		if err := tool.Install(); err != nil {
+			ui.PrintError(fmt.Sprintf("Failed to install %s: %v", tool.Name, err))
 		} else {
-			// Run setup command if defined
-			if pkg.SetupCmd != "" {
-				runSetupItem(pkg.SetupCmd)
+			// Run post-install scripts
+			for _, scriptName := range tool.Scripts {
+				runSetupItem(scriptName)
 			}
 		}
 	}
 
-	fmt.Println(green("✅ All packages installed"))
+	fmt.Println(ui.Green("✅ All tools installed"))
 }

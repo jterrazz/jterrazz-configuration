@@ -1,6 +1,14 @@
 package ui
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
+
+const (
+	// IndentSpaces is the number of spaces per indent level
+	IndentSpaces = 4
+)
 
 // ItemKind defines the type of list item
 type ItemKind int
@@ -141,10 +149,5 @@ func (i Item) indentPrefix() string {
 	if i.Indent <= 0 {
 		return ""
 	}
-	// Each indent level adds 4 spaces
-	prefix := ""
-	for j := 0; j < i.Indent; j++ {
-		prefix += "    "
-	}
-	return prefix
+	return strings.Repeat(" ", i.Indent*IndentSpaces)
 }

@@ -4,13 +4,18 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/fatih/color"
+	"github.com/jterrazz/jterrazz-cli/internal/config"
+	"github.com/jterrazz/jterrazz-cli/internal/system"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
 )
+
+// boxCharsRegex matches box-drawing characters used in skills CLI output
+var boxCharsRegex = regexp.MustCompile(`[│├└┌◇]`)
 
 // skillItemData holds domain-specific data for each item
 type skillItemData struct {
@@ -32,7 +37,7 @@ type skillsModel struct {
 	quitting    bool
 }
 
-func initialSkillsModel() skillsModel {
+func newSkillsModel() skillsModel {
 	installed := getInstalledSkills()
 
 	m := skillsModel{
@@ -51,7 +56,7 @@ func initialSkillsModel() skillsModel {
 }
 
 // isInstalled checks if a skill is in the installed list
-func (m *skillsModel) isInstalled(skill string) bool {
+func (m skillsModel) isInstalled(skill string) bool {
 	for _, s := range m.installed {
 		if s == skill {
 			return true
@@ -61,7 +66,7 @@ func (m *skillsModel) isInstalled(skill string) bool {
 }
 
 // getSkillsForRepo returns cached skills or nil if not loaded yet
-func (m *skillsModel) getSkillsForRepo(repoName string) []string {
+func (m skillsModel) getSkillsForRepo(repoName string) []string {
 	if skills, ok := m.repoSkills[repoName]; ok {
 		return skills
 	}
@@ -69,7 +74,7 @@ func (m *skillsModel) getSkillsForRepo(repoName string) []string {
 }
 
 // findRepoForSkill finds which repo a skill belongs to
-func (m *skillsModel) findRepoForSkill(skill string) string {
+func (m skillsModel) findRepoForSkill(skill string) string {
 	for repoName, skills := range m.repoSkills {
 		for _, s := range skills {
 			if s == skill {
@@ -77,7 +82,7 @@ func (m *skillsModel) findRepoForSkill(skill string) string {
 			}
 		}
 	}
-	for _, s := range MySkills {
+	for _, s := range config.FavoriteSkills {
 		if s.Skill == skill {
 			return s.Repo
 		}
@@ -85,7 +90,7 @@ func (m *skillsModel) findRepoForSkill(skill string) string {
 	return ""
 }
 
-func (m *skillsModel) buildItems() ([]ui.Item, []skillItemData) {
+func (m skillsModel) buildItems() ([]ui.Item, []skillItemData) {
 	var items []ui.Item
 	var data []skillItemData
 
@@ -100,11 +105,12 @@ func (m *skillsModel) buildItems() ([]ui.Item, []skillItemData) {
 	data = append(data, skillItemData{actionType: "remove-all"})
 
 	// Favorites section
-	if len(MySkills) > 0 {
+	favorites := config.GetFavoriteSkills()
+	if len(favorites) > 0 {
 		items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Favorites"})
 		data = append(data, skillItemData{})
 
-		for _, s := range MySkills {
+		for _, s := range favorites {
 			state := ui.StateUnchecked
 			if m.isInstalled(s.Skill) {
 				state = ui.StateChecked
@@ -121,14 +127,7 @@ func (m *skillsModel) buildItems() ([]ui.Item, []skillItemData) {
 	// Installed section (skills not in Favorites)
 	var otherInstalled []string
 	for _, skill := range m.installed {
-		isFavorite := false
-		for _, s := range MySkills {
-			if s.Skill == skill {
-				isFavorite = true
-				break
-			}
-		}
-		if !isFavorite {
+		if !config.IsFavoriteSkill("", skill) {
 			otherInstalled = append(otherInstalled, skill)
 		}
 	}
@@ -152,7 +151,7 @@ func (m *skillsModel) buildItems() ([]ui.Item, []skillItemData) {
 	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Browse"})
 	data = append(data, skillItemData{})
 
-	for _, repo := range SkillRepos {
+	for _, repo := range config.GetAllSkillRepos() {
 		expanded := m.expanded[repo.Name]
 		repoSkills := m.getSkillsForRepo(repo.Name)
 		isLoading := m.loadingRepo == repo.Name
@@ -210,7 +209,7 @@ func (m *skillsModel) buildItems() ([]ui.Item, []skillItemData) {
 	return items, data
 }
 
-func (m *skillsModel) rebuildItems() {
+func (m skillsModel) rebuildItems() skillsModel {
 	items, data := m.buildItems()
 	cursor := m.list.Cursor
 	m.list = ui.NewList(items)
@@ -227,6 +226,7 @@ func (m *skillsModel) rebuildItems() {
 	for m.list.Cursor > 0 && !m.list.Items[m.list.Cursor].Selectable() {
 		m.list.Cursor--
 	}
+	return m
 }
 
 func (m skillsModel) Init() tea.Cmd {
@@ -260,7 +260,7 @@ func (m skillsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.page.Message = msg.message
 		m.page.Processing = false
 		m.installed = getInstalledSkills()
-		m.rebuildItems()
+		m = m.rebuildItems()
 		return m, nil
 
 	case repoSkillsFetchedMsg:
@@ -271,7 +271,7 @@ func (m skillsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.page.Message = fmt.Sprintf("Failed to fetch skills for %s", msg.repo)
 			m.repoSkills[msg.repo] = []string{}
 		}
-		m.rebuildItems()
+		m = m.rebuildItems()
 		return m, nil
 
 	case tea.WindowSizeMsg:
@@ -299,15 +299,15 @@ func (m skillsModel) handleSelect() (skillsModel, tea.Cmd) {
 		// Toggle expand/collapse
 		if m.expanded[data.repo] {
 			m.expanded[data.repo] = false
-			m.rebuildItems()
+			m = m.rebuildItems()
 		} else {
 			m.expanded[data.repo] = true
 			if m.getSkillsForRepo(data.repo) == nil {
 				m.loadingRepo = data.repo
-				m.rebuildItems()
+				m = m.rebuildItems()
 				return m, m.fetchRepoSkills(data.repo)
 			}
-			m.rebuildItems()
+			m = m.rebuildItems()
 		}
 		return m, nil
 
@@ -361,7 +361,7 @@ func (m skillsModel) fetchRepoSkills(repo string) tea.Cmd {
 
 func parseSkillsListOutput(output string) []string {
 	var skills []string
-	cleanOutput := stripAnsi(output)
+	cleanOutput := system.StripAnsi(output)
 	lines := strings.Split(cleanOutput, "\n")
 
 	inSkillsSection := false
@@ -379,12 +379,7 @@ func parseSkillsListOutput(output string) []string {
 			break
 		}
 
-		cleaned := line
-		cleaned = strings.ReplaceAll(cleaned, "│", "")
-		cleaned = strings.ReplaceAll(cleaned, "├", "")
-		cleaned = strings.ReplaceAll(cleaned, "└", "")
-		cleaned = strings.ReplaceAll(cleaned, "┌", "")
-		cleaned = strings.ReplaceAll(cleaned, "◇", "")
+		cleaned := boxCharsRegex.ReplaceAllString(line, "")
 
 		leadingSpaces := len(cleaned) - len(strings.TrimLeft(cleaned, " "))
 		trimmed := strings.TrimSpace(cleaned)
@@ -451,14 +446,23 @@ func (m skillsModel) runGlobalAction(actionType string) tea.Cmd {
 	return func() tea.Msg {
 		switch actionType {
 		case "install-my-skills":
-			for _, s := range MySkills {
+			favorites := config.GetFavoriteSkills()
+			installed := 0
+			for _, s := range favorites {
 				cmd := exec.Command("skills", "add", s.Repo, "-g", "-y", "--skill", s.Skill)
-				cmd.Run()
+				if err := cmd.Run(); err == nil {
+					installed++
+				}
 			}
-			return skillActionDoneMsg{message: fmt.Sprintf("Installed %d favorites", len(MySkills))}
+			if installed < len(favorites) {
+				return skillActionDoneMsg{message: fmt.Sprintf("Installed %d/%d favorites", installed, len(favorites))}
+			}
+			return skillActionDoneMsg{message: fmt.Sprintf("Installed %d favorites", installed)}
 		case "remove-all":
 			cmd := exec.Command("skills", "remove", "-g", "-y", "--all")
-			cmd.Run()
+			if err := cmd.Run(); err != nil {
+				return skillActionDoneMsg{message: "Failed to remove skills", err: err}
+			}
 			return skillActionDoneMsg{message: "Removed all skills"}
 		}
 		return skillActionDoneMsg{message: "Unknown action"}
@@ -495,7 +499,7 @@ func getInstalledSkills() []string {
 		return installed
 	}
 
-	cleanOutput := stripAnsi(string(output))
+	cleanOutput := system.StripAnsi(string(output))
 	lines := strings.Split(cleanOutput, "\n")
 	for _, line := range lines {
 		if len(line) > 0 && (line[0] == ' ' || line[0] == '\t') {
@@ -529,12 +533,11 @@ func getInstalledSkills() []string {
 
 func runSkillsUI() {
 	if _, err := exec.LookPath("skills"); err != nil {
-		red := color.New(color.FgRed).SprintFunc()
-		fmt.Printf("%s skills CLI not installed. Run: npm install -g skills\n", red("❌"))
+		fmt.Printf("%s skills CLI not installed. Run: npm install -g skills\n", ui.Red("❌"))
 		return
 	}
 
-	m := initialSkillsModel()
+	m := newSkillsModel()
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {

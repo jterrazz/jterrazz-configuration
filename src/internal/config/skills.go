@@ -1,11 +1,20 @@
-package commands
+package config
 
-// MySkills is the list of skills you want installed on your machine
+// SkillRepo represents a repository containing AI agent skills
+type SkillRepo struct {
+	Name        string // Repository name (owner/repo format)
+	Description string
+}
+
+// Skill represents a favorite/installed skill
+type Skill struct {
+	Repo  string // Repository (owner/repo format)
+	Skill string // Skill name within the repo
+}
+
+// FavoriteSkills is the list of skills you want installed on your machine
 // The "Install All" action will install these skills
-var MySkills = []struct {
-	Repo  string // Repository in owner/repo format
-	Skill string // Skill name
-}{
+var FavoriteSkills = []Skill{
 	{"anthropics/skills", "frontend-design"},
 	{"expo/skills", "upgrading-expo"},
 	{"giuseppe-trisciuoglio/developer-kit", "shadcn-ui"},
@@ -13,12 +22,6 @@ var MySkills = []struct {
 	{"tobi/qmd", "qmd"},
 	{"vercel-labs/agent-skills", "vercel-react-best-practices"},
 	{"vercel-labs/agent-skills", "vercel-react-native-skills"},
-}
-
-// SkillRepo represents a repository containing skills
-type SkillRepo struct {
-	Name        string // Repository name (owner/repo format)
-	Description string // Brief description
 }
 
 // SkillRepos is the list of recommended skill repositories
@@ -52,4 +55,22 @@ func GetSkillRepoByName(name string) *SkillRepo {
 		}
 	}
 	return nil
+}
+
+// GetFavoriteSkills returns all favorite skills
+func GetFavoriteSkills() []Skill {
+	return FavoriteSkills
+}
+
+// IsFavoriteSkill checks if a skill is in the favorites list
+// If repo is empty, only the skill name is checked
+func IsFavoriteSkill(repo, skill string) bool {
+	for _, fav := range FavoriteSkills {
+		if fav.Skill == skill {
+			if repo == "" || fav.Repo == repo {
+				return true
+			}
+		}
+	}
+	return false
 }

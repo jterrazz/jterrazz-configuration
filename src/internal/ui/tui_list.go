@@ -2,6 +2,15 @@ package ui
 
 import "strings"
 
+const (
+	// DefaultTerminalWidth is the default terminal width
+	DefaultTerminalWidth = 80
+	// DefaultTerminalHeight is the default terminal height
+	DefaultTerminalHeight = 24
+	// ScrollMargin is the number of lines to keep visible above/below cursor
+	ScrollMargin = 3
+)
+
 // List represents a scrollable list of items with cursor navigation
 type List struct {
 	Items      []Item
@@ -16,8 +25,8 @@ func NewList(items []Item) *List {
 	l := &List{
 		Items:  items,
 		Cursor: 0,
-		Width:  80,
-		Height: 24,
+		Width:  DefaultTerminalWidth,
+		Height: DefaultTerminalHeight,
 	}
 	// Start cursor on first selectable item
 	l.skipToSelectable(1)
@@ -100,8 +109,8 @@ func (l *List) Render(visibleHeight int) string {
 
 	// Calculate visible range with scrolling
 	startIdx := 0
-	if l.Cursor > visibleHeight-3 {
-		startIdx = l.Cursor - visibleHeight + 3
+	if l.Cursor > visibleHeight-ScrollMargin {
+		startIdx = l.Cursor - visibleHeight + ScrollMargin
 	}
 	endIdx := startIdx + visibleHeight
 	if endIdx > len(l.Items) {

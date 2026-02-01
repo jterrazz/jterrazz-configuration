@@ -1,0 +1,99 @@
+package system
+
+import (
+	"context"
+	"fmt"
+	"os/exec"
+	"strings"
+	"time"
+)
+
+// =============================================================================
+// Version Helpers - Build version detection functions from common patterns
+// =============================================================================
+
+// VersionFromCmd creates a version func that runs a command and parses output
+func VersionFromCmd(cmd string, args []string, parser func(string) string) func() string {
+	return func() string {
+		out, err := exec.Command(cmd, args...).CombinedOutput()
+		if err != nil {
+			return ""
+		}
+		return parser(string(out))
+	}
+}
+
+// VersionFromBrewFormula creates a version func that gets version from brew info
+func VersionFromBrewFormula(formula string) func() string {
+	return func() string {
+		out, err := exec.Command("brew", "list", "--versions", formula).Output()
+		if err != nil {
+			return ""
+		}
+		// Output: "formula 1.2.3" or "formula 1.2.3 1.2.2"
+		parts := strings.Fields(string(out))
+		if len(parts) >= 2 {
+			return parts[1]
+		}
+		return ""
+	}
+}
+
+// VersionFromBrewCask creates a version func that gets version from brew cask info
+func VersionFromBrewCask(cask string) func() string {
+	return func() string {
+		out, err := exec.Command("brew", "list", "--cask", "--versions", cask).Output()
+		if err != nil {
+			return ""
+		}
+		// Output: "cask 1.2.3"
+		parts := strings.Fields(string(out))
+		if len(parts) >= 2 {
+			return parts[1]
+		}
+		return ""
+	}
+}
+
+// VersionFromAppPlist creates a version func that reads version from app's Info.plist
+func VersionFromAppPlist(appName string) func() string {
+	return func() string {
+		plistPath := fmt.Sprintf("/Applications/%s.app/Contents/Info.plist", appName)
+		out, err := exec.Command("defaults", "read", plistPath, "CFBundleShortVersionString").Output()
+		if err != nil {
+			return ""
+		}
+		return strings.TrimSpace(string(out))
+	}
+}
+
+// CommandExists checks if a command exists in PATH
+func CommandExists(cmd string) bool {
+	_, err := exec.LookPath(cmd)
+	return err == nil
+}
+
+// GetCommandOutput runs a command and returns its trimmed output, or empty string on error
+func GetCommandOutput(name string, args ...string) string {
+	out, err := exec.Command(name, args...).Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// GetCommandOutputWithTimeout runs a command with a timeout and returns its trimmed output
+func GetCommandOutputWithTimeout(timeout time.Duration, name string, args ...string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, name, args...)
+	out, err := cmd.Output()
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return "", fmt.Errorf("command timed out after %v", timeout)
+		}
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
+}

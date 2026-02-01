@@ -3,16 +3,12 @@ package commands
 import (
 	"fmt"
 
-	"github.com/fatih/color"
+	"github.com/jterrazz/jterrazz-cli/internal/config"
+	"github.com/jterrazz/jterrazz-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
-var (
-	updateAll  bool
-	updateBrew bool
-	updateNpm  bool
-	updatePnpm bool
-)
+var updateFlags = make(map[string]*bool)
 
 var updateCmd = &cobra.Command{
 	Use:   "update [package...]",
@@ -28,60 +24,46 @@ Examples:
   j update claude opencode   Update specific packages
   j update                   List available options`,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		// Suggest brew packages for completion
-		var suggestions []string
-		for _, pkg := range Packages {
-			if pkg.Method == InstallBrewFormula || pkg.Method == InstallBrewCask {
-				alreadyUsed := false
-				for _, arg := range args {
-					if arg == pkg.Name {
-						alreadyUsed = true
-						break
-					}
-				}
-				if !alreadyUsed {
-					suggestions = append(suggestions, pkg.Name)
-				}
+		var all []string
+		for _, pkg := range config.Tools {
+			if pkg.Method == config.InstallBrewFormula || pkg.Method == config.InstallBrewCask {
+				all = append(all, pkg.Name)
 			}
 		}
-		return suggestions, cobra.ShellCompDirectiveNoFileComp
+		return filterUsedArgs(all, args), cobra.ShellCompDirectiveNoFileComp
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		cyan := color.New(color.FgCyan).SprintFunc()
-		green := color.New(color.FgGreen).SprintFunc()
-
-		// If --all flag, update everything
-		if updateAll {
-			fmt.Println(cyan("🔄 Updating all packages..."))
-			updateBrewPackages()
-			updateNpmPackages()
-			updatePnpmPackages()
-			fmt.Println(green("✅ All updates completed"))
+		// Check for --all flag
+		allFlag, _ := cmd.Flags().GetBool("all")
+		if allFlag {
+			fmt.Println(ui.Cyan("🔄 Updating all packages..."))
+			config.UpdateAll()
+			fmt.Println(ui.Green("✅ All updates completed"))
 			return
 		}
 
-		// If specific manager flags
-		if updateBrew || updateNpm || updatePnpm {
-			if updateBrew {
-				updateBrewPackages()
+		// Check for specific manager flags
+		anyFlagSet := false
+		for _, pm := range config.PackageManagers {
+			if flagVal, ok := updateFlags[pm.Flag]; ok && *flagVal {
+				anyFlagSet = true
+				config.UpdatePackageManager(pm)
 			}
-			if updateNpm {
-				updateNpmPackages()
-			}
-			if updatePnpm {
-				updatePnpmPackages()
-			}
-			fmt.Println(green("✅ Updates completed"))
+		}
+		if anyFlagSet {
+			fmt.Println(ui.Green("✅ Updates completed"))
 			return
 		}
 
 		// If specific package names provided
 		if len(args) > 0 {
-			fmt.Println(cyan("🔄 Updating selected packages..."))
+			fmt.Println(ui.Cyan("🔄 Updating selected packages..."))
 			for _, name := range args {
-				updatePackageByName(name)
+				if err := config.UpdatePackageByName(name); err != nil {
+					ui.PrintError(err.Error())
+				}
 			}
-			fmt.Println(green("✅ Updates completed"))
+			fmt.Println(ui.Green("✅ Updates completed"))
 			return
 		}
 
@@ -91,130 +73,33 @@ Examples:
 }
 
 func init() {
-	updateCmd.Flags().BoolVarP(&updateAll, "all", "a", false, "Update all package managers")
-	updateCmd.Flags().BoolVar(&updateBrew, "brew", false, "Update Homebrew packages")
-	updateCmd.Flags().BoolVar(&updateNpm, "npm", false, "Update npm global packages")
-	updateCmd.Flags().BoolVar(&updatePnpm, "pnpm", false, "Update pnpm global packages")
+	updateCmd.Flags().BoolP("all", "a", false, "Update all package managers")
+
+	// Dynamically add flags for each package manager
+	for _, pm := range config.PackageManagers {
+		flagPtr := new(bool)
+		updateFlags[pm.Flag] = flagPtr
+		updateCmd.Flags().BoolVar(flagPtr, pm.Flag, false, fmt.Sprintf("Update %s packages", pm.Name))
+	}
+
 	rootCmd.AddCommand(updateCmd)
 }
 
 func listUpdateOptions() {
-	cyan := color.New(color.FgCyan).SprintFunc()
-	green := color.New(color.FgGreen).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
-	dim := color.New(color.FgHiBlack).SprintFunc()
-
-	fmt.Println(cyan("Available update targets:"))
+	fmt.Println(ui.Cyan("Available update targets:"))
 	fmt.Println()
 
-	managers := []struct {
-		name      string
-		flag      string
-		available bool
-	}{
-		{"homebrew", "--brew", commandExists("brew")},
-		{"npm", "--npm", commandExists("npm")},
-		{"pnpm", "--pnpm", commandExists("pnpm")},
-	}
-
-	for _, m := range managers {
-		status := red("✗")
-		if m.available {
-			status = green("✓")
+	for _, pm := range config.PackageManagers {
+		available := config.CommandExists(pm.RequiresCmd)
+		status := ui.Red("✗")
+		if available {
+			status = ui.Green("✓")
 		}
-		fmt.Printf("  %s %-12s %s\n", status, m.name, dim(m.flag))
+		fmt.Printf("  %s %-12s %s\n", status, pm.Name, ui.Dim("--"+pm.Flag))
 	}
 
 	fmt.Println()
-	fmt.Println(dim("Usage: j update <package> [package...]"))
-	fmt.Println(dim("       j update --brew --npm"))
-	fmt.Println(dim("       j update --all"))
-}
-
-func updateBrewPackages() {
-	cyan := color.New(color.FgCyan).SprintFunc()
-	green := color.New(color.FgGreen).SprintFunc()
-
-	if !commandExists("brew") {
-		printWarning("Homebrew not found, skipping")
-		return
-	}
-	fmt.Println(cyan("🍺 Updating Homebrew packages..."))
-	runBrewCommand("update")
-	runBrewCommand("upgrade")
-	fmt.Println(green("  ✅ Homebrew update completed"))
-}
-
-func updateNpmPackages() {
-	cyan := color.New(color.FgCyan).SprintFunc()
-	green := color.New(color.FgGreen).SprintFunc()
-
-	if !commandExists("npm") {
-		printWarning("npm not found, skipping")
-		return
-	}
-	fmt.Println(cyan("📦 Updating npm global packages..."))
-	runCommand("npm", "update", "-g")
-	fmt.Println(green("  ✅ npm update completed"))
-}
-
-func updatePnpmPackages() {
-	cyan := color.New(color.FgCyan).SprintFunc()
-	green := color.New(color.FgGreen).SprintFunc()
-
-	if !commandExists("pnpm") {
-		printWarning("pnpm not found, skipping")
-		return
-	}
-	fmt.Println(cyan("📦 Updating pnpm global packages..."))
-	runCommand("pnpm", "update", "-g")
-	fmt.Println(green("  ✅ pnpm update completed"))
-}
-
-func updatePackageByName(name string) {
-	green := color.New(color.FgGreen).SprintFunc()
-
-	// Find package in our list
-	pkg := GetPackageByName(name)
-	if pkg != nil {
-		switch pkg.Method {
-		case InstallBrewFormula:
-			if !commandExists("brew") {
-				printError("Homebrew not found")
-				return
-			}
-			fmt.Printf("  📥 Updating %s...\n", name)
-			runBrewCommand("upgrade", pkg.Formula)
-			fmt.Printf("  %s %s updated\n", green("✓"), name)
-			return
-		case InstallBrewCask:
-			if !commandExists("brew") {
-				printError("Homebrew not found")
-				return
-			}
-			fmt.Printf("  📥 Updating %s...\n", name)
-			runBrewCommand("upgrade", "--cask", pkg.Formula)
-			fmt.Printf("  %s %s updated\n", green("✓"), name)
-			return
-		case InstallNpm:
-			if !commandExists("npm") {
-				printError("npm not found")
-				return
-			}
-			fmt.Printf("  📥 Updating %s...\n", name)
-			runCommand("npm", "update", "-g", pkg.Formula)
-			fmt.Printf("  %s %s updated\n", green("✓"), name)
-			return
-		}
-	}
-
-	// Try as a direct brew package name
-	if commandExists("brew") {
-		fmt.Printf("  📥 Updating %s...\n", name)
-		runBrewCommand("upgrade", name)
-		fmt.Printf("  %s %s updated\n", green("✓"), name)
-		return
-	}
-
-	printError(fmt.Sprintf("Unknown package: %s", name))
+	fmt.Println(ui.Dim("Usage: j update <package> [package...]"))
+	fmt.Println(ui.Dim("       j update --brew --npm"))
+	fmt.Println(ui.Dim("       j update --all"))
 }
