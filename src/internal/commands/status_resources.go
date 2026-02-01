@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jterrazz/jterrazz-cli/internal/config"
+	"github.com/jterrazz/jterrazz-cli/internal/tool"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
 )
 
@@ -135,25 +136,25 @@ func printDiskTable() {
 	// Developer folder
 	developerPath := home + "/Developer"
 	if size := config.GetDirSize(developerPath); size > 0 {
-		mainRows = append(mainRows, []string{"~/Developer", ui.SpecialStyle.Render(formatBytes(size))})
+		mainRows = append(mainRows, []string{"~/Developer", ui.SpecialStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Applications
 	appsPath := "/Applications"
 	if size := config.GetDirSize(appsPath); size > 0 {
-		mainRows = append(mainRows, []string{"/Applications", ui.MutedStyle.Render(formatBytes(size))})
+		mainRows = append(mainRows, []string{"/Applications", ui.MutedStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Documents
 	documentsPath := home + "/Documents"
 	if size := config.GetDirSize(documentsPath); size > 0 {
-		mainRows = append(mainRows, []string{"~/Documents", ui.MutedStyle.Render(formatBytes(size))})
+		mainRows = append(mainRows, []string{"~/Documents", ui.MutedStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Downloads
 	downloadsPath := home + "/Downloads"
 	if size := config.GetDirSize(downloadsPath); size > 0 {
-		mainRows = append(mainRows, []string{"~/Downloads", ui.WarningStyle.Render(formatBytes(size))})
+		mainRows = append(mainRows, []string{"~/Downloads", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	if len(mainRows) > 0 {
@@ -177,87 +178,87 @@ func printDiskTable() {
 	// Xcode derived data
 	xcodeDerivedData := home + "/Library/Developer/Xcode/DerivedData"
 	if size := config.GetDirSize(xcodeDerivedData); size > 0 {
-		cacheRows = append(cacheRows, []string{"xcode derived", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"xcode derived", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Xcode archives
 	xcodeArchives := home + "/Library/Developer/Xcode/Archives"
 	if size := config.GetDirSize(xcodeArchives); size > 0 {
-		cacheRows = append(cacheRows, []string{"xcode archives", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"xcode archives", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// iOS Device Support
 	iosDeviceSupport := home + "/Library/Developer/Xcode/iOS DeviceSupport"
 	if size := config.GetDirSize(iosDeviceSupport); size > 0 {
-		cacheRows = append(cacheRows, []string{"ios device support", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"ios device support", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// CocoaPods cache
 	cocoapodsCache := home + "/Library/Caches/CocoaPods"
 	if size := config.GetDirSize(cocoapodsCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"cocoapods cache", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"cocoapods cache", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Homebrew cache
 	brewCache := home + "/Library/Caches/Homebrew"
 	if size := config.GetDirSize(brewCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"homebrew cache", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"homebrew cache", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Multipass
 	if config.CommandExists("multipass") {
 		multipassData := home + "/Library/Application Support/multipassd"
 		if size := config.GetDirSize(multipassData); size > 0 {
-			cacheRows = append(cacheRows, []string{"multipass", ui.WarningStyle.Render(formatBytes(size))})
+			cacheRows = append(cacheRows, []string{"multipass", ui.WarningStyle.Render(tool.FormatBytes(size))})
 		}
 	}
 
 	// npm cache
 	npmCache := home + "/.npm"
 	if size := config.GetDirSize(npmCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"npm cache", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"npm cache", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// pnpm cache
 	pnpmCache := home + "/Library/pnpm"
 	if size := config.GetDirSize(pnpmCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"pnpm cache", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"pnpm cache", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Yarn cache
 	yarnCache := home + "/Library/Caches/Yarn"
 	if size := config.GetDirSize(yarnCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"yarn cache", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"yarn cache", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Go module cache
 	goCache := home + "/go/pkg/mod"
 	if size := config.GetDirSize(goCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"go modules", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"go modules", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Gradle cache
 	gradleCache := home + "/.gradle/caches"
 	if size := config.GetDirSize(gradleCache); size > 0 {
-		cacheRows = append(cacheRows, []string{"gradle cache", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"gradle cache", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// System logs
 	systemLogs := "/var/log"
 	if size := config.GetDirSize(systemLogs); size > 0 {
-		cacheRows = append(cacheRows, []string{"system logs", ui.MutedStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"system logs", ui.MutedStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// User logs
 	userLogs := home + "/Library/Logs"
 	if size := config.GetDirSize(userLogs); size > 0 {
-		cacheRows = append(cacheRows, []string{"user logs", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"user logs", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	// Trash
 	trashPath := home + "/.Trash"
 	if size := config.GetDirSize(trashPath); size > 0 {
-		cacheRows = append(cacheRows, []string{"trash", ui.WarningStyle.Render(formatBytes(size))})
+		cacheRows = append(cacheRows, []string{"trash", ui.WarningStyle.Render(tool.FormatBytes(size))})
 	}
 
 	if len(cacheRows) > 0 {
@@ -269,18 +270,4 @@ func printDiskTable() {
 		fmt.Println()
 	}
 	fmt.Println()
-}
-
-// formatBytes formats bytes into human-readable format
-func formatBytes(bytes int64) string {
-	const unit = 1024
-	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
-	}
-	div, exp := int64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }

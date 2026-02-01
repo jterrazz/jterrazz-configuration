@@ -6,14 +6,14 @@ import (
 	"path/filepath"
 
 	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/system"
+	"github.com/jterrazz/jterrazz-cli/internal/tool"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
 )
 
 func printSystemInfo() {
 	hostname, _ := os.Hostname()
-	osInfo := system.GetCommandOutput("uname", "-sr")
-	arch := system.GetCommandOutput("uname", "-m")
+	osInfo := tool.GetCommandOutput("uname", "-sr")
+	arch := tool.GetCommandOutput("uname", "-m")
 	user := os.Getenv("USER")
 	shell := filepath.Base(os.Getenv("SHELL"))
 

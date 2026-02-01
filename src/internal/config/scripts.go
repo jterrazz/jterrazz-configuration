@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/system"
+	"github.com/jterrazz/jterrazz-cli/internal/tool"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
 )
 
@@ -461,7 +461,7 @@ func GetRepoConfigPath(relativePath string) (string, error) {
 
 // CommandExists checks if a command is available in PATH
 // Re-exported from system package for convenience
-var CommandExists = system.CommandExists
+var CommandExists = tool.CommandExists
 
 // =============================================================================
 // Script Functions

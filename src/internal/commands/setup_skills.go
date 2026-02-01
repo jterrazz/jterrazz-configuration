@@ -3,19 +3,13 @@ package commands
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"regexp"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/system"
+	"github.com/jterrazz/jterrazz-cli/internal/skill"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
 )
-
-// boxCharsRegex matches box-drawing characters used in skills CLI output
-var boxCharsRegex = regexp.MustCompile(`[│├└┌◇]`)
 
 // skillItemData holds domain-specific data for each item
 type skillItemData struct {
@@ -38,11 +32,9 @@ type skillsModel struct {
 }
 
 func newSkillsModel() skillsModel {
-	installed := getInstalledSkills()
-
 	m := skillsModel{
 		expanded:   make(map[string]bool),
-		installed:  installed,
+		installed:  skill.ListInstalled(),
 		repoSkills: make(map[string][]string),
 		page:       ui.NewPage("Skills"),
 	}
@@ -67,16 +59,16 @@ func (m skillsModel) isInstalled(skill string) bool {
 
 // getSkillsForRepo returns cached skills or nil if not loaded yet
 func (m skillsModel) getSkillsForRepo(repoName string) []string {
-	if skills, ok := m.repoSkills[repoName]; ok {
-		return skills
+	if s, ok := m.repoSkills[repoName]; ok {
+		return s
 	}
 	return nil
 }
 
 // findRepoForSkill finds which repo a skill belongs to
 func (m skillsModel) findRepoForSkill(skill string) string {
-	for repoName, skills := range m.repoSkills {
-		for _, s := range skills {
+	for repoName, repoSkills := range m.repoSkills {
+		for _, s := range repoSkills {
 			if s == skill {
 				return repoName
 			}
@@ -259,7 +251,7 @@ func (m skillsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.processing = false
 		m.page.Message = msg.message
 		m.page.Processing = false
-		m.installed = getInstalledSkills()
+		m.installed = skill.ListInstalled()
 		m = m.rebuildItems()
 		return m, nil
 
@@ -349,96 +341,38 @@ type repoSkillsFetchedMsg struct {
 
 func (m skillsModel) fetchRepoSkills(repo string) tea.Cmd {
 	return func() tea.Msg {
-		cmd := exec.Command("skills", "add", repo, "--list")
-		output, err := cmd.CombinedOutput()
+		repoSkills, err := skill.ListFromRepo(repo)
 		if err != nil {
 			return repoSkillsFetchedMsg{repo: repo, skills: []string{}, err: err}
 		}
-		skills := parseSkillsListOutput(string(output))
-		return repoSkillsFetchedMsg{repo: repo, skills: skills, err: nil}
+		return repoSkillsFetchedMsg{repo: repo, skills: repoSkills, err: nil}
 	}
 }
 
-func parseSkillsListOutput(output string) []string {
-	var skills []string
-	cleanOutput := system.StripAnsi(output)
-	lines := strings.Split(cleanOutput, "\n")
-
-	inSkillsSection := false
-	for _, line := range lines {
-		if strings.Contains(line, "Available Skills") {
-			inSkillsSection = true
-			continue
-		}
-
-		if !inSkillsSection {
-			continue
-		}
-
-		if strings.Contains(line, "Use --skill") {
-			break
-		}
-
-		cleaned := boxCharsRegex.ReplaceAllString(line, "")
-
-		leadingSpaces := len(cleaned) - len(strings.TrimLeft(cleaned, " "))
-		trimmed := strings.TrimSpace(cleaned)
-
-		if trimmed == "" {
-			continue
-		}
-
-		if leadingSpaces <= 5 && !strings.Contains(trimmed, " ") && len(trimmed) > 0 {
-			if isValidSkillName(trimmed) {
-				skills = append(skills, trimmed)
-			}
-		}
-	}
-
-	return skills
-}
-
-func isValidSkillName(s string) bool {
-	if len(s) == 0 {
-		return false
-	}
-	for _, c := range s {
-		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_') {
-			return false
-		}
-	}
-	return true
-}
-
-func (m skillsModel) installSkill(repo, skill string) tea.Cmd {
+func (m skillsModel) installSkill(repo, name string) tea.Cmd {
 	return func() tea.Msg {
-		cmd := exec.Command("skills", "add", repo, "-g", "-y", "--skill", skill)
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return skillActionDoneMsg{message: fmt.Sprintf("Error: %s", strings.TrimSpace(string(output))), err: err}
+		if err := skill.Install(repo, name); err != nil {
+			return skillActionDoneMsg{message: fmt.Sprintf("Error: %s", err), err: err}
 		}
-		return skillActionDoneMsg{message: fmt.Sprintf("Installed %s", skill)}
+		return skillActionDoneMsg{message: fmt.Sprintf("Installed %s", name)}
 	}
 }
 
 func (m skillsModel) installRepo(repo string) tea.Cmd {
 	return func() tea.Msg {
-		cmd := exec.Command("skills", "add", repo, "-g", "-y", "--all")
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return skillActionDoneMsg{message: fmt.Sprintf("Error: %s", strings.TrimSpace(string(output))), err: err}
+		if err := skill.InstallAll(repo); err != nil {
+			return skillActionDoneMsg{message: fmt.Sprintf("Error: %s", err), err: err}
 		}
 		return skillActionDoneMsg{message: fmt.Sprintf("Installed all from %s", repo)}
 	}
 }
 
-func (m skillsModel) removeSkill(skill string) tea.Cmd {
+func (m skillsModel) removeSkill(name string) tea.Cmd {
 	return func() tea.Msg {
-		cmd := exec.Command("skills", "remove", "-g", "-y", skill)
-		if err := cmd.Run(); err != nil {
-			return skillActionDoneMsg{message: fmt.Sprintf("Error removing %s: %v", skill, err), err: err}
+		if err := skill.Remove(name); err != nil {
+			return skillActionDoneMsg{message: fmt.Sprintf("Error: %v", err), err: err}
 		}
-		return skillActionDoneMsg{message: fmt.Sprintf("Removed %s", skill)}
+		return skillActionDoneMsg{message: fmt.Sprintf("Removed %s", name)}
 	}
 }
 
@@ -449,8 +383,7 @@ func (m skillsModel) runGlobalAction(actionType string) tea.Cmd {
 			favorites := config.GetFavoriteSkills()
 			installed := 0
 			for _, s := range favorites {
-				cmd := exec.Command("skills", "add", s.Repo, "-g", "-y", "--skill", s.Skill)
-				if err := cmd.Run(); err == nil {
+				if err := skill.Install(s.Repo, s.Skill); err == nil {
 					installed++
 				}
 			}
@@ -459,8 +392,7 @@ func (m skillsModel) runGlobalAction(actionType string) tea.Cmd {
 			}
 			return skillActionDoneMsg{message: fmt.Sprintf("Installed %d favorites", installed)}
 		case "remove-all":
-			cmd := exec.Command("skills", "remove", "-g", "-y", "--all")
-			if err := cmd.Run(); err != nil {
+			if err := skill.RemoveAll(); err != nil {
 				return skillActionDoneMsg{message: "Failed to remove skills", err: err}
 			}
 			return skillActionDoneMsg{message: "Removed all skills"}
@@ -490,49 +422,8 @@ func (m skillsModel) viewWithBreadcrumb(breadcrumbs ...string) string {
 	return m.page.Render()
 }
 
-func getInstalledSkills() []string {
-	var installed []string
-
-	cmd := exec.Command("skills", "list", "-g")
-	output, err := cmd.Output()
-	if err != nil {
-		return installed
-	}
-
-	cleanOutput := system.StripAnsi(string(output))
-	lines := strings.Split(cleanOutput, "\n")
-	for _, line := range lines {
-		if len(line) > 0 && (line[0] == ' ' || line[0] == '\t') {
-			continue
-		}
-
-		line = strings.TrimSpace(line)
-
-		if line == "" ||
-			strings.Contains(line, "No global skills") ||
-			strings.Contains(line, "Global") ||
-			strings.Contains(line, "Skills") ||
-			strings.HasPrefix(line, "Try ") {
-			continue
-		}
-
-		parts := strings.Fields(line)
-		if len(parts) >= 1 {
-			skillName := parts[0]
-			if !strings.HasPrefix(skillName, "/") &&
-				!strings.HasPrefix(skillName, "~") &&
-				!strings.Contains(skillName, ":") &&
-				len(skillName) > 0 {
-				installed = append(installed, skillName)
-			}
-		}
-	}
-
-	return installed
-}
-
 func runSkillsUI() {
-	if _, err := exec.LookPath("skills"); err != nil {
+	if !skill.IsInstalled() {
 		fmt.Printf("%s skills CLI not installed. Run: npm install -g skills\n", ui.Red("❌"))
 		return
 	}

@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/system"
+	"github.com/jterrazz/jterrazz-cli/internal/tool"
 )
 
 // CheckResult is the unified result type for all check operations
@@ -119,7 +119,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryPackageManager,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("bun", []string{"--version"}, system.TrimVersion),
+		VersionFn:    tool.VersionFromCmd("bun", []string{"--version"}, tool.TrimVersion),
 	},
 	{
 		Name:         "cocoapods",
@@ -128,7 +128,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryPackageManager,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("pod", []string{"--version"}, system.TrimVersion),
+		VersionFn:    tool.VersionFromCmd("pod", []string{"--version"}, tool.TrimVersion),
 	},
 	{
 		Name:     "homebrew",
@@ -140,7 +140,7 @@ var Tools = []Tool{
 				return CheckResult{}
 			}
 			out, _ := exec.Command("brew", "--version").Output()
-			version := system.ParseBrewVersion(string(out))
+			version := tool.ParseBrewVersion(string(out))
 			formulaeOut, _ := exec.Command("brew", "list", "--formula", "-1").Output()
 			caskOut, _ := exec.Command("brew", "list", "--cask", "-1").Output()
 			formulaeCount := 0
@@ -176,7 +176,7 @@ var Tools = []Tool{
 				return CheckResult{}
 			}
 			out, _ := exec.Command("npm", "--version").Output()
-			version := system.TrimVersion(string(out))
+			version := tool.TrimVersion(string(out))
 			npmOut, _ := exec.Command("npm", "list", "-g", "--depth=0", "--parseable").Output()
 			npmLines := strings.Split(strings.TrimSpace(string(npmOut)), "\n")
 			count := len(npmLines) - 1
@@ -226,7 +226,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryPackageManager,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("pnpm", []string{"--version"}, system.TrimVersion),
+		VersionFn:    tool.VersionFromCmd("pnpm", []string{"--version"}, tool.TrimVersion),
 	},
 
 	// ==========================================================================
@@ -239,7 +239,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryLanguages,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("go", []string{"version"}, system.ParseGoVersion),
+		VersionFn:    tool.VersionFromCmd("go", []string{"version"}, tool.ParseGoVersion),
 	},
 	{
 		Name:         "node",
@@ -247,7 +247,7 @@ var Tools = []Tool{
 		Method:       InstallNvm,
 		Category:     CategoryLanguages,
 		Dependencies: []string{"nvm"},
-		VersionFn:    system.VersionFromCmd("node", []string{"--version"}, system.TrimVersion),
+		VersionFn:    tool.VersionFromCmd("node", []string{"--version"}, tool.TrimVersion),
 	},
 	{
 		Name:         "openjdk",
@@ -261,14 +261,14 @@ var Tools = []Tool{
 			brewJava := "/opt/homebrew/opt/openjdk/bin/java"
 			if _, err := os.Stat(brewJava); err == nil {
 				out, _ := exec.Command(brewJava, "-version").CombinedOutput()
-				return CheckResult{Installed: true, Version: system.ParseJavaVersion(string(out))}
+				return CheckResult{Installed: true, Version: tool.ParseJavaVersion(string(out))}
 			}
 			cmd := exec.Command("/usr/libexec/java_home")
 			if err := cmd.Run(); err != nil {
 				return CheckResult{}
 			}
 			out, _ := exec.Command("java", "-version").CombinedOutput()
-			return CheckResult{Installed: true, Version: system.ParseJavaVersion(string(out))}
+			return CheckResult{Installed: true, Version: tool.ParseJavaVersion(string(out))}
 		},
 	},
 	{
@@ -278,7 +278,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryLanguages,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("python3", []string{"--version"}, system.ParsePythonVersion),
+		VersionFn:    tool.VersionFromCmd("python3", []string{"--version"}, tool.ParsePythonVersion),
 	},
 
 	// ==========================================================================
@@ -291,7 +291,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryInfrastructure,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("ansible", []string{"--version"}, system.ParseAnsibleVersion),
+		VersionFn:    tool.VersionFromCmd("ansible", []string{"--version"}, tool.ParseAnsibleVersion),
 	},
 	{
 		Name:         "ansible-lint",
@@ -300,7 +300,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryInfrastructure,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("ansible-lint", []string{"--version"}, system.ParseAnsibleLintVersion),
+		VersionFn:    tool.VersionFromCmd("ansible-lint", []string{"--version"}, tool.ParseAnsibleLintVersion),
 	},
 	{
 		Name:         "multipass",
@@ -309,7 +309,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryInfrastructure,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("multipass", []string{"--version"}, system.ParseMultipassVersion),
+		VersionFn:    tool.VersionFromCmd("multipass", []string{"--version"}, tool.ParseMultipassVersion),
 	},
 	{
 		Name:         "pulumi",
@@ -318,7 +318,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryInfrastructure,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("pulumi", []string{"version"}, system.ParsePulumiVersion),
+		VersionFn:    tool.VersionFromCmd("pulumi", []string{"version"}, tool.ParsePulumiVersion),
 	},
 	{
 		Name:         "terraform",
@@ -327,7 +327,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryInfrastructure,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("terraform", []string{"--version"}, system.ParseTerraformVersion),
+		VersionFn:    tool.VersionFromCmd("terraform", []string{"--version"}, tool.ParseTerraformVersion),
 	},
 
 	// ==========================================================================
@@ -340,7 +340,7 @@ var Tools = []Tool{
 		Method:       InstallBrewCask,
 		Category:     CategoryAI,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromBrewCask("claude-code"),
+		VersionFn:    tool.VersionFromBrewCask("claude-code"),
 	},
 	{
 		Name:         "codex",
@@ -349,7 +349,7 @@ var Tools = []Tool{
 		Method:       InstallBrewCask,
 		Category:     CategoryAI,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromBrewCask("codex"),
+		VersionFn:    tool.VersionFromBrewCask("codex"),
 	},
 	{
 		Name:         "gemini",
@@ -358,7 +358,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryAI,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("gemini", []string{"--version"}, system.TrimVersion),
+		VersionFn:    tool.VersionFromCmd("gemini", []string{"--version"}, tool.TrimVersion),
 	},
 	{
 		Name:         "ollama",
@@ -372,7 +372,7 @@ var Tools = []Tool{
 			if appErr != nil {
 				return CheckResult{}
 			}
-			version := system.VersionFromBrewCask("ollama")()
+			version := tool.VersionFromBrewCask("ollama")()
 			status := "stopped"
 			if err := exec.Command("pgrep", "-x", "ollama").Run(); err == nil {
 				status = "running"
@@ -387,7 +387,7 @@ var Tools = []Tool{
 		Method:       InstallNpm,
 		Category:     CategoryAI,
 		Dependencies: []string{"npm"},
-		VersionFn:    system.VersionFromCmd("happy", []string{"--version"}, system.ParseHappyCoderVersion),
+		VersionFn:    tool.VersionFromCmd("happy", []string{"--version"}, tool.ParseHappyCoderVersion),
 	},
 	{
 		Name:         "opencode",
@@ -396,7 +396,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryAI,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("opencode", []string{"--version"}, system.TrimVersion),
+		VersionFn:    tool.VersionFromCmd("opencode", []string{"--version"}, tool.TrimVersion),
 	},
 	{
 		Name:         "qmd",
@@ -404,12 +404,12 @@ var Tools = []Tool{
 		Method:       InstallManual,
 		Category:     CategoryAI,
 		Dependencies: []string{"bun"},
-		VersionFn:    system.VersionFromCmd("qmd", []string{"--version"}, system.TrimVersion),
+		VersionFn:    tool.VersionFromCmd("qmd", []string{"--version"}, tool.TrimVersion),
 		CheckFn: func() CheckResult {
 			if _, err := exec.LookPath("qmd"); err != nil {
 				return CheckResult{}
 			}
-			version := system.VersionFromCmd("qmd", []string{"--version"}, system.TrimVersion)()
+			version := tool.VersionFromCmd("qmd", []string{"--version"}, tool.TrimVersion)()
 			return CheckResult{Installed: true, Version: version}
 		},
 		InstallFn: func() error {
@@ -427,7 +427,7 @@ var Tools = []Tool{
 		Method:       InstallNpm,
 		Category:     CategoryAI,
 		Dependencies: []string{"npm"},
-		VersionFn:    system.VersionFromCmd("skills", []string{"--version"}, system.TrimVersion),
+		VersionFn:    tool.VersionFromCmd("skills", []string{"--version"}, tool.TrimVersion),
 	},
 
 	// ==========================================================================
@@ -445,7 +445,7 @@ var Tools = []Tool{
 			if appErr != nil {
 				return CheckResult{}
 			}
-			version := system.VersionFromBrewCask("docker")()
+			version := tool.VersionFromBrewCask("docker")()
 			status := "stopped"
 			if err := exec.Command("docker", "info").Run(); err == nil {
 				status = "running"
@@ -461,7 +461,7 @@ var Tools = []Tool{
 		Category:     CategoryApps,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"ghostty-config"},
-		VersionFn:    system.VersionFromBrewCask("ghostty"),
+		VersionFn:    tool.VersionFromBrewCask("ghostty"),
 	},
 	{
 		Name:         "gpg",
@@ -472,7 +472,7 @@ var Tools = []Tool{
 		Category:     CategorySystemTools,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"gpg-setup"},
-		VersionFn:    system.VersionFromBrewFormula("gnupg"),
+		VersionFn:    tool.VersionFromBrewFormula("gnupg"),
 	},
 	{
 		Name:        "ohmyzsh",
@@ -504,7 +504,7 @@ var Tools = []Tool{
 		Category:     CategoryApps,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"zed-config"},
-		VersionFn:    system.VersionFromBrewCask("zed"),
+		VersionFn:    tool.VersionFromBrewCask("zed"),
 	},
 
 	// ==========================================================================
@@ -515,7 +515,7 @@ var Tools = []Tool{
 		Command:   "git",
 		Method:    InstallXcode,
 		Category:  CategorySystemTools,
-		VersionFn: system.VersionFromCmd("git", []string{"--version"}, system.ParseGitVersion),
+		VersionFn: tool.VersionFromCmd("git", []string{"--version"}, tool.ParseGitVersion),
 	},
 	{
 		Name:         "mole",
@@ -524,7 +524,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategorySystemTools,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    system.VersionFromCmd("mo", []string{"--version"}, system.ParseMoleVersion),
+		VersionFn:    tool.VersionFromCmd("mo", []string{"--version"}, tool.ParseMoleVersion),
 	},
 }
 

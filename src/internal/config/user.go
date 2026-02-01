@@ -6,5 +6,5 @@ const (
 	UserEmail = "admin@jterrazz.com"
 
 	// UserName is the name used for GPG key generation
-	UserName = "Jean-Baptiste Music"
+	UserName = "Jean-Baptiste Terrazzoni"
 )

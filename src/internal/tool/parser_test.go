@@ -1,4 +1,4 @@
-package system
+package tool
 
 import "testing"
 
@@ -92,6 +92,31 @@ func TestStripAnsi(t *testing.T) {
 			// Then: clean string should be returned
 			if result != tt.expected {
 				t.Errorf("StripAnsi(%q) = %q, want %q", input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestFormatBytes(t *testing.T) {
+	tests := []struct {
+		name     string
+		given    int64
+		expected string
+	}{
+		{"zero bytes", 0, "0 B"},
+		{"500 bytes", 500, "500 B"},
+		{"1 KB", 1024, "1.0 KB"},
+		{"1.5 KB", 1536, "1.5 KB"},
+		{"1 MB", 1048576, "1.0 MB"},
+		{"1 GB", 1073741824, "1.0 GB"},
+		{"1.5 GB", 1610612736, "1.5 GB"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := FormatBytes(tt.given)
+			if result != tt.expected {
+				t.Errorf("FormatBytes(%d) = %q, want %q", tt.given, result, tt.expected)
 			}
 		})
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jterrazz/jterrazz-cli/internal/config"
+	"github.com/jterrazz/jterrazz-cli/internal/tool"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +27,7 @@ Examples:
 		for _, tool := range config.Tools {
 			all = append(all, tool.Name)
 		}
-		return filterUsedArgs(all, args), cobra.ShellCompDirectiveNoFileComp
+		return tool.FilterStrings(all, args), cobra.ShellCompDirectiveNoFileComp
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if installAll {

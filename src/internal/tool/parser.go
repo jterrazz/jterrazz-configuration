@@ -1,6 +1,7 @@
-package system
+package tool
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -167,4 +168,42 @@ func ParseHappyCoderVersion(s string) string {
 		}
 	}
 	return ""
+}
+
+// =============================================================================
+// Formatters
+// =============================================================================
+
+// FormatBytes formats bytes into human-readable format (KB, MB, GB, etc.)
+func FormatBytes(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+// =============================================================================
+// Slice Helpers
+// =============================================================================
+
+// FilterStrings returns elements from slice that are not in exclude
+func FilterStrings(slice, exclude []string) []string {
+	excludeSet := make(map[string]bool)
+	for _, s := range exclude {
+		excludeSet[s] = true
+	}
+
+	var result []string
+	for _, s := range slice {
+		if !excludeSet[s] {
+			result = append(result, s)
+		}
+	}
+	return result
 }
