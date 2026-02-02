@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/skill"
-	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
 	"github.com/jterrazz/jterrazz-cli/internal/ui/tui"
 )
 
@@ -307,7 +307,7 @@ func skillsConfig() tui.AppConfig {
 
 func runSkillsUI() {
 	if !skill.IsInstalled() {
-		ui.PrintError("skills CLI not installed. Run: npm install -g skills")
+		print.Error("skills CLI not installed. Run: npm install -g skills")
 		return
 	}
 

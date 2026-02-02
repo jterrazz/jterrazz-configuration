@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/tool"
-	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
 	"github.com/spf13/cobra"
 )
 
@@ -30,11 +30,11 @@ Examples:
 			return
 		}
 
-		ui.PrintAction("📦", "Installing selected tools...")
+		print.Action("📦", "Installing selected tools...")
 		for _, name := range args {
 			installToolByName(name)
 		}
-		ui.PrintDone("Done")
+		print.Done("Done")
 	},
 }
 
@@ -43,22 +43,22 @@ func init() {
 }
 
 func listAvailableTools() {
-	ui.PrintInfo("Available tools:")
-	ui.PrintEmpty()
+	print.Info("Available tools:")
+	print.Empty()
 
 	currentCategory := config.ToolCategory("")
 	for _, t := range config.Tools {
 		if t.Category != currentCategory {
 			currentCategory = t.Category
-			ui.PrintCategory(string(currentCategory))
+			print.Category(string(currentCategory))
 		}
 
 		result := t.Check()
-		ui.PrintRow(result.Installed, t.Name, t.Method.String())
+		print.Row(result.Installed, t.Name, t.Method.String())
 	}
 
-	ui.PrintEmpty()
-	ui.PrintUsage("Usage: j install <tool> [tool...]")
+	print.Empty()
+	print.Usage("Usage: j install <tool> [tool...]")
 }
 
 func installToolByName(name string) {
@@ -69,13 +69,13 @@ func installToolByName(name string) {
 
 	t := config.GetToolByName(name)
 	if t == nil {
-		ui.PrintError("Unknown tool: " + name)
+		print.Error("Unknown tool: " + name)
 		return
 	}
 
 	result := t.Check()
 	if result.Installed {
-		ui.PrintRow(true, t.Name, "already installed")
+		print.Row(true, t.Name, "already installed")
 		return
 	}
 
@@ -87,16 +87,16 @@ func installToolByName(name string) {
 		}
 		depResult := depTool.Check()
 		if !depResult.Installed {
-			ui.PrintError(depName + " required for " + t.Name + ". Run: j install " + depName)
+			print.Error(depName + " required for " + t.Name + ". Run: j install " + depName)
 			return
 		}
 	}
 
-	ui.PrintInstalling(t.Name)
+	print.Installing(t.Name)
 	if err := t.Install(); err != nil {
-		ui.PrintError("Failed to install " + t.Name + ": " + err.Error())
+		print.Error("Failed to install " + t.Name + ": " + err.Error())
 	} else {
-		ui.PrintRow(true, t.Name, "installed")
+		print.Row(true, t.Name, "installed")
 		// Run post-install scripts
 		for _, scriptName := range t.Scripts {
 			runSetupItem(scriptName)

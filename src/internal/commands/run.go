@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +36,7 @@ func createSubcommand(sub config.RunSubcommand) *cobra.Command {
 		Short: sub.Description,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := sub.RunFn(args); err != nil {
-				ui.PrintError(err.Error())
+				print.Error(err.Error())
 			}
 		},
 	}

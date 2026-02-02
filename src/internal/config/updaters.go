@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	output "github.com/jterrazz/jterrazz-cli/internal/ui/print"
 )
 
 // PackageManager represents an updatable package manager
@@ -58,7 +58,7 @@ func UpdateAll() {
 // UpdatePackageManager updates a specific package manager
 func UpdatePackageManager(pm PackageManager) {
 	if !CommandExists(pm.RequiresCmd) {
-		fmt.Printf("%s %s not found, skipping\n", ui.Yellow("Warning:"), pm.RequiresCmd)
+		fmt.Printf("%s %s not found, skipping\n", output.Yellow("Warning:"), pm.RequiresCmd)
 		return
 	}
 	pm.UpdateFn()
@@ -76,7 +76,7 @@ func UpdatePackageByName(name string) error {
 			}
 			fmt.Printf("  📥 Updating %s...\n", name)
 			ExecCommand("brew", "upgrade", pkg.Formula)
-			fmt.Printf("  %s %s updated\n", ui.Green("✓"), name)
+			fmt.Printf("  %s %s updated\n", output.Green("✓"), name)
 			return nil
 		case InstallBrewCask:
 			if !CommandExists("brew") {
@@ -84,7 +84,7 @@ func UpdatePackageByName(name string) error {
 			}
 			fmt.Printf("  📥 Updating %s...\n", name)
 			ExecCommand("brew", "upgrade", "--cask", pkg.Formula)
-			fmt.Printf("  %s %s updated\n", ui.Green("✓"), name)
+			fmt.Printf("  %s %s updated\n", output.Green("✓"), name)
 			return nil
 		case InstallNpm:
 			if !CommandExists("npm") {
@@ -92,7 +92,7 @@ func UpdatePackageByName(name string) error {
 			}
 			fmt.Printf("  📥 Updating %s...\n", name)
 			ExecCommand("npm", "update", "-g", pkg.Formula)
-			fmt.Printf("  %s %s updated\n", ui.Green("✓"), name)
+			fmt.Printf("  %s %s updated\n", output.Green("✓"), name)
 			return nil
 		}
 	}
@@ -101,7 +101,7 @@ func UpdatePackageByName(name string) error {
 	if CommandExists("brew") {
 		fmt.Printf("  📥 Updating %s...\n", name)
 		ExecCommand("brew", "upgrade", name)
-		fmt.Printf("  %s %s updated\n", ui.Green("✓"), name)
+		fmt.Printf("  %s %s updated\n", output.Green("✓"), name)
 		return nil
 	}
 
@@ -113,20 +113,20 @@ func UpdatePackageByName(name string) error {
 // =============================================================================
 
 func updateBrew() {
-	fmt.Println(ui.Cyan("🍺 Updating Homebrew packages..."))
+	fmt.Println(output.Cyan("🍺 Updating Homebrew packages..."))
 	ExecCommand("brew", "update")
 	ExecCommand("brew", "upgrade")
-	fmt.Println(ui.Green("  ✅ Homebrew update completed"))
+	fmt.Println(output.Green("  ✅ Homebrew update completed"))
 }
 
 func updateNpm() {
-	fmt.Println(ui.Cyan("📦 Updating npm global packages..."))
+	fmt.Println(output.Cyan("📦 Updating npm global packages..."))
 	ExecCommand("npm", "update", "-g")
-	fmt.Println(ui.Green("  ✅ npm update completed"))
+	fmt.Println(output.Green("  ✅ npm update completed"))
 }
 
 func updatePnpm() {
-	fmt.Println(ui.Cyan("📦 Updating pnpm global packages..."))
+	fmt.Println(output.Cyan("📦 Updating pnpm global packages..."))
 	ExecCommand("pnpm", "update", "-g")
-	fmt.Println(ui.Green("  ✅ pnpm update completed"))
+	fmt.Println(output.Green("  ✅ pnpm update completed"))
 }

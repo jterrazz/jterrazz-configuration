@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/tool"
-	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
 	"github.com/spf13/cobra"
 )
 
@@ -31,11 +31,11 @@ Examples:
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if cleanAll {
-			ui.PrintAction("🧹", "Cleaning everything...")
+			print.Action("🧹", "Cleaning everything...")
 			for _, c := range config.Cleanables {
 				runCleanable(c)
 			}
-			ui.PrintDone("System cleanup completed")
+			print.Done("System cleanup completed")
 			return
 		}
 
@@ -44,16 +44,16 @@ Examples:
 			return
 		}
 
-		ui.PrintAction("🧹", "Cleaning selected items...")
+		print.Action("🧹", "Cleaning selected items...")
 		for _, name := range args {
 			c := config.GetCleanableByName(name)
 			if c == nil {
-				ui.PrintError("Unknown clean item: " + name)
+				print.Error("Unknown clean item: " + name)
 				continue
 			}
 			runCleanable(*c)
 		}
-		ui.PrintDone("Cleanup completed")
+		print.Done("Cleanup completed")
 	},
 }
 
@@ -63,16 +63,16 @@ func init() {
 }
 
 func listCleanItems() {
-	ui.PrintInfo("Available clean items:")
-	ui.PrintEmpty()
+	print.Info("Available clean items:")
+	print.Empty()
 
 	for _, c := range config.Cleanables {
 		available := c.RequiresCmd == "" || config.CommandExists(c.RequiresCmd)
-		ui.PrintRow(available, c.Name, c.Description)
+		print.Row(available, c.Name, c.Description)
 	}
 
-	ui.PrintEmpty()
-	ui.PrintUsage(
+	print.Empty()
+	print.Usage(
 		"Usage: j clean <item> [item...]",
 		"       j clean --all",
 	)
@@ -80,13 +80,13 @@ func listCleanItems() {
 
 func runCleanable(c config.Cleanable) {
 	if c.RequiresCmd != "" && !config.CommandExists(c.RequiresCmd) {
-		ui.PrintWarning(c.RequiresCmd + " not found, skipping")
+		print.Warning(c.RequiresCmd + " not found, skipping")
 		return
 	}
 
-	ui.PrintAction("🧹", c.Description+"...")
+	print.Action("🧹", c.Description+"...")
 	if c.CleanFn != nil {
 		c.CleanFn()
 	}
-	ui.PrintRow(true, c.Name, "completed")
+	print.Row(true, c.Name, "completed")
 }

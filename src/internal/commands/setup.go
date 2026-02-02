@@ -3,7 +3,7 @@ package commands
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
 	"github.com/jterrazz/jterrazz-cli/internal/ui/tui"
 	"github.com/spf13/cobra"
 )
@@ -27,17 +27,17 @@ func init() {
 func runScript(name string) {
 	script := config.GetScriptByName(name)
 	if script == nil {
-		ui.PrintError("Unknown script: " + name)
+		print.Error("Unknown script: " + name)
 		return
 	}
 
 	if script.RunFn == nil {
-		ui.PrintError("No runner for script: " + name)
+		print.Error("No runner for script: " + name)
 		return
 	}
 
 	if err := script.RunFn(); err != nil {
-		ui.PrintError("Failed to run " + name + ": " + err.Error())
+		print.Error("Failed to run " + name + ": " + err.Error())
 	}
 }
 

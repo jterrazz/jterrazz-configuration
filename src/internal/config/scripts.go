@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/jterrazz/jterrazz-cli/internal/tool"
-	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	out "github.com/jterrazz/jterrazz-cli/internal/ui/print"
 )
 
 // ScriptCategory groups scripts by their purpose
@@ -157,11 +157,11 @@ var Scripts = []Script{
 // =============================================================================
 
 func runHushlogin() error {
-	fmt.Println(ui.Cyan("Setting up hushlogin..."))
+	fmt.Println(out.Cyan("Setting up hushlogin..."))
 
 	hushPath := os.Getenv("HOME") + "/.hushlogin"
 	if _, err := os.Stat(hushPath); err == nil {
-		fmt.Printf("%s .hushlogin already exists\n", ui.Green("Done"))
+		fmt.Printf("%s .hushlogin already exists\n", out.Green("Done"))
 		return nil
 	}
 
@@ -171,12 +171,12 @@ func runHushlogin() error {
 	}
 	f.Close()
 
-	fmt.Println(ui.Green("Done - terminal login message silenced"))
+	fmt.Println(out.Green("Done - terminal login message silenced"))
 	return nil
 }
 
 func runGhosttyConfig() error {
-	fmt.Println(ui.Cyan("Setting up Ghostty config..."))
+	fmt.Println(out.Cyan("Setting up Ghostty config..."))
 
 	configDir := os.Getenv("HOME") + "/.config/ghostty"
 	configPath := configDir + "/config"
@@ -199,12 +199,12 @@ func runGhosttyConfig() error {
 		return fmt.Errorf("failed to write config file %s: %w", configPath, err)
 	}
 
-	fmt.Println(ui.Green("Done - Ghostty config installed"))
+	fmt.Println(out.Green("Done - Ghostty config installed"))
 	return nil
 }
 
 func runGPGSetup() error {
-	fmt.Println(ui.Cyan("Setting up GPG for commit signing..."))
+	fmt.Println(out.Cyan("Setting up GPG for commit signing..."))
 
 	email := UserEmail
 	name := UserName
@@ -215,13 +215,13 @@ func runGPGSetup() error {
 
 	checkCmd := exec.Command("gpg", "--list-secret-keys", "--keyid-format", "long", email)
 	if output, err := checkCmd.Output(); err == nil && len(output) > 0 {
-		fmt.Println(ui.Green("GPG key already exists for " + email))
+		fmt.Println(out.Green("GPG key already exists for " + email))
 		configureGitGPG(email)
 		return nil
 	}
 
 	fmt.Println("Generating GPG key...")
-	fmt.Println(ui.Dim("Using ed25519 algorithm"))
+	fmt.Println(out.Dimmed("Using ed25519 algorithm"))
 
 	batchConfig := fmt.Sprintf(`%%no-protection
 Key-Type: eddsa
@@ -239,7 +239,7 @@ Expire-Date: 0
 	if err := genCmd.Run(); err != nil {
 		return fmt.Errorf("failed to generate GPG key: %w", err)
 	}
-	fmt.Println(ui.Green("GPG key generated"))
+	fmt.Println(out.Green("GPG key generated"))
 
 	configureGitGPG(email)
 	return nil
@@ -249,7 +249,7 @@ func configureGitGPG(email string) {
 	listCmd := exec.Command("gpg", "--list-secret-keys", "--keyid-format", "long", email)
 	output, err := listCmd.Output()
 	if err != nil {
-		ui.PrintError("Failed to list GPG keys")
+		out.Error("Failed to list GPG keys")
 		return
 	}
 
@@ -266,7 +266,7 @@ func configureGitGPG(email string) {
 	}
 
 	if keyID == "" {
-		ui.PrintError("Could not find GPG key ID")
+		out.Error("Could not find GPG key ID")
 		return
 	}
 
@@ -276,7 +276,7 @@ func configureGitGPG(email string) {
 	exec.Command("git", "config", "--global", "commit.gpgsign", "true").Run()
 	exec.Command("git", "config", "--global", "gpg.program", "gpg").Run()
 
-	fmt.Println(ui.Green("Git configured for commit signing"))
+	fmt.Println(out.Green("Git configured for commit signing"))
 
 	fmt.Println()
 	fmt.Println("Your GPG public key (add to GitHub):")
@@ -288,12 +288,12 @@ func configureGitGPG(email string) {
 	fmt.Println("Add at: https://github.com/settings/gpg/new")
 
 	fmt.Println()
-	fmt.Println(ui.Green("GPG setup completed"))
-	fmt.Println(ui.Dim("All future commits will be signed automatically"))
+	fmt.Println(out.Green("GPG setup completed"))
+	fmt.Println(out.Dimmed("All future commits will be signed automatically"))
 }
 
 func runSSHSetup() error {
-	fmt.Println(ui.Cyan("Setting up SSH..."))
+	fmt.Println(out.Cyan("Setting up SSH..."))
 
 	sshDir := os.Getenv("HOME") + "/.ssh"
 	sshKey := sshDir + "/id_ed25519"
@@ -304,10 +304,10 @@ func runSSHSetup() error {
 	}
 
 	if _, err := os.Stat(sshKey); err == nil {
-		fmt.Printf("%s SSH key already exists at %s\n", ui.Green("Done"), sshKey)
+		fmt.Printf("%s SSH key already exists at %s\n", out.Green("Done"), sshKey)
 	} else {
 		fmt.Println("Generating SSH key with macOS Keychain integration...")
-		fmt.Println(ui.Dim("You'll be prompted to create a passphrase"))
+		fmt.Println(out.Dimmed("You'll be prompted to create a passphrase"))
 		fmt.Println()
 
 		genCmd := exec.Command("ssh-keygen", "-t", "ed25519", "-C", email, "-f", sshKey)
@@ -317,7 +317,7 @@ func runSSHSetup() error {
 		if err := genCmd.Run(); err != nil {
 			return fmt.Errorf("failed to generate SSH key: %w", err)
 		}
-		fmt.Println(ui.Green("SSH key generated"))
+		fmt.Println(out.Green("SSH key generated"))
 	}
 
 	fmt.Println("Configuring SSH...")
@@ -335,14 +335,14 @@ Host *
 		if err == nil {
 			f.WriteString(configContent)
 			f.Close()
-			fmt.Println(ui.Green("SSH config updated"))
+			fmt.Println(out.Green("SSH config updated"))
 		}
 	} else {
-		fmt.Println(ui.Green("SSH config already configured"))
+		fmt.Println(out.Green("SSH config already configured"))
 	}
 
 	fmt.Println("Adding key to SSH agent with Keychain...")
-	fmt.Println(ui.Dim("Passphrase will be stored in macOS Keychain"))
+	fmt.Println(out.Dimmed("Passphrase will be stored in macOS Keychain"))
 	fmt.Println()
 
 	addCmd := exec.Command("ssh-add", "--apple-use-keychain", sshKey)
@@ -361,12 +361,12 @@ Host *
 	fmt.Println("----------------------------------------")
 	fmt.Println("Add at: https://github.com/settings/ssh/new")
 
-	fmt.Println(ui.Green("SSH setup completed"))
+	fmt.Println(out.Green("SSH setup completed"))
 	return nil
 }
 
 func runZedConfig() error {
-	fmt.Println(ui.Cyan("Setting up Zed config..."))
+	fmt.Println(out.Cyan("Setting up Zed config..."))
 
 	configDir := os.Getenv("HOME") + "/.config/zed"
 	configPath := configDir + "/settings.json"
@@ -389,12 +389,12 @@ func runZedConfig() error {
 		return fmt.Errorf("failed to write config file %s: %w", configPath, err)
 	}
 
-	fmt.Println(ui.Green("Done - Zed config installed"))
+	fmt.Println(out.Green("Done - Zed config installed"))
 	return nil
 }
 
 func runJavaSymlink() error {
-	fmt.Println(ui.Cyan("Setting up Java runtime..."))
+	fmt.Println(out.Cyan("Setting up Java runtime..."))
 
 	brewJava := "/opt/homebrew/opt/openjdk/libexec/openjdk.jdk"
 	if _, err := os.Stat(brewJava); err != nil {
@@ -404,7 +404,7 @@ func runJavaSymlink() error {
 	symlinkPath := "/Library/Java/JavaVirtualMachines/openjdk.jdk"
 
 	if _, err := os.Lstat(symlinkPath); err == nil {
-		fmt.Printf("%s Java symlink already exists\n", ui.Green("Done"))
+		fmt.Printf("%s Java symlink already exists\n", out.Green("Done"))
 		return nil
 	}
 
@@ -418,23 +418,23 @@ func runJavaSymlink() error {
 		return fmt.Errorf("failed to create symlink: %w", err)
 	}
 
-	fmt.Println(ui.Green("Done - Java configured for macOS"))
+	fmt.Println(out.Green("Done - Java configured for macOS"))
 	return nil
 }
 
 func runDockReset() error {
-	fmt.Println(ui.Cyan("Resetting macOS Dock..."))
+	fmt.Println(out.Cyan("Resetting macOS Dock..."))
 	ExecCommand("defaults", "delete", "com.apple.dock")
 	ExecCommand("killall", "Dock")
-	fmt.Println(ui.Green("Done - Dock reset to defaults"))
+	fmt.Println(out.Green("Done - Dock reset to defaults"))
 	return nil
 }
 
 func runDockSpacer() error {
-	fmt.Println(ui.Cyan("Adding spacer to Dock..."))
+	fmt.Println(out.Cyan("Adding spacer to Dock..."))
 	ExecCommand("defaults", "write", "com.apple.dock", "persistent-apps", "-array-add", `{"tile-type"="small-spacer-tile";}`)
 	ExecCommand("killall", "Dock")
-	fmt.Println(ui.Green("Done - Dock spacer added"))
+	fmt.Println(out.Green("Done - Dock spacer added"))
 	return nil
 }
 

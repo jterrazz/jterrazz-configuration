@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/tool"
-	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
 	"github.com/spf13/cobra"
 )
 
@@ -35,9 +35,9 @@ Examples:
 		// Check for --all flag
 		allFlag, _ := cmd.Flags().GetBool("all")
 		if allFlag {
-			ui.PrintAction("🔄", "Updating all packages...")
+			print.Action("🔄", "Updating all packages...")
 			config.UpdateAll()
-			ui.PrintDone("All updates completed")
+			print.Done("All updates completed")
 			return
 		}
 
@@ -50,19 +50,19 @@ Examples:
 			}
 		}
 		if anyFlagSet {
-			ui.PrintDone("Updates completed")
+			print.Done("Updates completed")
 			return
 		}
 
 		// If specific package names provided
 		if len(args) > 0 {
-			ui.PrintAction("🔄", "Updating selected packages...")
+			print.Action("🔄", "Updating selected packages...")
 			for _, name := range args {
 				if err := config.UpdatePackageByName(name); err != nil {
-					ui.PrintError(err.Error())
+					print.Error(err.Error())
 				}
 			}
-			ui.PrintDone("Updates completed")
+			print.Done("Updates completed")
 			return
 		}
 
@@ -85,16 +85,16 @@ func init() {
 }
 
 func listUpdateOptions() {
-	ui.PrintInfo("Available update targets:")
-	ui.PrintEmpty()
+	print.Info("Available update targets:")
+	print.Empty()
 
 	for _, pm := range config.PackageManagers {
 		available := config.CommandExists(pm.RequiresCmd)
-		ui.PrintRow(available, pm.Name, "--"+pm.Flag)
+		print.Row(available, pm.Name, "--"+pm.Flag)
 	}
 
-	ui.PrintEmpty()
-	ui.PrintUsage(
+	print.Empty()
+	print.Usage(
 		"Usage: j update <package> [package...]",
 		"       j update --brew --npm",
 		"       j update --all",
