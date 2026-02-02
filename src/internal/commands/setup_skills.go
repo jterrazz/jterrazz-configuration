@@ -7,6 +7,7 @@ import (
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/skill"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/tui"
 )
 
 // =============================================================================
@@ -49,23 +50,23 @@ func initSkillsState() {
 // Skills Items Builder
 // =============================================================================
 
-func buildSkillsItems() []ui.Item {
-	var items []ui.Item
+func buildSkillsItems() []tui.Item {
+	var items []tui.Item
 	skills.itemData = nil
 
 	// Favorites section
 	favorites := config.GetFavoriteSkills()
 	if len(favorites) > 0 {
-		items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Favorites"})
+		items = append(items, tui.Item{Kind: tui.KindHeader, Label: "Favorites"})
 		skills.itemData = append(skills.itemData, skillItemData{})
 
 		for _, s := range favorites {
-			state := ui.StateUnchecked
+			state := tui.StateUnchecked
 			if isSkillInstalled(s.Skill) {
-				state = ui.StateChecked
+				state = tui.StateChecked
 			}
-			items = append(items, ui.Item{
-				Kind:  ui.KindToggle,
+			items = append(items, tui.Item{
+				Kind:  tui.KindToggle,
 				Label: s.Skill,
 				State: state,
 			})
@@ -81,23 +82,23 @@ func buildSkillsItems() []ui.Item {
 		}
 	}
 	if len(otherInstalled) > 0 {
-		items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Installed"})
+		items = append(items, tui.Item{Kind: tui.KindHeader, Label: "Installed"})
 		skills.itemData = append(skills.itemData, skillItemData{})
 
 		for _, s := range otherInstalled {
 			repo := findRepoForSkill(s)
-			items = append(items, ui.Item{
-				Kind:        ui.KindToggle,
+			items = append(items, tui.Item{
+				Kind:        tui.KindToggle,
 				Label:       s,
 				Description: repo,
-				State:       ui.StateChecked,
+				State:       tui.StateChecked,
 			})
 			skills.itemData = append(skills.itemData, skillItemData{repo: repo, skill: s})
 		}
 	}
 
 	// Browse section
-	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Browse"})
+	items = append(items, tui.Item{Kind: tui.KindHeader, Label: "Browse"})
 	skills.itemData = append(skills.itemData, skillItemData{})
 
 	for _, repo := range config.GetAllSkillRepos() {
@@ -121,8 +122,8 @@ func buildSkillsItems() []ui.Item {
 			}
 		}
 
-		items = append(items, ui.Item{
-			Kind:        ui.KindExpandable,
+		items = append(items, tui.Item{
+			Kind:        tui.KindExpandable,
 			Label:       repo.Name,
 			Description: desc,
 			Expanded:    expanded,
@@ -130,20 +131,20 @@ func buildSkillsItems() []ui.Item {
 		skills.itemData = append(skills.itemData, skillItemData{repo: repo.Name})
 
 		if expanded && repoSkills != nil {
-			items = append(items, ui.Item{
-				Kind:   ui.KindAction,
+			items = append(items, tui.Item{
+				Kind:   tui.KindAction,
 				Label:  "Install all",
 				Indent: 1,
 			})
 			skills.itemData = append(skills.itemData, skillItemData{repo: repo.Name, action: skillActionInstallRepo})
 
 			for _, s := range repoSkills {
-				state := ui.StateUnchecked
+				state := tui.StateUnchecked
 				if isSkillInstalled(s) {
-					state = ui.StateChecked
+					state = tui.StateChecked
 				}
-				items = append(items, ui.Item{
-					Kind:   ui.KindToggle,
+				items = append(items, tui.Item{
+					Kind:   tui.KindToggle,
 					Label:  s,
 					State:  state,
 					Indent: 1,
@@ -189,33 +190,33 @@ func findRepoForSkill(name string) string {
 // Skills Event Handlers
 // =============================================================================
 
-func handleSkillsSelect(index int, item ui.Item) tea.Cmd {
+func handleSkillsSelect(index int, item tui.Item) tea.Cmd {
 	if index >= len(skills.itemData) {
 		return nil
 	}
 	data := skills.itemData[index]
 
 	switch item.Kind {
-	case ui.KindExpandable:
+	case tui.KindExpandable:
 		if skills.expanded[data.repo] {
 			skills.expanded[data.repo] = false
-			return func() tea.Msg { return ui.RefreshMsg{} }
+			return func() tea.Msg { return tui.RefreshMsg{} }
 		} else {
 			skills.expanded[data.repo] = true
 			if skills.repoSkills[data.repo] == nil {
 				skills.loadingRepo = data.repo
 				return fetchSkillsCmd(data.repo)
 			}
-			return func() tea.Msg { return ui.RefreshMsg{} }
+			return func() tea.Msg { return tui.RefreshMsg{} }
 		}
 
-	case ui.KindAction:
+	case tui.KindAction:
 		if data.action == skillActionInstallRepo {
 			return installRepoCmd(data.repo)
 		}
 
-	case ui.KindToggle:
-		if item.State == ui.StateChecked {
+	case tui.KindToggle:
+		if item.State == tui.StateChecked {
 			return removeSkillCmd(data.skill)
 		}
 		return installSkillCmd(data.repo, data.skill)
@@ -245,7 +246,7 @@ func handleSkillsMessage(msg tea.Msg) tea.Cmd {
 		}
 		return nil
 
-	case ui.ActionDoneMsg:
+	case tui.ActionDoneMsg:
 		skills.installed = skill.ListInstalled()
 		return nil
 	}
@@ -266,27 +267,27 @@ func fetchSkillsCmd(repo string) tea.Cmd {
 func installSkillCmd(repo, name string) tea.Cmd {
 	return func() tea.Msg {
 		if err := skill.Install(repo, name); err != nil {
-			return ui.ActionDoneMsg{Message: "Error: " + err.Error(), Err: err}
+			return tui.ActionDoneMsg{Message: "Error: " + err.Error(), Err: err}
 		}
-		return ui.ActionDoneMsg{Message: "Installed " + name}
+		return tui.ActionDoneMsg{Message: "Installed " + name}
 	}
 }
 
 func installRepoCmd(repo string) tea.Cmd {
 	return func() tea.Msg {
 		if err := skill.InstallAll(repo); err != nil {
-			return ui.ActionDoneMsg{Message: "Error: " + err.Error(), Err: err}
+			return tui.ActionDoneMsg{Message: "Error: " + err.Error(), Err: err}
 		}
-		return ui.ActionDoneMsg{Message: "Installed all from " + repo}
+		return tui.ActionDoneMsg{Message: "Installed all from " + repo}
 	}
 }
 
 func removeSkillCmd(name string) tea.Cmd {
 	return func() tea.Msg {
 		if err := skill.Remove(name); err != nil {
-			return ui.ActionDoneMsg{Message: "Error: " + err.Error(), Err: err}
+			return tui.ActionDoneMsg{Message: "Error: " + err.Error(), Err: err}
 		}
-		return ui.ActionDoneMsg{Message: "Removed " + name}
+		return tui.ActionDoneMsg{Message: "Removed " + name}
 	}
 }
 
@@ -294,9 +295,9 @@ func removeSkillCmd(name string) tea.Cmd {
 // Skills Config
 // =============================================================================
 
-func skillsConfig() ui.AppConfig {
+func skillsConfig() tui.AppConfig {
 	initSkillsState()
-	return ui.AppConfig{
+	return tui.AppConfig{
 		Title:      "Skills",
 		BuildItems: buildSkillsItems,
 		OnSelect:   handleSkillsSelect,
@@ -310,5 +311,5 @@ func runSkillsUI() {
 		return
 	}
 
-	ui.RunOrExit(skillsConfig())
+	tui.RunOrExit(skillsConfig())
 }

@@ -1,8 +1,10 @@
-package ui
+package tui
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/jterrazz/jterrazz-cli/internal/ui/theme"
 )
 
 const (
@@ -49,7 +51,7 @@ func (i Item) Selectable() bool {
 func (i Item) Render(selected bool, labelWidth int) string {
 	switch i.Kind {
 	case KindHeader:
-		return RenderSection(i.Label)
+		return renderSection(i.Label)
 
 	case KindAction:
 		return i.renderAction(selected)
@@ -64,47 +66,52 @@ func (i Item) Render(selected bool, labelWidth int) string {
 	return ""
 }
 
+func renderSection(title string) string {
+	line := "───"
+	return theme.Section.Render(line + " " + title + " " + line)
+}
+
 func (i Item) renderAction(selected bool) string {
 	indent := i.indentPrefix()
 	prefix := indent + "  "
 
 	if selected {
-		prefix = indent + IconSelected + " "
-		return SelectedStyle.Render(prefix + i.Label)
+		prefix = indent + theme.IconSelected + " "
+		return theme.Selected.Render(prefix + i.Label)
 	}
-	return ActionStyle.Render(prefix + i.Label)
+	return theme.Action.Render(prefix + i.Label)
 }
 
 func (i Item) renderToggle(selected bool, labelWidth int) string {
 	indent := i.indentPrefix()
 
 	var status string
-	var style = MutedStyle
+	var style = theme.Muted
 
 	switch i.State {
 	case StateChecked:
-		status = IconCheck
-		style = SuccessStyle
+		status = theme.IconCheck
+		style = theme.Success
 	case StateUnchecked:
-		status = "○"
-		style = MutedStyle
+		status = theme.IconCheckboxUnchecked
+		style = theme.Muted
 	case StateLoading:
-		status = "◌"
-		style = ActionStyle
+		status = theme.IconCheckboxLoading
+		style = theme.Action
 	default:
 		status = " "
 	}
 
 	prefix := indent + "  "
 	if selected {
-		prefix = indent + IconSelected + " "
-		style = SelectedStyle
+		prefix = indent + theme.IconSelected + " "
+		style = theme.Selected
 	}
 
 	if labelWidth > 0 && i.Description != "" {
 		paddedLabel := fmt.Sprintf("%-*s", labelWidth, i.Label)
 		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedLabel)) +
-			MutedStyle.Render("  "+i.Description)
+			theme.Muted.Render("  "+i.Description)
 	}
 
 	return style.Render(fmt.Sprintf("%s%s %s", prefix, status, i.Label))
@@ -115,14 +122,14 @@ func (i Item) renderExpandable(selected bool, labelWidth int) string {
 
 	var arrow string
 	if i.Expanded {
-		arrow = IconArrowDown
+		arrow = theme.IconArrowDown
 	} else {
-		arrow = IconArrowRight
+		arrow = theme.IconArrowRight
 	}
 
 	prefix := indent + "  "
 	if selected {
-		prefix = indent + IconSelected + " "
+		prefix = indent + theme.IconSelected + " "
 	}
 
 	paddedLabel := i.Label
@@ -131,16 +138,16 @@ func (i Item) renderExpandable(selected bool, labelWidth int) string {
 	}
 
 	if selected {
-		base := SelectedStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedLabel))
+		base := theme.Selected.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedLabel))
 		if i.Description != "" {
-			return base + MutedStyle.Render("  "+i.Description)
+			return base + theme.Muted.Render("  "+i.Description)
 		}
 		return base
 	}
 
-	base := NormalStyle.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedLabel))
+	base := theme.Normal.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedLabel))
 	if i.Description != "" {
-		return base + MutedStyle.Render("  "+i.Description)
+		return base + theme.Muted.Render("  "+i.Description)
 	}
 	return base
 }

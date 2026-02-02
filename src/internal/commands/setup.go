@@ -4,6 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/ui"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -59,23 +60,23 @@ const (
 // setupItemNames maps list indices to script/action names
 var setupItemNames []string
 
-func buildSetupItems() []ui.Item {
-	var items []ui.Item
+func buildSetupItems() []tui.Item {
+	var items []tui.Item
 	setupItemNames = []string{}
 
 	// Navigation section
-	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Navigation"})
+	items = append(items, tui.Item{Kind: tui.KindHeader, Label: "Navigation"})
 	setupItemNames = append(setupItemNames, "")
 
-	items = append(items, ui.Item{Kind: ui.KindAction, Label: "skills", Description: "Manage AI agent skills"})
+	items = append(items, tui.Item{Kind: tui.KindAction, Label: "skills", Description: "Manage AI agent skills"})
 	setupItemNames = append(setupItemNames, string(setupActionSkills))
 
 	// Configuration section - from config.Scripts with CheckFn
-	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Configuration"})
+	items = append(items, tui.Item{Kind: tui.KindHeader, Label: "Configuration"})
 	setupItemNames = append(setupItemNames, "")
 
 	type scriptEntry struct {
-		item ui.Item
+		item tui.Item
 		name string
 	}
 	var configuredItems, notConfiguredItems []scriptEntry
@@ -86,14 +87,14 @@ func buildSetupItems() []ui.Item {
 		}
 
 		result := script.CheckFn()
-		state := ui.StateUnchecked
+		state := tui.StateUnchecked
 		if result.Installed {
-			state = ui.StateChecked
+			state = tui.StateChecked
 		}
 
 		entry := scriptEntry{
-			item: ui.Item{
-				Kind:        ui.KindToggle,
+			item: tui.Item{
+				Kind:        tui.KindToggle,
 				Label:       script.Name,
 				Description: script.Description,
 				State:       state,
@@ -118,7 +119,7 @@ func buildSetupItems() []ui.Item {
 	}
 
 	// Scripts section - scripts without CheckFn (utilities)
-	items = append(items, ui.Item{Kind: ui.KindHeader, Label: "Scripts"})
+	items = append(items, tui.Item{Kind: tui.KindHeader, Label: "Scripts"})
 	setupItemNames = append(setupItemNames, "")
 
 	for _, script := range config.Scripts {
@@ -126,8 +127,8 @@ func buildSetupItems() []ui.Item {
 			continue
 		}
 
-		items = append(items, ui.Item{
-			Kind:        ui.KindAction,
+		items = append(items, tui.Item{
+			Kind:        tui.KindAction,
 			Label:       script.Name,
 			Description: script.Description,
 		})
@@ -137,7 +138,7 @@ func buildSetupItems() []ui.Item {
 	return items
 }
 
-func handleSetupSelect(index int, item ui.Item) tea.Cmd {
+func handleSetupSelect(index int, item tui.Item) tea.Cmd {
 	if index >= len(setupItemNames) {
 		return nil
 	}
@@ -146,9 +147,9 @@ func handleSetupSelect(index int, item ui.Item) tea.Cmd {
 	switch setupAction(name) {
 	case setupActionSkills:
 		return func() tea.Msg {
-			return ui.NavigateMsg{
+			return tui.NavigateMsg{
 				InitFunc: initSkillsState,
-				Config: ui.AppConfig{
+				Config: tui.AppConfig{
 					Title:      "Skills",
 					BuildItems: buildSkillsItems,
 					OnSelect:   handleSkillsSelect,
@@ -160,13 +161,13 @@ func handleSetupSelect(index int, item ui.Item) tea.Cmd {
 	default:
 		return func() tea.Msg {
 			runScript(name)
-			return ui.ActionDoneMsg{Message: "Completed " + name}
+			return tui.ActionDoneMsg{Message: "Completed " + name}
 		}
 	}
 }
 
 func runSetupUI() {
-	ui.RunOrExit(ui.AppConfig{
+	tui.RunOrExit(tui.AppConfig{
 		Title:      "Setup",
 		BuildItems: buildSetupItems,
 		OnSelect:   handleSetupSelect,

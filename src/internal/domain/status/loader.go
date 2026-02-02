@@ -1,4 +1,4 @@
-package commands
+package status
 
 import (
 	"os"
@@ -11,91 +11,37 @@ import (
 	"github.com/jterrazz/jterrazz-cli/internal/tool"
 )
 
-// =============================================================================
-// Status Item Types
-// =============================================================================
-
-// StatusItemKind represents the type of status item
-type StatusItemKind int
-
-const (
-	StatusItemHeader StatusItemKind = iota
-	StatusItemSetup
-	StatusItemSecurity
-	StatusItemIdentity
-	StatusItemTool
-	StatusItemNetwork
-	StatusItemDisk
-	StatusItemCache
-	StatusItemSystemInfo
-)
-
-// StatusItem represents a single item in the status display
-type StatusItem struct {
-	ID          string
-	Kind        StatusItemKind
-	Section     string
-	SubSection  string
-	Name        string
-	Description string
-	Loaded      bool
-
-	// Result data (populated after loading)
-	Installed bool
-	Version   string
-	Status    string
-	Detail    string
-	Value     string
-	Style     string
-	GoodWhen  bool
-	Method    string
-	Available bool
-}
-
-// StatusUpdateMsg is sent when a status item finishes loading
-type StatusUpdateMsg struct {
-	ID   string
-	Item StatusItem
-}
-
-// AllLoadedMsg is sent when all items have finished loading
-type AllLoadedMsg struct{}
-
-// =============================================================================
-// Status Loader
-// =============================================================================
-
-// StatusLoader manages parallel loading of status items
-type StatusLoader struct {
-	items   []StatusItem
-	updates chan StatusUpdateMsg
+// Loader manages parallel loading of status items
+type Loader struct {
+	items   []Item
+	updates chan UpdateMsg
 	started bool
 	mu      sync.Mutex
 }
 
-// NewStatusLoader creates a new loader with all items in pending state
-func NewStatusLoader() *StatusLoader {
-	loader := &StatusLoader{
-		updates: make(chan StatusUpdateMsg, 100),
+// NewLoader creates a new loader with all items in pending state
+func NewLoader() *Loader {
+	loader := &Loader{
+		updates: make(chan UpdateMsg, 100),
 	}
 	loader.buildItems()
 	return loader
 }
 
 // GetItems returns a copy of all items
-func (l *StatusLoader) GetItems() []StatusItem {
+func (l *Loader) GetItems() []Item {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	items := make([]StatusItem, len(l.items))
+	items := make([]Item, len(l.items))
 	copy(items, l.items)
 	return items
 }
 
 // GetPendingCount returns the number of items that need loading
-func (l *StatusLoader) GetPendingCount() int {
+func (l *Loader) GetPendingCount() int {
 	count := 0
 	for _, item := range l.items {
-		if !item.Loaded && item.Kind != StatusItemHeader {
+		if !item.Loaded && item.Kind != KindHeader {
 			count++
 		}
 	}
@@ -103,24 +49,24 @@ func (l *StatusLoader) GetPendingCount() int {
 }
 
 // buildItems creates all status items in display order
-func (l *StatusLoader) buildItems() {
+func (l *Loader) buildItems() {
 	// System Info header
-	l.addItem(StatusItem{
+	l.addItem(Item{
 		ID:      "sysinfo",
-		Kind:    StatusItemSystemInfo,
+		Kind:    KindSystemInfo,
 		Section: "System",
 		Name:    "System Info",
 	})
 
 	// Setup section
-	l.addItem(StatusItem{ID: "header-setup", Kind: StatusItemHeader, Section: "System", SubSection: "Setup", Loaded: true})
+	l.addItem(Item{ID: "header-setup", Kind: KindHeader, Section: "System", SubSection: "Setup", Loaded: true})
 	for _, script := range config.Scripts {
 		if script.CheckFn == nil {
 			continue
 		}
-		l.addItem(StatusItem{
+		l.addItem(Item{
 			ID:          "setup-" + script.Name,
-			Kind:        StatusItemSetup,
+			Kind:        KindSetup,
 			Section:     "System",
 			SubSection:  "Setup",
 			Name:        script.Name,
@@ -129,11 +75,11 @@ func (l *StatusLoader) buildItems() {
 	}
 
 	// Security section
-	l.addItem(StatusItem{ID: "header-security", Kind: StatusItemHeader, Section: "System", SubSection: "MacOS Security", Loaded: true})
+	l.addItem(Item{ID: "header-security", Kind: KindHeader, Section: "System", SubSection: "MacOS Security", Loaded: true})
 	for _, check := range config.SecurityChecks {
-		l.addItem(StatusItem{
+		l.addItem(Item{
 			ID:          "security-" + check.Name,
-			Kind:        StatusItemSecurity,
+			Kind:        KindSecurity,
 			Section:     "System",
 			SubSection:  "MacOS Security",
 			Name:        check.Name,
@@ -143,11 +89,11 @@ func (l *StatusLoader) buildItems() {
 	}
 
 	// Identity section
-	l.addItem(StatusItem{ID: "header-identity", Kind: StatusItemHeader, Section: "System", SubSection: "Identity", Loaded: true})
+	l.addItem(Item{ID: "header-identity", Kind: KindHeader, Section: "System", SubSection: "Identity", Loaded: true})
 	for _, check := range config.IdentityChecks {
-		l.addItem(StatusItem{
+		l.addItem(Item{
 			ID:          "identity-" + check.Name,
-			Kind:        StatusItemIdentity,
+			Kind:        KindIdentity,
 			Section:     "System",
 			SubSection:  "Identity",
 			Name:        check.Name,
@@ -162,11 +108,11 @@ func (l *StatusLoader) buildItems() {
 		if len(tools) == 0 {
 			continue
 		}
-		l.addItem(StatusItem{ID: "header-tools-" + string(category), Kind: StatusItemHeader, Section: "Tools", SubSection: string(category), Loaded: true})
+		l.addItem(Item{ID: "header-tools-" + string(category), Kind: KindHeader, Section: "Tools", SubSection: string(category), Loaded: true})
 		for _, t := range tools {
-			l.addItem(StatusItem{
+			l.addItem(Item{
 				ID:         "tool-" + t.Name,
-				Kind:       StatusItemTool,
+				Kind:       KindTool,
 				Section:    "Tools",
 				SubSection: string(category),
 				Name:       t.Name,
@@ -176,11 +122,11 @@ func (l *StatusLoader) buildItems() {
 	}
 
 	// Network section
-	l.addItem(StatusItem{ID: "header-network", Kind: StatusItemHeader, Section: "Resources", SubSection: "Network", Loaded: true})
+	l.addItem(Item{ID: "header-network", Kind: KindHeader, Section: "Resources", SubSection: "Network", Loaded: true})
 	for _, check := range config.NetworkChecks {
-		l.addItem(StatusItem{
+		l.addItem(Item{
 			ID:         "network-" + check.Name,
-			Kind:       StatusItemNetwork,
+			Kind:       KindNetwork,
 			Section:    "Resources",
 			SubSection: "Network",
 			Name:       check.Name,
@@ -188,11 +134,11 @@ func (l *StatusLoader) buildItems() {
 	}
 
 	// Disk section
-	l.addItem(StatusItem{ID: "header-disk", Kind: StatusItemHeader, Section: "Resources", SubSection: "Disk Usage", Loaded: true})
+	l.addItem(Item{ID: "header-disk", Kind: KindHeader, Section: "Resources", SubSection: "Disk Usage", Loaded: true})
 	for _, check := range config.MainDiskChecks {
-		l.addItem(StatusItem{
+		l.addItem(Item{
 			ID:         "disk-" + check.Name,
-			Kind:       StatusItemDisk,
+			Kind:       KindDisk,
 			Section:    "Resources",
 			SubSection: "Disk Usage",
 			Name:       check.Name,
@@ -200,11 +146,11 @@ func (l *StatusLoader) buildItems() {
 	}
 
 	// Cache section
-	l.addItem(StatusItem{ID: "header-cache", Kind: StatusItemHeader, Section: "Resources", SubSection: "Caches & Cleanable", Loaded: true})
+	l.addItem(Item{ID: "header-cache", Kind: KindHeader, Section: "Resources", SubSection: "Caches & Cleanable", Loaded: true})
 	for _, check := range config.CacheChecks {
-		l.addItem(StatusItem{
+		l.addItem(Item{
 			ID:         "cache-" + check.Name,
-			Kind:       StatusItemCache,
+			Kind:       KindCache,
 			Section:    "Resources",
 			SubSection: "Caches & Cleanable",
 			Name:       check.Name,
@@ -212,12 +158,12 @@ func (l *StatusLoader) buildItems() {
 	}
 }
 
-func (l *StatusLoader) addItem(item StatusItem) {
+func (l *Loader) addItem(item Item) {
 	l.items = append(l.items, item)
 }
 
 // Start launches all checks in parallel (call only once)
-func (l *StatusLoader) Start() {
+func (l *Loader) Start() {
 	l.mu.Lock()
 	if l.started {
 		l.mu.Unlock()
@@ -233,7 +179,7 @@ func (l *StatusLoader) Start() {
 	go func() {
 		defer wg.Done()
 		item := l.loadSystemInfo()
-		l.updates <- StatusUpdateMsg{ID: item.ID, Item: item}
+		l.updates <- UpdateMsg{ID: item.ID, Item: item}
 	}()
 
 	// Setup checks
@@ -245,15 +191,15 @@ func (l *StatusLoader) Start() {
 		go func(s config.Script) {
 			defer wg.Done()
 			result := config.CheckScript(s)
-			item := StatusItem{
+			item := Item{
 				ID:        "setup-" + s.Name,
-				Kind:      StatusItemSetup,
+				Kind:      KindSetup,
 				Name:      s.Name,
 				Loaded:    true,
 				Installed: result.Installed,
 				Detail:    result.Detail,
 			}
-			l.updates <- StatusUpdateMsg{ID: item.ID, Item: item}
+			l.updates <- UpdateMsg{ID: item.ID, Item: item}
 		}(script)
 	}
 
@@ -263,9 +209,9 @@ func (l *StatusLoader) Start() {
 		go func(c config.SecurityCheck) {
 			defer wg.Done()
 			result := c.CheckFn()
-			item := StatusItem{
+			item := Item{
 				ID:          "security-" + c.Name,
-				Kind:        StatusItemSecurity,
+				Kind:        KindSecurity,
 				Name:        c.Name,
 				Description: c.Description,
 				Loaded:      true,
@@ -273,7 +219,7 @@ func (l *StatusLoader) Start() {
 				Detail:      result.Detail,
 				GoodWhen:    c.GoodWhen,
 			}
-			l.updates <- StatusUpdateMsg{ID: item.ID, Item: item}
+			l.updates <- UpdateMsg{ID: item.ID, Item: item}
 		}(check)
 	}
 
@@ -283,9 +229,9 @@ func (l *StatusLoader) Start() {
 		go func(c config.IdentityCheck) {
 			defer wg.Done()
 			result := c.CheckFn()
-			item := StatusItem{
+			item := Item{
 				ID:          "identity-" + c.Name,
-				Kind:        StatusItemIdentity,
+				Kind:        KindIdentity,
 				Name:        c.Name,
 				Description: c.Description,
 				Loaded:      true,
@@ -293,7 +239,7 @@ func (l *StatusLoader) Start() {
 				Detail:      result.Detail,
 				GoodWhen:    c.GoodWhen,
 			}
-			l.updates <- StatusUpdateMsg{ID: item.ID, Item: item}
+			l.updates <- UpdateMsg{ID: item.ID, Item: item}
 		}(check)
 	}
 
@@ -303,9 +249,9 @@ func (l *StatusLoader) Start() {
 		go func(t config.Tool) {
 			defer wg.Done()
 			result := t.Check()
-			item := StatusItem{
+			item := Item{
 				ID:        "tool-" + t.Name,
-				Kind:      StatusItemTool,
+				Kind:      KindTool,
 				Name:      t.Name,
 				Loaded:    true,
 				Installed: result.Installed,
@@ -313,7 +259,7 @@ func (l *StatusLoader) Start() {
 				Status:    result.Status,
 				Method:    t.Method.String(),
 			}
-			l.updates <- StatusUpdateMsg{ID: item.ID, Item: item}
+			l.updates <- UpdateMsg{ID: item.ID, Item: item}
 		}(t)
 	}
 
@@ -323,16 +269,16 @@ func (l *StatusLoader) Start() {
 		go func(c config.ResourceCheck) {
 			defer wg.Done()
 			result := c.CheckFn()
-			item := StatusItem{
+			item := Item{
 				ID:        "network-" + c.Name,
-				Kind:      StatusItemNetwork,
+				Kind:      KindNetwork,
 				Name:      c.Name,
 				Loaded:    true,
 				Available: result.Available,
 				Value:     result.Value,
 				Style:     result.Style,
 			}
-			l.updates <- StatusUpdateMsg{ID: item.ID, Item: item}
+			l.updates <- UpdateMsg{ID: item.ID, Item: item}
 		}(check)
 	}
 
@@ -342,16 +288,16 @@ func (l *StatusLoader) Start() {
 		go func(c config.DiskCheck) {
 			defer wg.Done()
 			result := c.Check()
-			item := StatusItem{
+			item := Item{
 				ID:        "disk-" + c.Name,
-				Kind:      StatusItemDisk,
+				Kind:      KindDisk,
 				Name:      c.Name,
 				Loaded:    true,
 				Available: result.Available,
 				Value:     result.Value,
 				Style:     result.Style,
 			}
-			l.updates <- StatusUpdateMsg{ID: item.ID, Item: item}
+			l.updates <- UpdateMsg{ID: item.ID, Item: item}
 		}(check)
 	}
 
@@ -361,16 +307,16 @@ func (l *StatusLoader) Start() {
 		go func(c config.DiskCheck) {
 			defer wg.Done()
 			result := c.Check()
-			item := StatusItem{
+			item := Item{
 				ID:        "cache-" + c.Name,
-				Kind:      StatusItemCache,
+				Kind:      KindCache,
 				Name:      c.Name,
 				Loaded:    true,
 				Available: result.Available,
 				Value:     result.Value,
 				Style:     result.Style,
 			}
-			l.updates <- StatusUpdateMsg{ID: item.ID, Item: item}
+			l.updates <- UpdateMsg{ID: item.ID, Item: item}
 		}(check)
 	}
 
@@ -382,7 +328,7 @@ func (l *StatusLoader) Start() {
 }
 
 // WaitForUpdate returns a command that waits for the next update
-func (l *StatusLoader) WaitForUpdate() tea.Cmd {
+func (l *Loader) WaitForUpdate() tea.Cmd {
 	return func() tea.Msg {
 		update, ok := <-l.updates
 		if !ok {
@@ -393,7 +339,7 @@ func (l *StatusLoader) WaitForUpdate() tea.Cmd {
 }
 
 // loadSystemInfo loads system information
-func (l *StatusLoader) loadSystemInfo() StatusItem {
+func (l *Loader) loadSystemInfo() Item {
 	hostname, _ := os.Hostname()
 	// Shorten hostname (remove .local suffix and truncate if too long)
 	if idx := strings.Index(hostname, "."); idx > 0 {
@@ -408,9 +354,9 @@ func (l *StatusLoader) loadSystemInfo() StatusItem {
 	user := os.Getenv("USER")
 	shell := filepath.Base(os.Getenv("SHELL"))
 
-	return StatusItem{
+	return Item{
 		ID:     "sysinfo",
-		Kind:   StatusItemSystemInfo,
+		Kind:   KindSystemInfo,
 		Loaded: true,
 		Detail: osInfo + " " + arch + " • " + hostname + " • " + user + " • " + shell,
 	}

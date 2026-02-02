@@ -1,6 +1,11 @@
-package ui
+package tui
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/jterrazz/jterrazz-cli/internal/ui/components"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/theme"
+)
 
 // Page represents a full-screen TUI page layout
 type Page struct {
@@ -45,9 +50,9 @@ func (p *Page) Render() string {
 
 	// Header: title or breadcrumbs
 	if len(p.Breadcrumbs) > 0 {
-		b.WriteString(RenderBreadcrumb(p.Breadcrumbs...) + "\n\n")
+		b.WriteString(components.Breadcrumb(p.Breadcrumbs...) + "\n\n")
 	} else if p.Title != "" {
-		b.WriteString(TitleStyle.Render(p.Title) + "\n\n")
+		b.WriteString(theme.Title.Render(p.Title) + "\n\n")
 	}
 
 	// Main content
@@ -57,16 +62,16 @@ func (p *Page) Render() string {
 
 	// Help text
 	if p.Help != "" {
-		b.WriteString(HelpStyle.Render(p.Help))
+		b.WriteString(theme.Help.Render(p.Help))
 	}
 
 	// Status message
 	if p.Message != "" {
 		b.WriteString("\n")
 		if p.Processing {
-			b.WriteString(ActionStyle.Render(p.Message))
+			b.WriteString(theme.Action.Render(p.Message))
 		} else {
-			b.WriteString(SuccessStyle.Render(p.Message))
+			b.WriteString(theme.Success.Render(p.Message))
 		}
 	}
 

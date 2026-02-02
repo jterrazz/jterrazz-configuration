@@ -1,8 +1,9 @@
-package ui
+package tui
 
 import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/theme"
 )
 
 // TableColumn defines a column configuration
@@ -19,7 +20,7 @@ func Table(rows [][]string, columns []TableColumn) string {
 
 	t := table.New().
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color(theme.ColorBorder))).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			style := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 
@@ -48,16 +49,16 @@ func SimpleTable(rows [][]string, firstColWidth int) string {
 
 	t := table.New().
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color(theme.ColorBorder))).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			if col == 0 {
 				return lipgloss.NewStyle().
-					Foreground(lipgloss.Color(ColorPrimary)).
+					Foreground(lipgloss.Color(theme.ColorPrimary)).
 					PaddingLeft(1).PaddingRight(1).
 					Width(firstColWidth)
 			}
 			return lipgloss.NewStyle().
-				Foreground(lipgloss.Color(ColorMuted)).
+				Foreground(lipgloss.Color(theme.ColorMuted)).
 				PaddingLeft(1).PaddingRight(1)
 		}).
 		Rows(rows...)
@@ -74,22 +75,22 @@ func StatusTable(rows [][]string, nameWidth int) string {
 
 	t := table.New().
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color(theme.ColorBorder))).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch col {
 			case 0:
 				return lipgloss.NewStyle().
-					Foreground(lipgloss.Color(ColorPrimary)).
+					Foreground(lipgloss.Color(theme.ColorPrimary)).
 					PaddingLeft(1).PaddingRight(1).
 					Width(nameWidth)
 			case 1:
 				return lipgloss.NewStyle().
-					Foreground(lipgloss.Color(ColorMuted)).
+					Foreground(lipgloss.Color(theme.ColorMuted)).
 					PaddingLeft(1).PaddingRight(1).
 					Width(30)
 			case 2:
 				return lipgloss.NewStyle().
-					Foreground(lipgloss.Color(ColorSecondary)).
+					Foreground(lipgloss.Color(theme.ColorSecondary)).
 					PaddingLeft(1).PaddingRight(1)
 			default:
 				return lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
