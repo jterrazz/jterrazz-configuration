@@ -17,30 +17,6 @@ type IdentityCheck struct {
 // IdentityChecks is the list of developer identity checks
 var IdentityChecks = []IdentityCheck{
 	{
-		Name:        "ssh",
-		Description: "SSH key for authentication",
-		CheckFn: func() CheckResult {
-			sshKey := os.Getenv("HOME") + "/.ssh/id_ed25519"
-			if _, err := os.Stat(sshKey); err == nil {
-				return InstalledWithDetail("~/.ssh/id_ed25519")
-			}
-			return NotInstalled()
-		},
-		GoodWhen: true,
-	},
-	{
-		Name:        "gpg",
-		Description: "GPG key for signing",
-		CheckFn: func() CheckResult {
-			out, err := exec.Command("gpg", "--list-secret-keys", "--keyid-format", "long").Output()
-			if err != nil || len(out) == 0 {
-				return NotInstalled()
-			}
-			return InstalledWithDetail("~/.gnupg")
-		},
-		GoodWhen: true,
-	},
-	{
 		Name:        "git-email",
 		Description: "Git commit email",
 		CheckFn: func() CheckResult {
@@ -61,11 +37,35 @@ var IdentityChecks = []IdentityCheck{
 		GoodWhen: true,
 	},
 	{
-		Name:        "commit-signing",
-		Description: "Sign git commits with GPG",
+		Name:        "git-signing",
+		Description: "Git commit signature",
 		CheckFn: func() CheckResult {
 			out, _ := exec.Command("git", "config", "--global", "commit.gpgsign").Output()
 			return CheckResult{Installed: strings.TrimSpace(string(out)) == "true"}
+		},
+		GoodWhen: true,
+	},
+	{
+		Name:        "gpg-key",
+		Description: "GPG key for signing",
+		CheckFn: func() CheckResult {
+			out, err := exec.Command("gpg", "--list-secret-keys", "--keyid-format", "long").Output()
+			if err != nil || len(out) == 0 {
+				return NotInstalled()
+			}
+			return InstalledWithDetail("~/.gnupg")
+		},
+		GoodWhen: true,
+	},
+	{
+		Name:        "ssh-key",
+		Description: "SSH key for authentication",
+		CheckFn: func() CheckResult {
+			sshKey := os.Getenv("HOME") + "/.ssh/id_ed25519"
+			if _, err := os.Stat(sshKey); err == nil {
+				return InstalledWithDetail("~/.ssh/id_ed25519")
+			}
+			return NotInstalled()
 		},
 		GoodWhen: true,
 	},

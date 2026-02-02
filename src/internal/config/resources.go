@@ -32,7 +32,7 @@ var NetworkChecks = []ResourceCheck{
 			for _, line := range strings.Split(string(out), "\n") {
 				if strings.Contains(line, " SSID:") {
 					ssid := strings.TrimSpace(strings.TrimPrefix(line, " SSID:"))
-					return ResourceResult{Value: ssid, Style: "special", Available: true}
+					return ResourceResult{Value: ssid, Style: "muted", Available: true}
 				}
 			}
 			return ResourceResult{Available: false}
@@ -116,7 +116,7 @@ var NetworkChecks = []ResourceCheck{
 				count = len(lines) - 1 // subtract header
 			}
 			if count > 0 {
-				return ResourceResult{Value: fmt.Sprintf("%d ports", count), Style: "warning", Available: true}
+				return ResourceResult{Value: fmt.Sprintf("%d ports", count), Style: "muted", Available: true}
 			}
 			return ResourceResult{Value: "0 ports", Style: "muted", Available: true}
 		},
@@ -146,10 +146,10 @@ type DiskCheck struct {
 
 // MainDiskChecks shows primary directories
 var MainDiskChecks = []DiskCheck{
-	{Name: "~/Developer", Path: "~/Developer", Style: "special"},
+	{Name: "~/Developer", Path: "~/Developer", Style: "muted"},
 	{Name: "/Applications", Path: "/Applications", Style: "muted"},
 	{Name: "~/Documents", Path: "~/Documents", Style: "muted"},
-	{Name: "~/Downloads", Path: "~/Downloads", Style: "warning"},
+	{Name: "~/Downloads", Path: "~/Downloads", Style: "muted"},
 }
 
 // CacheChecks shows cleanable caches
@@ -163,16 +163,16 @@ var CacheChecks = []DiskCheck{
 			out, _ := exec.Command("docker", "system", "df", "--format", "{{.Size}}").Output()
 			lines := strings.Split(strings.TrimSpace(string(out)), "\n")
 			if len(lines) > 0 && lines[0] != "" {
-				return ResourceResult{Value: strings.Join(lines, " + "), Style: "warning", Available: true}
+				return ResourceResult{Value: strings.Join(lines, " + "), Style: "muted", Available: true}
 			}
 			return ResourceResult{Available: false}
 		},
 	},
-	{Name: "xcode derived", Path: "~/Library/Developer/Xcode/DerivedData", Style: "warning"},
-	{Name: "xcode archives", Path: "~/Library/Developer/Xcode/Archives", Style: "warning"},
-	{Name: "ios device support", Path: "~/Library/Developer/Xcode/iOS DeviceSupport", Style: "warning"},
-	{Name: "cocoapods cache", Path: "~/Library/Caches/CocoaPods", Style: "warning"},
-	{Name: "homebrew cache", Path: "~/Library/Caches/Homebrew", Style: "warning"},
+	{Name: "xcode derived", Path: "~/Library/Developer/Xcode/DerivedData", Style: "muted"},
+	{Name: "xcode archives", Path: "~/Library/Developer/Xcode/Archives", Style: "muted"},
+	{Name: "ios device support", Path: "~/Library/Developer/Xcode/iOS DeviceSupport", Style: "muted"},
+	{Name: "cocoapods cache", Path: "~/Library/Caches/CocoaPods", Style: "muted"},
+	{Name: "homebrew cache", Path: "~/Library/Caches/Homebrew", Style: "muted"},
 	{
 		Name: "multipass",
 		CheckFn: func() ResourceResult {
@@ -181,19 +181,19 @@ var CacheChecks = []DiskCheck{
 			}
 			path := expandHome("~/Library/Application Support/multipassd")
 			if size := GetDirSize(path); size > 0 {
-				return ResourceResult{Value: tool.FormatBytes(size), Style: "warning", Available: true}
+				return ResourceResult{Value: tool.FormatBytes(size), Style: "muted", Available: true}
 			}
 			return ResourceResult{Available: false}
 		},
 	},
-	{Name: "npm cache", Path: "~/.npm", Style: "warning"},
-	{Name: "pnpm cache", Path: "~/Library/pnpm", Style: "warning"},
-	{Name: "yarn cache", Path: "~/Library/Caches/Yarn", Style: "warning"},
-	{Name: "go modules", Path: "~/go/pkg/mod", Style: "warning"},
-	{Name: "gradle cache", Path: "~/.gradle/caches", Style: "warning"},
+	{Name: "npm cache", Path: "~/.npm", Style: "muted"},
+	{Name: "pnpm cache", Path: "~/Library/pnpm", Style: "muted"},
+	{Name: "yarn cache", Path: "~/Library/Caches/Yarn", Style: "muted"},
+	{Name: "go modules", Path: "~/go/pkg/mod", Style: "muted"},
+	{Name: "gradle cache", Path: "~/.gradle/caches", Style: "muted"},
 	{Name: "system logs", Path: "/var/log", Style: "muted"},
-	{Name: "user logs", Path: "~/Library/Logs", Style: "warning"},
-	{Name: "trash", Path: "~/.Trash", Style: "warning"},
+	{Name: "user logs", Path: "~/Library/Logs", Style: "muted"},
+	{Name: "trash", Path: "~/.Trash", Style: "muted"},
 }
 
 // CheckDisk checks a disk path and returns the result

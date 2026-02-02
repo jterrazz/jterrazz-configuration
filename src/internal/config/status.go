@@ -12,7 +12,7 @@ type StatusSection struct {
 var StatusSections = []StatusSection{
 	// System section with subsections
 	{Title: "System", SubTitle: "Setup", RenderFn: nil},          // Uses Scripts
-	{Title: "System", SubTitle: "macOS Security", RenderFn: nil}, // Uses SecurityChecks
+	{Title: "System", SubTitle: "MacOS Security", RenderFn: nil}, // Uses SecurityChecks
 	{Title: "System", SubTitle: "Identity", RenderFn: nil},       // Uses IdentityChecks
 
 	// Tools section - one subsection per category

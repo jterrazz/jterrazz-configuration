@@ -79,6 +79,8 @@ func (m InstallMethod) String() string {
 		return "nvm"
 	case InstallXcode:
 		return "xcode"
+	case InstallManual:
+		return "sh"
 	default:
 		return "-"
 	}
@@ -216,7 +218,8 @@ var Tools = []Tool{
 					status = fmt.Sprintf("%d versions", count)
 				}
 			}
-			return CheckResult{Installed: true, Status: status}
+			version := tool.VersionFromBrewFormula("nvm")()
+			return CheckResult{Installed: true, Version: version, Status: status}
 		},
 	},
 	{
@@ -293,15 +296,7 @@ var Tools = []Tool{
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("ansible", []string{"--version"}, tool.ParseAnsibleVersion),
 	},
-	{
-		Name:         "ansible-lint",
-		Command:      "ansible-lint",
-		Formula:      "ansible-lint",
-		Method:       InstallBrewFormula,
-		Category:     CategoryInfrastructure,
-		Dependencies: []string{"homebrew"},
-		VersionFn:    tool.VersionFromCmd("ansible-lint", []string{"--version"}, tool.ParseAnsibleLintVersion),
-	},
+
 	{
 		Name:         "multipass",
 		Command:      "multipass",
@@ -349,7 +344,7 @@ var Tools = []Tool{
 		Method:       InstallBrewCask,
 		Category:     CategoryAI,
 		Dependencies: []string{"homebrew"},
-		VersionFn:    tool.VersionFromBrewCask("codex"),
+		VersionFn:    tool.VersionFromCmd("codex", []string{"--version"}, tool.ParseBrewVersion),
 	},
 	{
 		Name:         "gemini",
@@ -372,7 +367,7 @@ var Tools = []Tool{
 			if appErr != nil {
 				return CheckResult{}
 			}
-			version := tool.VersionFromBrewCask("ollama")()
+			version := tool.VersionFromBrewCask("ollama-app")()
 			status := "stopped"
 			if err := exec.Command("pgrep", "-x", "ollama").Run(); err == nil {
 				status = "running"
@@ -487,10 +482,17 @@ var Tools = []Tool{
 		Category:    CategorySystemTools,
 		CheckFn: func() CheckResult {
 			omzPath := os.Getenv("HOME") + "/.oh-my-zsh"
-			if _, err := os.Stat(omzPath); err == nil {
-				return CheckResult{Installed: true, Detail: "~/.oh-my-zsh"}
+			if _, err := os.Stat(omzPath); err != nil {
+				return CheckResult{}
 			}
-			return CheckResult{}
+			// Get git commit hash as version
+			cmd := exec.Command("git", "-C", omzPath, "rev-parse", "--short", "HEAD")
+			out, err := cmd.Output()
+			version := ""
+			if err == nil {
+				version = strings.TrimSpace(string(out))
+			}
+			return CheckResult{Installed: true, Version: version}
 		},
 		InstallFn: func() error {
 			cmd := exec.Command("sh", "-c", "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)")
@@ -512,7 +514,7 @@ var Tools = []Tool{
 			if _, err := os.Stat("/Applications/Zed.app"); err != nil {
 				return CheckResult{}
 			}
-			version := tool.VersionFromBrewCask("zed")()
+			version := tool.VersionFromAppPlist("Zed")()
 			return CheckResult{Installed: true, Version: version}
 		},
 	},

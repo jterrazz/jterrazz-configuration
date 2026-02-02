@@ -173,3 +173,29 @@ func (r Row) Render() string {
 func RenderRow(ok bool, label string, detail string) string {
 	return Row{Status: StatusFromBool(ok), Label: label, Detail: detail}.Render()
 }
+
+// =============================================================================
+// Styled Value Rendering
+// =============================================================================
+
+// RenderStyledValue renders a value with a semantic style name.
+// This is the central function for styling dynamic values from config/parsing.
+// Supported styles: "success", "warning", "danger", "special", "muted", "normal"
+func RenderStyledValue(value string, style string) string {
+	switch style {
+	case "success":
+		return SuccessStyle.Render(value)
+	case "warning":
+		return WarningStyle.Render(value)
+	case "danger":
+		return DangerStyle.Render(value)
+	case "special":
+		return SpecialStyle.Render(value)
+	case "normal":
+		return NormalStyle.Render(value)
+	case "muted":
+		fallthrough
+	default:
+		return MutedStyle.Render(value)
+	}
+}
