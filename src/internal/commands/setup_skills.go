@@ -6,8 +6,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/skill"
+	"github.com/jterrazz/jterrazz-cli/internal/ui/components/tui"
 	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/tui"
 )
 
 // =============================================================================
