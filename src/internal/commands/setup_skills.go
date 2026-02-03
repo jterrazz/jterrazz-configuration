@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/jterrazz/jterrazz-cli/internal/skill"
+	"github.com/jterrazz/jterrazz-cli/internal/domain/skill"
 	"github.com/jterrazz/jterrazz-cli/internal/ui/components/tui"
 	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
 	setupview "github.com/jterrazz/jterrazz-cli/internal/ui/views/setup"

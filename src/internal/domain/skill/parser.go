@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/tool"
+	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
 )
 
 // boxCharsRegex matches box-drawing characters used in skills CLI output

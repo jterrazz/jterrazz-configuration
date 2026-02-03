@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/tool"
+	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
 	out "github.com/jterrazz/jterrazz-cli/internal/ui/print"
 )
 

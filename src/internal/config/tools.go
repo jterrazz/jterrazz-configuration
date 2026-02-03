@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/tool"
+	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
 )
 
 // CheckResult is the unified result type for all check operations

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/tool"
+	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
 )
 
 // ResourceCheck represents a system resource check (network, disk, cache)

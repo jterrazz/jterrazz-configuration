@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/tool"
+	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
 )
 
 // Install installs a skill from a repo globally

@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/skill"
+	"github.com/jterrazz/jterrazz-cli/internal/domain/skill"
 	"github.com/jterrazz/jterrazz-cli/internal/ui/components/tui"
 )
 
