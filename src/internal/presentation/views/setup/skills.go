@@ -50,7 +50,7 @@ func BuildSkillsItems() []components.Item {
 	// Favorites section
 	favorites := config.GetFavoriteSkills()
 	if len(favorites) > 0 {
-		items = append(items, components.Item{Kind: components.KindHeader, Label: "Favorites"})
+		items = append(items, components.Item{Kind: components.KindHeader, Label: "Pinned"})
 		skills.itemData = append(skills.itemData, skillItemData{})
 
 		for _, s := range favorites {
@@ -91,7 +91,7 @@ func BuildSkillsItems() []components.Item {
 	}
 
 	// Browse section
-	items = append(items, components.Item{Kind: components.KindHeader, Label: "Browse"})
+	items = append(items, components.Item{Kind: components.KindHeader, Label: "Repositories"})
 	skills.itemData = append(skills.itemData, skillItemData{})
 
 	for _, repo := range config.GetAllSkillRepos() {

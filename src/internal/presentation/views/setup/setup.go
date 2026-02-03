@@ -22,14 +22,14 @@ func BuildItems() []components.Item {
 	itemNames = []string{}
 
 	// Navigation section
-	items = append(items, components.Item{Kind: components.KindHeader, Label: "Navigation"})
+	items = append(items, components.Item{Kind: components.KindHeader, Label: "Skills"})
 	itemNames = append(itemNames, "")
 
 	items = append(items, components.Item{Kind: components.KindAction, Label: "skills", Description: "Manage AI agent skills"})
 	itemNames = append(itemNames, string(ActionSkills))
 
 	// Configuration section - from config.Scripts with CheckFn
-	items = append(items, components.Item{Kind: components.KindHeader, Label: "Configuration"})
+	items = append(items, components.Item{Kind: components.KindHeader, Label: "Setup"})
 	itemNames = append(itemNames, "")
 
 	type scriptEntry struct {
@@ -76,7 +76,7 @@ func BuildItems() []components.Item {
 	}
 
 	// Scripts section - scripts without CheckFn (utilities)
-	items = append(items, components.Item{Kind: components.KindHeader, Label: "Scripts"})
+	items = append(items, components.Item{Kind: components.KindHeader, Label: "Utilities"})
 	itemNames = append(itemNames, "")
 
 	for _, script := range config.Scripts {
