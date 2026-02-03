@@ -18,6 +18,11 @@ import (
 // ProcessRefreshMsg triggers a refresh of process data
 type ProcessRefreshMsg struct{}
 
+// ProcessDataMsg carries refreshed process data
+type ProcessDataMsg struct {
+	Data map[string][]config.ProcessInfo
+}
+
 // Model is the Bubble Tea model for the status view
 type Model struct {
 	loader    *status.Loader
@@ -81,6 +86,17 @@ func scheduleProcessRefresh() tea.Cmd {
 	})
 }
 
+// refreshProcesses runs process checks in background and returns the data
+func refreshProcesses() tea.Cmd {
+	return func() tea.Msg {
+		data := make(map[string][]config.ProcessInfo)
+		for _, check := range config.ProcessChecks {
+			data["process-"+check.Name] = check.CheckFn()
+		}
+		return ProcessDataMsg{Data: data}
+	}
+}
+
 // Update implements tea.Model
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -136,17 +152,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.allLoaded = true
 
 	case ProcessRefreshMsg:
-		// Refresh process data
-		for _, check := range config.ProcessChecks {
-			processes := check.CheckFn()
-			id := "process-" + check.Name
+		// Trigger async process data refresh
+		cmds = append(cmds, refreshProcesses(), scheduleProcessRefresh())
+		return m, tea.Batch(cmds...) // Don't re-render yet
+
+	case ProcessDataMsg:
+		// Apply refreshed process data
+		for id, processes := range msg.Data {
 			if existing, ok := m.items[id]; ok {
 				existing.Processes = processes
 				existing.Available = len(processes) > 0
 				m.items[id] = existing
 			}
 		}
-		cmds = append(cmds, scheduleProcessRefresh())
 
 	case spinner.TickMsg:
 		if !m.allLoaded {
@@ -154,8 +172,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
 		}
+		// Only re-render content on spinner tick if still loading
+		if m.ready && !m.allLoaded {
+			m.viewport.SetContent(m.renderContent())
+		}
+		return m, tea.Batch(cmds...)
 	}
 
+	// Re-render content for data updates (UpdateMsg, ProcessDataMsg, etc.)
 	if m.ready {
 		m.viewport.SetContent(m.renderContent())
 		var cmd tea.Cmd
