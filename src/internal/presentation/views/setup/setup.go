@@ -15,6 +15,7 @@ const (
 
 // itemNames maps list indices to script/action names
 var itemNames []string
+var loadingScript string // Script currently being run
 
 // BuildItems builds the setup menu items
 func BuildItems() []components.Item {
@@ -45,7 +46,9 @@ func BuildItems() []components.Item {
 
 		result := script.CheckFn()
 		state := components.StateUnchecked
-		if result.Installed {
+		if loadingScript == script.Name {
+			state = components.StateLoading
+		} else if result.Installed {
 			state = components.StateChecked
 		}
 
@@ -112,8 +115,10 @@ func HandleSelect(index int, item components.Item, runScript func(string)) tea.C
 		}
 
 	default:
+		loadingScript = name
 		return func() tea.Msg {
 			runScript(name)
+			loadingScript = ""
 			return components.ActionDoneMsg{Message: "Completed " + name}
 		}
 	}

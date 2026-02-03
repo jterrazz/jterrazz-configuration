@@ -17,11 +17,12 @@ const (
 )
 
 type skillsState struct {
-	expanded    map[string]bool
-	installed   []string
-	repoSkills  map[string][]string
-	loadingRepo string
-	itemData    []skillItemData
+	expanded     map[string]bool
+	installed    []string
+	repoSkills   map[string][]string
+	loadingRepo  string
+	loadingSkill string // Skill currently being installed/removed
+	itemData     []skillItemData
 }
 
 type skillItemData struct {
@@ -55,7 +56,9 @@ func BuildSkillsItems() []components.Item {
 
 		for _, s := range favorites {
 			state := components.StateUnchecked
-			if isSkillInstalled(s.Skill) {
+			if skills.loadingSkill == s.Skill {
+				state = components.StateLoading
+			} else if isSkillInstalled(s.Skill) {
 				state = components.StateChecked
 			}
 			items = append(items, components.Item{
@@ -80,11 +83,15 @@ func BuildSkillsItems() []components.Item {
 
 		for _, s := range otherInstalled {
 			repo := findRepoForSkill(s)
+			state := components.StateChecked
+			if skills.loadingSkill == s {
+				state = components.StateLoading
+			}
 			items = append(items, components.Item{
 				Kind:        components.KindToggle,
 				Label:       s,
 				Description: repo,
-				State:       components.StateChecked,
+				State:       state,
 			})
 			skills.itemData = append(skills.itemData, skillItemData{repo: repo, skill: s})
 		}
@@ -133,7 +140,9 @@ func BuildSkillsItems() []components.Item {
 
 			for _, s := range repoSkills {
 				state := components.StateUnchecked
-				if isSkillInstalled(s) {
+				if skills.loadingSkill == s {
+					state = components.StateLoading
+				} else if isSkillInstalled(s) {
 					state = components.StateChecked
 				}
 				items = append(items, components.Item{
@@ -202,6 +211,7 @@ func HandleSkillsSelect(index int, item components.Item) tea.Cmd {
 		}
 
 	case components.KindToggle:
+		skills.loadingSkill = data.skill
 		if item.State == components.StateChecked {
 			return removeSkillCmd(data.skill)
 		}
@@ -231,6 +241,7 @@ func HandleSkillsMessage(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case components.ActionDoneMsg:
+		skills.loadingSkill = ""
 		skills.installed = skill.ListInstalled()
 		return nil
 	}
