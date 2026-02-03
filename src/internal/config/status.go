@@ -28,7 +28,6 @@ var StatusSections = []StatusSection{
 	// Resources section with subsections
 	{Title: "Resources", SubTitle: "Top Processes", RenderFn: nil},      // Uses ProcessChecks
 	{Title: "Resources", SubTitle: "Network", RenderFn: nil},            // Uses NetworkChecks
-	{Title: "Resources", SubTitle: "Disk Usage", RenderFn: nil},         // Uses MainDiskChecks
 	{Title: "Resources", SubTitle: "Caches & Cleanable", RenderFn: nil}, // Uses CacheChecks
 }
 

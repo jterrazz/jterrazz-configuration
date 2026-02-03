@@ -39,7 +39,7 @@ func (m Model) renderContent() string {
 				continue
 			}
 			for _, item := range items {
-				if item.Kind == status.KindNetwork || item.Kind == status.KindDisk || item.Kind == status.KindCache {
+				if item.Kind == status.KindNetwork || item.Kind == status.KindCache {
 					if !item.Loaded || item.Available {
 						allSectionItems = append(allSectionItems, item)
 					}
@@ -62,7 +62,7 @@ func (m Model) renderContent() string {
 			// Filter out unavailable items
 			var visibleItems []status.Item
 			for _, item := range items {
-				if item.Kind == status.KindNetwork || item.Kind == status.KindDisk || item.Kind == status.KindCache {
+				if item.Kind == status.KindNetwork || item.Kind == status.KindCache {
 					if !item.Loaded || item.Available {
 						visibleItems = append(visibleItems, item)
 					}
@@ -121,7 +121,7 @@ func getSubsectionOrder(section string) []string {
 	case "Tools":
 		return []string{"Package Managers", "Languages", "Infrastructure", "AI", "Apps", "System Tools"}
 	case "Resources":
-		return []string{"Top Processes", "Network", "Disk Usage", "Caches & Cleanable"}
+		return []string{"Top Processes", "Network", "Caches & Cleanable"}
 	}
 	return nil
 }

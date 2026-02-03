@@ -16,7 +16,7 @@ func (m Model) renderTableRow(item status.Item, colWidths ColumnWidths) string {
 			return m.renderCheckRowLoading(item, colWidths)
 		case status.KindTool:
 			return m.renderToolRowLoading(item, colWidths)
-		case status.KindNetwork, status.KindDisk, status.KindCache:
+		case status.KindNetwork, status.KindCache:
 			return m.renderResourceRowLoading(item, colWidths)
 		default:
 			return fmt.Sprintf("  %s  %-*s", m.spinner.View(), colWidths.Name, item.Name)
@@ -30,7 +30,7 @@ func (m Model) renderTableRow(item status.Item, colWidths ColumnWidths) string {
 		return m.renderCheckRow(item, colWidths)
 	case status.KindTool:
 		return m.renderToolRow(item, colWidths)
-	case status.KindNetwork, status.KindDisk, status.KindCache:
+	case status.KindNetwork, status.KindCache:
 		return m.renderResourceRow(item, colWidths)
 	}
 

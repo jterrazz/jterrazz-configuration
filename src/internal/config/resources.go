@@ -158,14 +158,6 @@ type DiskCheck struct {
 	CheckFn func() ResourceResult // Custom check (overrides Path)
 }
 
-// MainDiskChecks shows primary directories
-var MainDiskChecks = []DiskCheck{
-	{Name: "~/Developer", Path: "~/Developer", Style: "muted"},
-	{Name: "/Applications", Path: "/Applications", Style: "muted"},
-	{Name: "~/Documents", Path: "~/Documents", Style: "muted"},
-	{Name: "~/Downloads", Path: "~/Downloads", Style: "muted"},
-}
-
 // CacheChecks shows cleanable caches
 var CacheChecks = []DiskCheck{
 	{

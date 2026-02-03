@@ -22,7 +22,6 @@ const (
 	KindTool
 	KindProcess
 	KindNetwork
-	KindDisk
 	KindCache
 	KindSystemInfo
 )
@@ -195,18 +194,6 @@ func (l *Loader) buildItems() {
 		})
 	}
 
-	// Disk section
-	l.addItem(Item{ID: "header-disk", Kind: KindHeader, Section: "Resources", SubSection: "Disk Usage", Loaded: true})
-	for _, check := range config.MainDiskChecks {
-		l.addItem(Item{
-			ID:         "disk-" + check.Name,
-			Kind:       KindDisk,
-			Section:    "Resources",
-			SubSection: "Disk Usage",
-			Name:       check.Name,
-		})
-	}
-
 	// Cache section
 	l.addItem(Item{ID: "header-cache", Kind: KindHeader, Section: "Resources", SubSection: "Caches & Cleanable", Loaded: true})
 	for _, check := range config.CacheChecks {
@@ -352,25 +339,6 @@ func (l *Loader) Start() {
 			item := Item{
 				ID:        "network-" + c.Name,
 				Kind:      KindNetwork,
-				Name:      c.Name,
-				Loaded:    true,
-				Available: result.Available,
-				Value:     result.Value,
-				Style:     result.Style,
-			}
-			l.updates <- UpdateMsg{ID: item.ID, Item: item}
-		}(check)
-	}
-
-	// Disk checks
-	for _, check := range config.MainDiskChecks {
-		wg.Add(1)
-		go func(c config.DiskCheck) {
-			defer wg.Done()
-			result := c.Check()
-			item := Item{
-				ID:        "disk-" + c.Name,
-				Kind:      KindDisk,
 				Name:      c.Name,
 				Loaded:    true,
 				Available: result.Available,
