@@ -23,10 +23,10 @@ func BuildItems() []components.Item {
 	itemNames = []string{}
 
 	// Navigation section
-	items = append(items, components.Item{Kind: components.KindHeader, Label: "Skills"})
+	items = append(items, components.Item{Kind: components.KindHeader, Label: "Navigation"})
 	itemNames = append(itemNames, "")
 
-	items = append(items, components.Item{Kind: components.KindAction, Label: "skills", Description: "Manage AI agent skills"})
+	items = append(items, components.Item{Kind: components.KindNavigation, Label: "skills", Description: "Manage AI agent skills"})
 	itemNames = append(itemNames, string(ActionSkills))
 
 	// Configuration section - from config.Scripts with CheckFn

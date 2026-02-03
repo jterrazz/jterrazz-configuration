@@ -17,7 +17,8 @@ type ItemKind int
 
 const (
 	KindHeader     ItemKind = iota // Non-selectable section header
-	KindAction                     // Clickable action
+	KindNavigation                 // Navigates to another view
+	KindAction                     // Runs a one-shot action
 	KindToggle                     // Has on/off state (checkbox)
 	KindExpandable                 // Can expand/collapse (tree node)
 )
@@ -53,6 +54,9 @@ func (i Item) Render(selected bool, labelWidth int) string {
 	case KindHeader:
 		return renderSection(i.Label)
 
+	case KindNavigation:
+		return i.renderNavigation(selected)
+
 	case KindAction:
 		return i.renderAction(selected)
 
@@ -69,6 +73,19 @@ func (i Item) Render(selected bool, labelWidth int) string {
 func renderSection(title string) string {
 	line := "───"
 	return theme.Section.Render(line + " " + title + " " + line)
+}
+
+func (i Item) renderNavigation(selected bool) string {
+	indent := i.indentPrefix()
+
+	icon := "→"
+	prefix := indent + "  "
+
+	if selected {
+		prefix = indent + theme.IconSelected + " "
+		return theme.Selected.Render(prefix+icon+" "+i.Label) + "  " + theme.Muted.Render(i.Description)
+	}
+	return prefix + theme.Special.Render(icon) + " " + theme.Normal.Render(i.Label) + "  " + theme.Muted.Render(i.Description)
 }
 
 func (i Item) renderAction(selected bool) string {
