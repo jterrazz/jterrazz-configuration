@@ -9,6 +9,9 @@ import (
 	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
+// SpinnerFPS is the animation speed for all spinners
+const SpinnerFPS = 150 * time.Millisecond
+
 // Spinner wraps the bubbles spinner with our theme
 type Spinner struct {
 	Model spinner.Model
@@ -19,7 +22,7 @@ func NewSpinner() Spinner {
 	s := spinner.New()
 	s.Spinner = spinner.Spinner{
 		Frames: theme.BrailleSpinner,
-		FPS:    120 * time.Millisecond,
+		FPS:    SpinnerFPS,
 	}
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.ColorSpinner))
 	return Spinner{Model: s}
@@ -30,10 +33,21 @@ func NewSpinnerWithStyle(color string) Spinner {
 	s := spinner.New()
 	s.Spinner = spinner.Spinner{
 		Frames: theme.BrailleSpinner,
-		FPS:    120 * time.Millisecond,
+		FPS:    SpinnerFPS,
 	}
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
 	return Spinner{Model: s}
+}
+
+// NewSpinnerModel creates a raw spinner.Model for use in custom views
+func NewSpinnerModel() spinner.Model {
+	s := spinner.New()
+	s.Spinner = spinner.Spinner{
+		Frames: theme.BrailleSpinner,
+		FPS:    SpinnerFPS,
+	}
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.ColorSpinner))
+	return s
 }
 
 // View returns the current spinner frame

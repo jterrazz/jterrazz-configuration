@@ -53,18 +53,11 @@ func New() Model {
 		}
 	}
 
-	s := spinner.New()
-	s.Spinner = spinner.Spinner{
-		Frames: theme.BrailleSpinner,
-		FPS:    120 * time.Millisecond,
-	}
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.ColorSpinner))
-
 	return Model{
 		loader:    loader,
 		items:     items,
 		itemOrder: itemOrder,
-		spinner:   s,
+		spinner:   components.NewSpinnerModel(),
 		total:     total,
 	}
 }
