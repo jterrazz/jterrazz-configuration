@@ -83,12 +83,7 @@ func SubsectionBox(title string, lines []string, width int) string {
 	// Pad content lines
 	var paddedLines []string
 	for _, line := range lines {
-		padding := innerWidth - VisibleLen(line)
-		if padding < 0 {
-			padding = 0
-		}
-		paddedLine := borderStyle.Render(theme.BoxRoundedVertical+" ") + line + strings.Repeat(" ", padding) + borderStyle.Render(" "+theme.BoxRoundedVertical)
-		paddedLines = append(paddedLines, paddedLine)
+		paddedLines = append(paddedLines, padBoxLine(line, innerWidth))
 	}
 
 	return top + "\n" + strings.Join(paddedLines, "\n") + "\n" + bottom
@@ -113,12 +108,7 @@ func SimpleBox(content string, width int) string {
 
 	var paddedLines []string
 	for _, line := range lines {
-		padding := innerWidth - VisibleLen(line)
-		if padding < 0 {
-			padding = 0
-		}
-		paddedLine := borderStyle.Render(theme.BoxRoundedVertical+" ") + line + strings.Repeat(" ", padding) + borderStyle.Render(" "+theme.BoxRoundedVertical)
-		paddedLines = append(paddedLines, paddedLine)
+		paddedLines = append(paddedLines, padBoxLine(line, innerWidth))
 	}
 
 	return top + "\n" + strings.Join(paddedLines, "\n") + "\n" + bottom
@@ -127,6 +117,16 @@ func SimpleBox(content string, width int) string {
 // =============================================================================
 // Helpers
 // =============================================================================
+
+// padBoxLine pads a line to fit inside a box with borders
+func padBoxLine(line string, innerWidth int) string {
+	borderStyle := theme.SectionBorder
+	padding := innerWidth - VisibleLen(line)
+	if padding < 0 {
+		padding = 0
+	}
+	return borderStyle.Render(theme.BoxRoundedVertical+" ") + line + strings.Repeat(" ", padding) + borderStyle.Render(" "+theme.BoxRoundedVertical)
+}
 
 // VisibleLen returns the visible length of a string, stripping ANSI escape codes
 func VisibleLen(s string) int {

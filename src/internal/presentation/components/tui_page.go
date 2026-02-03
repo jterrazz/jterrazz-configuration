@@ -49,9 +49,9 @@ func (p *Page) Render() string {
 
 	// Header: simple title like status view
 	if len(p.Breadcrumbs) > 0 {
-		b.WriteString("  " + theme.SectionTitle.Render(strings.ToUpper(p.Breadcrumbs[len(p.Breadcrumbs)-1])) + "\n\n")
+		b.WriteString(PageIndent + theme.SectionTitle.Render(strings.ToUpper(p.Breadcrumbs[len(p.Breadcrumbs)-1])) + "\n\n")
 	} else if p.Title != "" {
-		b.WriteString("  " + theme.SectionTitle.Render(strings.ToUpper(p.Title)) + "\n\n")
+		b.WriteString(PageIndent + theme.SectionTitle.Render(strings.ToUpper(p.Title)) + "\n\n")
 	}
 
 	// Main content

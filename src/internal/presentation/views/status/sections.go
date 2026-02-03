@@ -6,7 +6,6 @@ import (
 
 	"github.com/jterrazz/jterrazz-cli/internal/domain/status"
 	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
 // renderContent renders all sections
@@ -172,12 +171,4 @@ func calculateColumnWidths(items []status.Item) ColumnWidths {
 		}
 	}
 	return widths
-}
-
-// Badge renders a status badge
-func badge(ok bool) string {
-	if ok {
-		return theme.BadgeOK.Render(theme.IconCheck)
-	}
-	return theme.BadgeError.Render(theme.IconCross)
 }

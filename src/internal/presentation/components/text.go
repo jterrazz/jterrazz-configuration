@@ -106,6 +106,32 @@ func CellSpecial(text string, width int) string {
 	return theme.Special.Render(fmt.Sprintf("%-*s", width, text))
 }
 
+// CellRight renders a right-aligned cell with special style
+func CellRight(text string, width int) string {
+	return theme.Special.Render(fmt.Sprintf("%*s", width, text))
+}
+
+// =============================================================================
+// Description Rendering
+// =============================================================================
+
+// ColumnSeparator is the standard separator between columns
+const ColumnSeparator = "  "
+
+// RowPrefix is the prefix for rows inside boxes (aligns with box content)
+const RowPrefix = " "
+
+// PageIndent is the prefix for page-level headers and titles
+const PageIndent = "  "
+
+// RenderDescription renders a description in muted style with column separator
+func RenderDescription(text string) string {
+	if text == "" {
+		return ""
+	}
+	return theme.Muted.Render(ColumnSeparator + text)
+}
+
 // =============================================================================
 // Breadcrumb
 // =============================================================================

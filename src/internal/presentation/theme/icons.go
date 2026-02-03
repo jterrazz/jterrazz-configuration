@@ -56,23 +56,3 @@ const (
 	BoxThickHorizontal  = "━"
 	BoxThickVertical    = "┃"
 )
-
-// =============================================================================
-// Rendered Status Icons (convenience)
-// =============================================================================
-
-// StatusIcon returns a styled status icon
-func StatusIcon(ok bool) string {
-	if ok {
-		return BadgeOK.Render(IconCheck)
-	}
-	return BadgeError.Render(IconCross)
-}
-
-// ServiceIcon returns a styled service status icon
-func ServiceIcon(running bool) string {
-	if running {
-		return ServiceRunning.Render(IconServiceOn)
-	}
-	return ServiceStopped.Render(IconServiceOff)
-}

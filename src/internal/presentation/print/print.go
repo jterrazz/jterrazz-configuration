@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
 	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
@@ -71,12 +72,12 @@ func Done(msg string) {
 
 // Installing prints an installing message
 func Installing(name string) {
-	fmt.Printf("  📥 Installing %s...\n", name)
+	fmt.Printf(components.PageIndent+"📥 Installing %s...\n", name)
 }
 
 // InstallingVia prints an installing message with method
 func InstallingVia(name, method string) {
-	fmt.Printf("  📥 Installing %s (via %s)...\n", name, method)
+	fmt.Printf(components.PageIndent+"📥 Installing %s (via %s)...\n", name, method)
 }
 
 // =============================================================================
@@ -110,11 +111,11 @@ func Category(name string) {
 
 // Row prints a status row (icon + label + detail)
 func Row(ok bool, label, detail string) {
-	icon := theme.StatusIcon(ok)
+	icon := components.Badge(ok)
 	if detail != "" {
-		fmt.Printf("  %s %-14s %s\n", icon, label, theme.Muted.Render(detail))
+		fmt.Printf(components.PageIndent+"%s %-14s %s\n", icon, label, theme.Muted.Render(detail))
 	} else {
-		fmt.Printf("  %s %s\n", icon, label)
+		fmt.Printf(components.PageIndent+"%s %s\n", icon, label)
 	}
 }
 
@@ -160,7 +161,7 @@ func RenderDanger(s string) string {
 
 // RenderStatusIcon renders a status icon (check or cross)
 func RenderStatusIcon(ok bool) string {
-	return theme.StatusIcon(ok)
+	return components.Badge(ok)
 }
 
 // =============================================================================

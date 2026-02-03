@@ -215,8 +215,8 @@ func (m Model) View() string {
 
 	header := lipgloss.JoinVertical(lipgloss.Left,
 		"",
-		"  "+title,
-		"  "+sysInfo,
+		components.PageIndent+title,
+		components.PageIndent+sysInfo,
 		"",
 	)
 	b.WriteString(header)
@@ -231,11 +231,11 @@ func (m Model) View() string {
 	help := fmt.Sprintf("↑/↓ scroll • g/G top/bottom • %d%% • q quit", scrollPercent)
 
 	if m.allLoaded {
-		footer := theme.Help.Render(help) + "  " + theme.Success.Render(theme.IconCheck+" All checks complete")
+		footer := theme.Help.Render(help) + components.ColumnSeparator + theme.Success.Render(theme.IconCheck+" All checks complete")
 		b.WriteString(footer)
 	} else {
 		progressBar := m.renderProgressBar()
-		footer := theme.Help.Render(help) + "  " + progressBar
+		footer := theme.Help.Render(help) + components.ColumnSeparator + progressBar
 		b.WriteString(footer)
 	}
 
