@@ -19,7 +19,7 @@ func (m Model) renderContent() string {
 		boxWidth = 40
 	}
 
-	for _, section := range []string{"System", "Tools", "Resources"} {
+	for _, section := range []string{"Setup", "System", "Tools", "Resources"} {
 		subsections, ok := sections[section]
 		if !ok {
 			continue
@@ -114,8 +114,10 @@ func (m Model) groupBySection() map[string]map[string][]status.Item {
 
 func getSubsectionOrder(section string) []string {
 	switch section {
+	case "Setup":
+		return []string{"Setup"}
 	case "System":
-		return []string{"Setup", "MacOS Security", "Identity"}
+		return []string{"Security", "Identity"}
 	case "Tools":
 		return []string{"Package Managers", "Languages", "Infrastructure", "AI", "Apps", "System Tools"}
 	case "Resources":

@@ -104,8 +104,8 @@ func (l *Loader) buildItems() {
 		Name:    "System Info",
 	})
 
-	// Setup section
-	l.addItem(Item{ID: "header-setup", Kind: KindHeader, Section: "System", SubSection: "Setup", Loaded: true})
+	// Setup section (standalone)
+	l.addItem(Item{ID: "header-setup", Kind: KindHeader, Section: "Setup", SubSection: "Setup", Loaded: true})
 	for _, script := range config.Scripts {
 		if script.CheckFn == nil {
 			continue
@@ -113,7 +113,7 @@ func (l *Loader) buildItems() {
 		l.addItem(Item{
 			ID:          "setup-" + script.Name,
 			Kind:        KindSetup,
-			Section:     "System",
+			Section:     "Setup",
 			SubSection:  "Setup",
 			Name:        script.Name,
 			Description: script.Description,
@@ -121,13 +121,13 @@ func (l *Loader) buildItems() {
 	}
 
 	// Security section
-	l.addItem(Item{ID: "header-security", Kind: KindHeader, Section: "System", SubSection: "MacOS Security", Loaded: true})
+	l.addItem(Item{ID: "header-security", Kind: KindHeader, Section: "System", SubSection: "Security", Loaded: true})
 	for _, check := range config.SecurityChecks {
 		l.addItem(Item{
 			ID:          "security-" + check.Name,
 			Kind:        KindSecurity,
 			Section:     "System",
-			SubSection:  "MacOS Security",
+			SubSection:  "Security",
 			Name:        check.Name,
 			Description: check.Description,
 			GoodWhen:    check.GoodWhen,

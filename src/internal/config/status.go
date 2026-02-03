@@ -10,10 +10,12 @@ type StatusSection struct {
 // StatusSections defines all status sections in display order
 // This is the single source of truth for the status command layout
 var StatusSections = []StatusSection{
+	// Setup section (standalone)
+	{Title: "Setup", SubTitle: "Setup", RenderFn: nil}, // Uses Scripts
+
 	// System section with subsections
-	{Title: "System", SubTitle: "Setup", RenderFn: nil},          // Uses Scripts
-	{Title: "System", SubTitle: "MacOS Security", RenderFn: nil}, // Uses SecurityChecks
-	{Title: "System", SubTitle: "Identity", RenderFn: nil},       // Uses IdentityChecks
+	{Title: "System", SubTitle: "Security", RenderFn: nil}, // Uses SecurityChecks
+	{Title: "System", SubTitle: "Identity", RenderFn: nil}, // Uses IdentityChecks
 
 	// Tools section - one subsection per category
 	{Title: "Tools", SubTitle: "Package Managers", RenderFn: nil},
