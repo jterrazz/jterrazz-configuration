@@ -1,9 +1,8 @@
-package tui
+package components
 
 import (
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
 	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
@@ -50,7 +49,7 @@ func (p *Page) Render() string {
 
 	// Header: title or breadcrumbs
 	if len(p.Breadcrumbs) > 0 {
-		b.WriteString(components.Breadcrumb(p.Breadcrumbs...) + "\n\n")
+		b.WriteString(Breadcrumb(p.Breadcrumbs...) + "\n\n")
 	} else if p.Title != "" {
 		b.WriteString(theme.Title.Render(p.Title) + "\n\n")
 	}

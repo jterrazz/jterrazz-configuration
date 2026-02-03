@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/domain/skill"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components/tui"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
 	"github.com/jterrazz/jterrazz-cli/internal/presentation/print"
 	setupview "github.com/jterrazz/jterrazz-cli/internal/presentation/views/setup"
 	"github.com/spf13/cobra"
@@ -52,5 +52,5 @@ func runSkillsUI() {
 	}
 
 	setupview.InitSkillsState()
-	tui.RunOrExit(setupview.SkillsConfig())
+	components.RunOrExit(setupview.SkillsConfig())
 }
