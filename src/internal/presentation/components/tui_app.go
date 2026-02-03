@@ -114,6 +114,10 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.processing = false
 		a.page.Message = msg.Message
 		a.page.Processing = false
+		// Let custom handler update state before rebuilding
+		if a.config.OnMessage != nil {
+			a.config.OnMessage(msg)
+		}
 		a.rebuildItems()
 		return a, nil
 
