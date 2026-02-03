@@ -79,19 +79,20 @@ func (i Item) renderNavigation(selected bool, labelWidth int) string {
 	indent := i.indentPrefix()
 
 	icon := "→"
+	style := theme.Normal
+
 	prefix := indent + "  "
+	if selected {
+		prefix = indent + theme.IconSelected + " "
+		style = theme.Selected
+	}
 
 	paddedLabel := i.Label
 	if labelWidth > 0 {
 		paddedLabel = fmt.Sprintf("%-*s", labelWidth, i.Label)
 	}
 
-	if selected {
-		prefix = indent + theme.IconSelected + " "
-		return theme.Selected.Render(fmt.Sprintf("%s%s %s", prefix, icon, paddedLabel)) +
-			theme.Muted.Render("  "+i.Description)
-	}
-	return fmt.Sprintf("%s%s %s", prefix, theme.Special.Render(icon), theme.Normal.Render(paddedLabel)) +
+	return style.Render(fmt.Sprintf("%s%s %s", prefix, icon, paddedLabel)) +
 		theme.Muted.Render("  "+i.Description)
 }
 
