@@ -204,6 +204,8 @@ func (a *App) handleSelect() (*App, tea.Cmd) {
 		if cmd != nil {
 			a.processing = true
 			a.page.Processing = true
+			// Rebuild items immediately to show loading state
+			a.rebuildItems()
 			return a, cmd
 		}
 	}
