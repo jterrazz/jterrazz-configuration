@@ -153,8 +153,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.page.SetSize(msg.Width, msg.Height)
 
 	case spinner.TickMsg:
-		a.spinner.Update(msg)
-		return a, a.spinner.Tick()
+		cmd := a.spinner.Update(msg)
+		return a, cmd
 
 	default:
 		// Custom message handler

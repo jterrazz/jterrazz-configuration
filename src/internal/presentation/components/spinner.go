@@ -10,7 +10,7 @@ import (
 )
 
 // SpinnerFPS is the animation speed for all spinners
-const SpinnerFPS = 150 * time.Millisecond
+const SpinnerFPS = 80 * time.Millisecond
 
 // Spinner wraps the bubbles spinner with our theme
 type Spinner struct {
@@ -60,9 +60,11 @@ func (s Spinner) Tick() tea.Cmd {
 	return s.Model.Tick
 }
 
-// Update updates the spinner state
-func (s *Spinner) Update(msg spinner.TickMsg) {
-	s.Model, _ = s.Model.Update(msg)
+// Update updates the spinner state and returns the next tick command
+func (s *Spinner) Update(msg tea.Msg) tea.Cmd {
+	var cmd tea.Cmd
+	s.Model, cmd = s.Model.Update(msg)
+	return cmd
 }
 
 // SpinnerFrames returns the raw spinner frames for custom rendering
