@@ -88,9 +88,11 @@ func (i Item) renderNavigation(selected bool, labelWidth int) string {
 
 	if selected {
 		prefix = indent + theme.IconSelected + " "
-		return theme.Selected.Render(prefix+icon+" "+paddedLabel) + "    " + theme.Muted.Render(i.Description)
+		return theme.Selected.Render(fmt.Sprintf("%s%s %s", prefix, icon, paddedLabel)) +
+			theme.Muted.Render("  "+i.Description)
 	}
-	return prefix + theme.Special.Render(icon) + " " + theme.Normal.Render(paddedLabel) + "    " + theme.Muted.Render(i.Description)
+	return fmt.Sprintf("%s%s %s", prefix, theme.Special.Render(icon), theme.Normal.Render(paddedLabel)) +
+		theme.Muted.Render("  "+i.Description)
 }
 
 func (i Item) renderAction(selected bool) string {
