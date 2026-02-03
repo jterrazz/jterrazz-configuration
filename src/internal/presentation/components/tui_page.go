@@ -47,11 +47,11 @@ func (p *Page) ContentHeight() int {
 func (p *Page) Render() string {
 	var b strings.Builder
 
-	// Header: title or breadcrumbs
+	// Header: simple title like status view
 	if len(p.Breadcrumbs) > 0 {
-		b.WriteString(Breadcrumb(p.Breadcrumbs...) + "\n\n")
+		b.WriteString("  " + theme.SectionTitle.Render(strings.ToUpper(p.Breadcrumbs[len(p.Breadcrumbs)-1])) + "\n\n")
 	} else if p.Title != "" {
-		b.WriteString(theme.Title.Render(p.Title) + "\n\n")
+		b.WriteString("  " + theme.SectionTitle.Render(strings.ToUpper(p.Title)) + "\n\n")
 	}
 
 	// Main content

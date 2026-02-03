@@ -49,10 +49,10 @@ func (i Item) Selectable() bool {
 }
 
 // Render renders the item as a styled string
-func (i Item) Render(selected bool, labelWidth int) string {
+func (i Item) Render(selected bool, labelWidth int, width int) string {
 	switch i.Kind {
 	case KindHeader:
-		return renderSection(i.Label)
+		return renderSection(i.Label, width)
 
 	case KindNavigation:
 		return i.renderNavigation(selected, labelWidth)
@@ -70,9 +70,9 @@ func (i Item) Render(selected bool, labelWidth int) string {
 	return ""
 }
 
-func renderSection(title string) string {
-	line := "───"
-	return theme.Section.Render(line + " " + title + " " + line)
+func renderSection(title string, width int) string {
+	// Use SectionHeader style (thick bordered box)
+	return SectionHeader(title, width)
 }
 
 func (i Item) renderNavigation(selected bool, labelWidth int) string {

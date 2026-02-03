@@ -121,7 +121,7 @@ func (l *List) Render(visibleHeight int) string {
 	for i := startIdx; i < endIdx; i++ {
 		item := l.Items[i]
 		selected := i == l.Cursor
-		line := item.Render(selected, l.LabelWidth)
+		line := item.Render(selected, l.LabelWidth, l.Width)
 		b.WriteString(line + "\n")
 	}
 
