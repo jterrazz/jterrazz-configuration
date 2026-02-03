@@ -3,7 +3,7 @@ package setup
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/components/tui"
 )
 
 // Action represents navigation/action items in setup
@@ -17,23 +17,23 @@ const (
 var itemNames []string
 
 // BuildItems builds the setup menu items
-func BuildItems() []components.Item {
-	var items []components.Item
+func BuildItems() []tui.Item {
+	var items []tui.Item
 	itemNames = []string{}
 
 	// Navigation section
-	items = append(items, components.Item{Kind: components.KindHeader, Label: "Skills"})
+	items = append(items, tui.Item{Kind: tui.KindHeader, Label: "Skills"})
 	itemNames = append(itemNames, "")
 
-	items = append(items, components.Item{Kind: components.KindAction, Label: "skills", Description: "Manage AI agent skills"})
+	items = append(items, tui.Item{Kind: tui.KindAction, Label: "skills", Description: "Manage AI agent skills"})
 	itemNames = append(itemNames, string(ActionSkills))
 
 	// Configuration section - from config.Scripts with CheckFn
-	items = append(items, components.Item{Kind: components.KindHeader, Label: "Setup"})
+	items = append(items, tui.Item{Kind: tui.KindHeader, Label: "Setup"})
 	itemNames = append(itemNames, "")
 
 	type scriptEntry struct {
-		item components.Item
+		item tui.Item
 		name string
 	}
 	var configuredItems, notConfiguredItems []scriptEntry
@@ -44,14 +44,14 @@ func BuildItems() []components.Item {
 		}
 
 		result := script.CheckFn()
-		state := components.StateUnchecked
+		state := tui.StateUnchecked
 		if result.Installed {
-			state = components.StateChecked
+			state = tui.StateChecked
 		}
 
 		entry := scriptEntry{
-			item: components.Item{
-				Kind:        components.KindToggle,
+			item: tui.Item{
+				Kind:        tui.KindToggle,
 				Label:       script.Name,
 				Description: script.Description,
 				State:       state,
@@ -76,7 +76,7 @@ func BuildItems() []components.Item {
 	}
 
 	// Scripts section - scripts without CheckFn (utilities)
-	items = append(items, components.Item{Kind: components.KindHeader, Label: "Utilities"})
+	items = append(items, tui.Item{Kind: tui.KindHeader, Label: "Utilities"})
 	itemNames = append(itemNames, "")
 
 	for _, script := range config.Scripts {
@@ -84,8 +84,8 @@ func BuildItems() []components.Item {
 			continue
 		}
 
-		items = append(items, components.Item{
-			Kind:        components.KindAction,
+		items = append(items, tui.Item{
+			Kind:        tui.KindAction,
 			Label:       script.Name,
 			Description: script.Description,
 		})
@@ -96,7 +96,7 @@ func BuildItems() []components.Item {
 }
 
 // HandleSelect handles item selection in the setup menu
-func HandleSelect(index int, item components.Item, runScript func(string)) tea.Cmd {
+func HandleSelect(index int, item tui.Item, runScript func(string)) tea.Cmd {
 	if index >= len(itemNames) {
 		return nil
 	}
@@ -105,7 +105,7 @@ func HandleSelect(index int, item components.Item, runScript func(string)) tea.C
 	switch Action(name) {
 	case ActionSkills:
 		return func() tea.Msg {
-			return components.NavigateMsg{
+			return tui.NavigateMsg{
 				InitFunc: InitSkillsState,
 				Config:   SkillsConfig(),
 			}
@@ -114,17 +114,17 @@ func HandleSelect(index int, item components.Item, runScript func(string)) tea.C
 	default:
 		return func() tea.Msg {
 			runScript(name)
-			return components.ActionDoneMsg{Message: "Completed " + name}
+			return tui.ActionDoneMsg{Message: "Completed " + name}
 		}
 	}
 }
 
 // RunOrExit runs the setup TUI
 func RunOrExit(runScript func(string)) {
-	components.RunOrExit(components.AppConfig{
+	tui.RunOrExit(tui.AppConfig{
 		Title:      "Setup",
 		BuildItems: BuildItems,
-		OnSelect: func(index int, item components.Item) tea.Cmd {
+		OnSelect: func(index int, item tui.Item) tea.Cmd {
 			return HandleSelect(index, item, runScript)
 		},
 	})
