@@ -61,15 +61,22 @@ func SubsectionBox(title string, lines []string, width int) string {
 	borderStyle := theme.SectionBorder
 
 	// Build top border with title: ╭─ Title ─────────────────╮
-	titleLen := len(title) + 4 // "─ " + title + " ─"
-	topBorderRight := strings.Repeat(theme.BoxRoundedHorizontal, innerWidth-titleLen)
-	if topBorderRight == "" {
-		topBorderRight = theme.BoxRoundedHorizontal
+	// Total width = innerWidth + 2 (for borders ╭ and ╮)
+	// Left part: ╭─ (2 chars)
+	// Title part: title
+	// Right part: ─...─╮ (remaining chars)
+	totalBorderChars := innerWidth + 2 // total horizontal space including corners
+	leftPart := 2                      // "─ " after ╭
+	rightPart := 2                     // " ─" before ╮
+	titleSpace := len(title)           // title text
+	remainingDashes := totalBorderChars - leftPart - titleSpace - rightPart + 1
+	if remainingDashes < 1 {
+		remainingDashes = 1
 	}
 
 	top := borderStyle.Render(theme.BoxRoundedTopLeft+theme.BoxRoundedHorizontal+" ") +
 		theme.SubSection.Render(title) +
-		borderStyle.Render(" "+theme.BoxRoundedHorizontal+topBorderRight+theme.BoxRoundedTopRight)
+		borderStyle.Render(" "+strings.Repeat(theme.BoxRoundedHorizontal, remainingDashes)+theme.BoxRoundedTopRight)
 
 	bottom := borderStyle.Render(theme.BoxRoundedBottomLeft + strings.Repeat(theme.BoxRoundedHorizontal, innerWidth+2) + theme.BoxRoundedBottomRight)
 

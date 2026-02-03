@@ -14,7 +14,7 @@ func (m Model) renderContent() string {
 	var b strings.Builder
 
 	sections := m.groupBySection()
-	boxWidth := m.width - 4
+	boxWidth := m.width
 	if boxWidth < 40 {
 		boxWidth = 40
 	}
