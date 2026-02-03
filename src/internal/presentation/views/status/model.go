@@ -9,10 +9,14 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/domain/status"
 	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
 	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
+
+// ProcessRefreshMsg triggers a refresh of process data
+type ProcessRefreshMsg struct{}
 
 // Model is the Bubble Tea model for the status view
 type Model struct {
@@ -66,7 +70,15 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.spinner.Tick,
 		m.loader.WaitForUpdate(),
+		scheduleProcessRefresh(),
 	)
+}
+
+// scheduleProcessRefresh returns a command that triggers a process refresh after 1 second
+func scheduleProcessRefresh() tea.Cmd {
+	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
+		return ProcessRefreshMsg{}
+	})
 }
 
 // Update implements tea.Model
@@ -110,6 +122,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			existing.Value = msg.Item.Value
 			existing.Style = msg.Item.Style
 			existing.Available = msg.Item.Available
+			existing.Processes = msg.Item.Processes
 			m.items[msg.ID] = existing
 		} else {
 			m.items[msg.ID] = msg.Item
@@ -121,6 +134,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case status.AllLoadedMsg:
 		m.allLoaded = true
+
+	case ProcessRefreshMsg:
+		// Refresh process data
+		for _, check := range config.ProcessChecks {
+			processes := check.CheckFn()
+			id := "process-" + check.Name
+			if existing, ok := m.items[id]; ok {
+				existing.Processes = processes
+				existing.Available = len(processes) > 0
+				m.items[id] = existing
+			}
+		}
+		cmds = append(cmds, scheduleProcessRefresh())
 
 	case spinner.TickMsg:
 		if !m.allLoaded {

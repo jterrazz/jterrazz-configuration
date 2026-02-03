@@ -16,6 +16,19 @@ type ResourceCheck struct {
 	CheckFn func() ResourceResult
 }
 
+// ProcessInfo represents a single process entry
+type ProcessInfo struct {
+	Name  string
+	Value string // CPU % or Memory
+	PID   string
+}
+
+// ProcessResult holds multiple processes
+type ProcessResult struct {
+	Processes []ProcessInfo
+	Available bool
+}
+
 // ResourceResult holds the result of a resource check
 type ResourceResult struct {
 	Value     string // The value to display (e.g., IP address, size)
@@ -215,4 +228,69 @@ func expandHome(path string) string {
 		return filepath.Join(os.Getenv("HOME"), path[2:])
 	}
 	return path
+}
+
+// ProcessCheck represents a process resource check
+type ProcessCheck struct {
+	Name    string
+	CheckFn func() []ProcessInfo
+}
+
+// ProcessChecks defines the process monitoring checks
+var ProcessChecks = []ProcessCheck{
+	{
+		Name: "top cpu",
+		CheckFn: func() []ProcessInfo {
+			// ps -arcwwwxo pid,%cpu,comm
+			out, err := exec.Command("ps", "-arcwwwxo", "pid,%cpu,comm").Output()
+			if err != nil {
+				return nil
+			}
+			return parseProcessOutput(out, true)
+		},
+	},
+	{
+		Name: "top memory",
+		CheckFn: func() []ProcessInfo {
+			// ps -amcwwwxo pid,%mem,comm
+			out, err := exec.Command("ps", "-amcwwwxo", "pid,%mem,comm").Output()
+			if err != nil {
+				return nil
+			}
+			return parseProcessOutput(out, false)
+		},
+	},
+}
+
+// parseProcessOutput parses ps output into ProcessInfo slice
+func parseProcessOutput(out []byte, isCPU bool) []ProcessInfo {
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	var processes []ProcessInfo
+
+	// Skip header, take top 5
+	for i := 1; i < len(lines) && len(processes) < 5; i++ {
+		fields := strings.Fields(lines[i])
+		if len(fields) < 3 {
+			continue
+		}
+		pid := fields[0]
+		value := fields[1]
+		name := strings.Join(fields[2:], " ")
+
+		// Format value
+		var formatted string
+		if isCPU {
+			formatted = value + "%"
+		} else {
+			formatted = value + "%"
+		}
+
+		processes = append(processes, ProcessInfo{
+			Name:  name,
+			Value: formatted,
+			PID:   pid,
+		})
+	}
+
+	return processes
 }

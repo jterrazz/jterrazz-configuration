@@ -121,7 +121,7 @@ func getSubsectionOrder(section string) []string {
 	case "Tools":
 		return []string{"Package Managers", "Languages", "Infrastructure", "AI", "Apps", "System Tools"}
 	case "Resources":
-		return []string{"Network", "Disk Usage", "Caches & Cleanable"}
+		return []string{"Top Processes", "Network", "Disk Usage", "Caches & Cleanable"}
 	}
 	return nil
 }
@@ -130,8 +130,14 @@ func (m Model) renderSubsectionBox(title string, items []status.Item, width int,
 	// Render rows
 	var rows []string
 	for _, item := range items {
-		row := m.renderTableRow(item, colWidths)
-		rows = append(rows, row)
+		if item.Kind == status.KindProcess {
+			// Process items render multiple rows
+			processRows := m.renderProcessRows(item)
+			rows = append(rows, processRows...)
+		} else {
+			row := m.renderTableRow(item, colWidths)
+			rows = append(rows, row)
+		}
 	}
 
 	return components.SubsectionBox(title, rows, width)

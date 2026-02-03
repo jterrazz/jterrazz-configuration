@@ -121,3 +121,44 @@ func (m Model) renderResourceRow(item status.Item, colWidths ColumnWidths) strin
 	value := theme.Render(item.Value, item.Style)
 	return fmt.Sprintf("  %s  %s", name, value)
 }
+
+func (m Model) renderProcessRows(item status.Item) []string {
+	// Add category header
+	var header string
+	if item.Name == "top cpu" {
+		header = "  " + theme.Muted.Render("CPU")
+	} else if item.Name == "top memory" {
+		header = "  " + theme.Muted.Render("Memory")
+	}
+
+	if len(item.Processes) == 0 {
+		if !item.Loaded {
+			return []string{header + "  " + m.spinner.View()}
+		}
+		return []string{header + "  " + theme.Muted.Render("no data")}
+	}
+
+	var rows []string
+	rows = append(rows, header)
+
+	const nameWidth = 28
+
+	for i, p := range item.Processes {
+		if i >= 5 { // Show top 5
+			break
+		}
+		// Truncate name if too long
+		name := p.Name
+		if len(name) > nameWidth {
+			name = name[:nameWidth-3] + "..."
+		}
+
+		// Pad name to fixed width, then add value
+		paddedName := fmt.Sprintf("%-*s", nameWidth, name)
+		row := fmt.Sprintf("    %s  %s",
+			theme.Cell.Render(paddedName),
+			theme.Special.Render(fmt.Sprintf("%6s", p.Value)))
+		rows = append(rows, row)
+	}
+	return rows
+}

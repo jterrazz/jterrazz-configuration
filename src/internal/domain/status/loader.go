@@ -20,6 +20,7 @@ const (
 	KindSecurity
 	KindIdentity
 	KindTool
+	KindProcess
 	KindNetwork
 	KindDisk
 	KindCache
@@ -46,6 +47,9 @@ type Item struct {
 	GoodWhen  bool   // For checks: true means Installed=true is good
 	Method    string // Install method for tools
 	Available bool   // For resources: whether the resource exists
+
+	// Process data (for KindProcess items)
+	Processes []config.ProcessInfo
 }
 
 // UpdateMsg is sent when a status item finishes loading
@@ -165,6 +169,18 @@ func (l *Loader) buildItems() {
 				Method:     t.Method.String(),
 			})
 		}
+	}
+
+	// Process section
+	l.addItem(Item{ID: "header-process", Kind: KindHeader, Section: "Resources", SubSection: "Top Processes", Loaded: true})
+	for _, check := range config.ProcessChecks {
+		l.addItem(Item{
+			ID:         "process-" + check.Name,
+			Kind:       KindProcess,
+			Section:    "Resources",
+			SubSection: "Top Processes",
+			Name:       check.Name,
+		})
 	}
 
 	// Network section
@@ -307,6 +323,24 @@ func (l *Loader) Start() {
 			}
 			l.updates <- UpdateMsg{ID: item.ID, Item: item}
 		}(t)
+	}
+
+	// Process checks
+	for _, check := range config.ProcessChecks {
+		wg.Add(1)
+		go func(c config.ProcessCheck) {
+			defer wg.Done()
+			processes := c.CheckFn()
+			item := Item{
+				ID:        "process-" + c.Name,
+				Kind:      KindProcess,
+				Name:      c.Name,
+				Loaded:    true,
+				Available: len(processes) > 0,
+				Processes: processes,
+			}
+			l.updates <- UpdateMsg{ID: item.ID, Item: item}
+		}(check)
 	}
 
 	// Network checks
