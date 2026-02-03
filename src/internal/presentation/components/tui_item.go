@@ -55,7 +55,7 @@ func (i Item) Render(selected bool, labelWidth int) string {
 		return renderSection(i.Label)
 
 	case KindNavigation:
-		return i.renderNavigation(selected)
+		return i.renderNavigation(selected, labelWidth)
 
 	case KindAction:
 		return i.renderAction(selected)
@@ -75,17 +75,22 @@ func renderSection(title string) string {
 	return theme.Section.Render(line + " " + title + " " + line)
 }
 
-func (i Item) renderNavigation(selected bool) string {
+func (i Item) renderNavigation(selected bool, labelWidth int) string {
 	indent := i.indentPrefix()
 
 	icon := "→"
 	prefix := indent + "  "
 
+	paddedLabel := i.Label
+	if labelWidth > 0 {
+		paddedLabel = fmt.Sprintf("%-*s", labelWidth, i.Label)
+	}
+
 	if selected {
 		prefix = indent + theme.IconSelected + " "
-		return theme.Selected.Render(prefix+icon+" "+i.Label) + "  " + theme.Muted.Render(i.Description)
+		return theme.Selected.Render(prefix+icon+" "+paddedLabel) + "  " + theme.Muted.Render(i.Description)
 	}
-	return prefix + theme.Special.Render(icon) + " " + theme.Normal.Render(i.Label) + "  " + theme.Muted.Render(i.Description)
+	return prefix + theme.Special.Render(icon) + " " + theme.Normal.Render(paddedLabel) + "  " + theme.Muted.Render(i.Description)
 }
 
 func (i Item) renderAction(selected bool) string {
