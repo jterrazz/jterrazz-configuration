@@ -41,6 +41,7 @@ type Item struct {
 	State       ItemState
 	Expanded    bool
 	Indent      int // Nesting level (0 = root, 1 = nested, etc.)
+	DescWidth   int // Width for description alignment (0 = no padding)
 }
 
 // Selectable returns true if this item can be selected/focused
@@ -49,7 +50,7 @@ func (i Item) Selectable() bool {
 }
 
 // Render renders the item as a styled string
-func (i Item) Render(selected bool, labelWidth int, width int) string {
+func (i Item) Render(selected bool, labelWidth int, width int, spinnerFrame string) string {
 	switch i.Kind {
 	case KindHeader:
 		return renderSection(i.Label, width)
@@ -61,7 +62,7 @@ func (i Item) Render(selected bool, labelWidth int, width int) string {
 		return i.renderAction(selected)
 
 	case KindToggle:
-		return i.renderToggle(selected, labelWidth)
+		return i.renderToggle(selected, labelWidth, spinnerFrame)
 
 	case KindExpandable:
 		return i.renderExpandable(selected, labelWidth)
@@ -78,12 +79,11 @@ func renderSection(title string, width int) string {
 func (i Item) renderNavigation(selected bool, labelWidth int) string {
 	indent := i.indentPrefix()
 
-	icon := "→"
 	style := theme.Normal
 
-	prefix := indent + "  "
+	prefix := indent + "   "
 	if selected {
-		prefix = indent + theme.IconSelected + " "
+		prefix = indent + " " + theme.IconSelected + " "
 		style = theme.Selected
 	}
 
@@ -92,71 +92,72 @@ func (i Item) renderNavigation(selected bool, labelWidth int) string {
 		paddedLabel = fmt.Sprintf("%-*s", labelWidth, i.Label)
 	}
 
-	return style.Render(fmt.Sprintf("%s%s %s", prefix, icon, paddedLabel)) +
+	return style.Render(fmt.Sprintf("%s%s", prefix, paddedLabel)) +
 		theme.Muted.Render("  "+i.Description)
 }
 
 func (i Item) renderAction(selected bool) string {
 	indent := i.indentPrefix()
 
-	icon := theme.IconArrowRight
-	prefix := indent + "  "
+	prefix := indent + "   "
 
 	if selected {
-		prefix = indent + theme.IconSelected + " "
-		return theme.Selected.Render(prefix + icon + " " + i.Label)
+		prefix = indent + " " + theme.IconSelected + " "
+		return theme.Selected.Render(prefix + i.Label)
 	}
-	return prefix + theme.Action.Render(icon) + " " + theme.Normal.Render(i.Label)
+	return prefix + theme.Action.Render(i.Label)
 }
 
-func (i Item) renderToggle(selected bool, labelWidth int) string {
+func (i Item) renderToggle(selected bool, labelWidth int, spinnerFrame string) string {
 	indent := i.indentPrefix()
 
-	var status string
-	var style = theme.Muted
-
+	var statusBadge string
 	switch i.State {
 	case StateChecked:
-		status = theme.IconCheck
-		style = theme.Success
+		statusBadge = BadgeOK()
 	case StateUnchecked:
-		status = theme.IconCheckboxUnchecked
-		style = theme.Muted
+		statusBadge = BadgeError()
 	case StateLoading:
-		status = theme.IconCheckboxLoading
-		style = theme.Action
+		if spinnerFrame != "" {
+			statusBadge = theme.SpinnerStyle.Render(spinnerFrame)
+		} else {
+			statusBadge = theme.BadgeLoading.Render(theme.IconLoading)
+		}
 	default:
-		status = " "
+		statusBadge = " "
 	}
 
-	prefix := indent + "  "
+	prefix := indent + "   "
+	style := theme.Normal
 	if selected {
-		prefix = indent + theme.IconSelected + " "
+		prefix = indent + " " + theme.IconSelected + " "
 		style = theme.Selected
 	}
 
-	if labelWidth > 0 && i.Description != "" {
-		paddedLabel := fmt.Sprintf("%-*s", labelWidth, i.Label)
-		return style.Render(fmt.Sprintf("%s%s %s", prefix, status, paddedLabel)) +
-			theme.Muted.Render("  "+i.Description)
+	paddedLabel := i.Label
+	if labelWidth > 0 {
+		paddedLabel = fmt.Sprintf("%-*s", labelWidth, i.Label)
 	}
 
-	return style.Render(fmt.Sprintf("%s%s %s", prefix, status, i.Label))
+	// Status on the right: label  description  status
+	if i.Description != "" {
+		desc := i.Description
+		if i.DescWidth > 0 {
+			desc = fmt.Sprintf("%-*s", i.DescWidth, i.Description)
+		}
+		return style.Render(fmt.Sprintf("%s%s", prefix, paddedLabel)) +
+			theme.Muted.Render("  "+desc) + "  " + statusBadge
+	}
+
+	return style.Render(fmt.Sprintf("%s%s", prefix, paddedLabel)) + "  " + statusBadge
 }
 
 func (i Item) renderExpandable(selected bool, labelWidth int) string {
 	indent := i.indentPrefix()
 
-	var arrow string
-	if i.Expanded {
-		arrow = theme.IconArrowDown
-	} else {
-		arrow = theme.IconArrowRight
-	}
-
-	prefix := indent + "  "
+	prefix := indent + "   "
 	if selected {
-		prefix = indent + theme.IconSelected + " "
+		prefix = indent + " " + theme.IconSelected + " "
 	}
 
 	paddedLabel := i.Label
@@ -165,14 +166,14 @@ func (i Item) renderExpandable(selected bool, labelWidth int) string {
 	}
 
 	if selected {
-		base := theme.Selected.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedLabel))
+		base := theme.Selected.Render(fmt.Sprintf("%s%s", prefix, paddedLabel))
 		if i.Description != "" {
 			return base + theme.Muted.Render("  "+i.Description)
 		}
 		return base
 	}
 
-	base := theme.Normal.Render(fmt.Sprintf("%s%s %s", prefix, arrow, paddedLabel))
+	base := theme.Normal.Render(fmt.Sprintf("%s%s", prefix, paddedLabel))
 	if i.Description != "" {
 		return base + theme.Muted.Render("  "+i.Description)
 	}

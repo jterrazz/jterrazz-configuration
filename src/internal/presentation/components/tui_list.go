@@ -13,11 +13,12 @@ const (
 
 // List represents a scrollable list of items with cursor navigation
 type List struct {
-	Items      []Item
-	Cursor     int
-	Width      int
-	Height     int
-	LabelWidth int // For aligning descriptions (0 = no alignment)
+	Items        []Item
+	Cursor       int
+	Width        int
+	Height       int
+	LabelWidth   int    // For aligning descriptions (0 = no alignment)
+	SpinnerFrame string // Current spinner frame for loading states
 }
 
 // NewList creates a new list with the given items
@@ -121,7 +122,7 @@ func (l *List) Render(visibleHeight int) string {
 	for i := startIdx; i < endIdx; i++ {
 		item := l.Items[i]
 		selected := i == l.Cursor
-		line := item.Render(selected, l.LabelWidth, l.Width)
+		line := item.Render(selected, l.LabelWidth, l.Width, l.SpinnerFrame)
 		b.WriteString(line + "\n")
 	}
 

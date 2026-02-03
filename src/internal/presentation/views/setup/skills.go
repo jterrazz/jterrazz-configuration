@@ -133,7 +133,7 @@ func BuildSkillsItems() []components.Item {
 		if expanded && repoSkills != nil {
 			items = append(items, components.Item{
 				Kind:   components.KindAction,
-				Label:  "Install all",
+				Label:  "install all",
 				Indent: 1,
 			})
 			skills.itemData = append(skills.itemData, skillItemData{repo: repo.Name, action: skillActionInstallRepo})

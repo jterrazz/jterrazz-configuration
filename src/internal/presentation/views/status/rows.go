@@ -19,7 +19,7 @@ func (m Model) renderTableRow(item status.Item, colWidths ColumnWidths) string {
 		case status.KindNetwork, status.KindCache:
 			return m.renderResourceRowLoading(item, colWidths)
 		default:
-			return fmt.Sprintf("  %s  %-*s", m.spinner.View(), colWidths.Name, item.Name)
+			return fmt.Sprintf(" %s  %-*s", m.spinner.View(), colWidths.Name, item.Name)
 		}
 	}
 
@@ -40,7 +40,7 @@ func (m Model) renderTableRow(item status.Item, colWidths ColumnWidths) string {
 func (m Model) renderSetupRowLoading(item status.Item, colWidths ColumnWidths) string {
 	name := theme.Cell.Render(fmt.Sprintf("%-*s", colWidths.Name, item.Name))
 	desc := theme.Muted.Render(fmt.Sprintf("%-*s", colWidths.Desc, item.Description))
-	return fmt.Sprintf("  %s  %s  %s", name, desc, m.spinner.View())
+	return fmt.Sprintf(" %s  %s  %s", name, desc, m.spinner.View())
 }
 
 func (m Model) renderSetupRow(item status.Item, colWidths ColumnWidths) string {
@@ -49,15 +49,15 @@ func (m Model) renderSetupRow(item status.Item, colWidths ColumnWidths) string {
 	statusBadge := badge(item.Installed)
 	detail := ""
 	if item.Detail != "" {
-		detail = theme.Special.Render(item.Detail)
+		detail = theme.Muted.Render(item.Detail)
 	}
-	return fmt.Sprintf("  %s  %s  %s  %s", name, desc, statusBadge, detail)
+	return fmt.Sprintf(" %s  %s  %s  %s", name, desc, statusBadge, detail)
 }
 
 func (m Model) renderCheckRowLoading(item status.Item, colWidths ColumnWidths) string {
 	name := theme.Cell.Render(fmt.Sprintf("%-*s", colWidths.Name, item.Name))
 	desc := theme.Muted.Render(fmt.Sprintf("%-*s", colWidths.Desc, item.Description))
-	return fmt.Sprintf("  %s  %s  %s", name, desc, m.spinner.View())
+	return fmt.Sprintf(" %s  %s  %s", name, desc, m.spinner.View())
 }
 
 func (m Model) renderCheckRow(item status.Item, colWidths ColumnWidths) string {
@@ -67,15 +67,15 @@ func (m Model) renderCheckRow(item status.Item, colWidths ColumnWidths) string {
 	statusBadge := badge(ok)
 	detail := ""
 	if item.Detail != "" {
-		detail = theme.Special.Render(item.Detail)
+		detail = theme.Muted.Render(item.Detail)
 	}
-	return fmt.Sprintf("  %s  %s  %s  %s", name, desc, statusBadge, detail)
+	return fmt.Sprintf(" %s  %s  %s  %s", name, desc, statusBadge, detail)
 }
 
 func (m Model) renderToolRowLoading(item status.Item, colWidths ColumnWidths) string {
 	name := theme.Cell.Render(fmt.Sprintf("%-*s", colWidths.Name, item.Name))
 	method := theme.Method.Render(fmt.Sprintf("%-*s", colWidths.Method, item.Method))
-	return fmt.Sprintf("  %s  %s  %s", name, method, m.spinner.View())
+	return fmt.Sprintf(" %s  %s  %s", name, method, m.spinner.View())
 }
 
 func (m Model) renderToolRow(item status.Item, colWidths ColumnWidths) string {
@@ -101,34 +101,34 @@ func (m Model) renderToolRow(item status.Item, colWidths ColumnWidths) string {
 		if item.Status == "running" {
 			extra = "  " + theme.ServiceRunning.Render(theme.IconServiceOn) + " " + theme.Success.Render("running")
 		} else if item.Status == "stopped" {
-			extra = "  " + theme.ServiceStopped.Render(theme.IconServiceOff) + " " + theme.Warning.Render("stopped")
+			extra = "  " + theme.Muted.Render("stopped")
 		} else {
 			// Other status like "199 formulae, 6 casks" or "2 versions"
 			extra = "  " + theme.Muted.Render(item.Status)
 		}
 	}
 
-	return fmt.Sprintf("  %s  %s  %s  %s%s", name, method, statusBadge, version, extra)
+	return fmt.Sprintf(" %s  %s  %s  %s%s", name, method, statusBadge, version, extra)
 }
 
 func (m Model) renderResourceRowLoading(item status.Item, colWidths ColumnWidths) string {
-	name := theme.Muted.Render(fmt.Sprintf("%-*s", colWidths.Name, item.Name))
-	return fmt.Sprintf("  %s  %s", name, m.spinner.View())
+	name := theme.Cell.Render(fmt.Sprintf("%-*s", colWidths.Name, item.Name))
+	return fmt.Sprintf(" %s  %s", name, m.spinner.View())
 }
 
 func (m Model) renderResourceRow(item status.Item, colWidths ColumnWidths) string {
-	name := theme.Muted.Render(fmt.Sprintf("%-*s", colWidths.Name, item.Name))
+	name := theme.Cell.Render(fmt.Sprintf("%-*s", colWidths.Name, item.Name))
 	value := theme.Render(item.Value, item.Style)
-	return fmt.Sprintf("  %s  %s", name, value)
+	return fmt.Sprintf(" %s  %s", name, value)
 }
 
 func (m Model) renderProcessRows(item status.Item) []string {
 	// Add category header
 	var header string
 	if item.Name == "top cpu" {
-		header = "  " + theme.Muted.Render("CPU")
+		header = " " + theme.Muted.Render("CPU")
 	} else if item.Name == "top memory" {
-		header = "  " + theme.Muted.Render("Memory")
+		header = " " + theme.Muted.Render("Memory")
 	}
 
 	if len(item.Processes) == 0 {
@@ -155,7 +155,7 @@ func (m Model) renderProcessRows(item status.Item) []string {
 
 		// Pad name to fixed width, then add value
 		paddedName := fmt.Sprintf("%-*s", nameWidth, name)
-		row := fmt.Sprintf("    %s  %s",
+		row := fmt.Sprintf(" %s  %s",
 			theme.Cell.Render(paddedName),
 			theme.Special.Render(fmt.Sprintf("%6s", p.Value)))
 		rows = append(rows, row)

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -42,6 +43,7 @@ type App struct {
 	configStack []AppConfig // Stack for navigation history
 	list        *List
 	page        *Page
+	spinner     Spinner
 	processing  bool
 	quitting    bool
 	width       int
@@ -58,15 +60,16 @@ func NewApp(config AppConfig) *App {
 	page.Breadcrumbs = config.Breadcrumbs
 
 	return &App{
-		config: config,
-		list:   list,
-		page:   page,
+		config:  config,
+		list:    list,
+		page:    page,
+		spinner: NewSpinner(),
 	}
 }
 
 // Init implements tea.Model
 func (a *App) Init() tea.Cmd {
-	return tea.WindowSize()
+	return tea.Batch(tea.WindowSize(), a.spinner.Tick())
 }
 
 // Update implements tea.Model
@@ -149,6 +152,10 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.list.SetSize(msg.Width, msg.Height)
 		a.page.SetSize(msg.Width, msg.Height)
 
+	case spinner.TickMsg:
+		a.spinner.Update(msg)
+		return a, a.spinner.Tick()
+
 	default:
 		// Custom message handler
 		if a.config.OnMessage != nil {
@@ -175,6 +182,8 @@ func (a *App) View() string {
 		a.page.Help = DefaultHelp()
 	}
 
+	// Pass spinner frame to list for loading states
+	a.list.SpinnerFrame = a.spinner.View()
 	a.page.Content = a.list.Render(a.page.ContentHeight())
 	return a.page.Render()
 }

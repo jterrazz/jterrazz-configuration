@@ -40,29 +40,6 @@ type ResourceResult struct {
 // NetworkChecks is the list of network resource checks
 var NetworkChecks = []ResourceCheck{
 	{
-		Name: "wifi",
-		CheckFn: func() ResourceResult {
-			out, _ := exec.Command("/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", "-I").Output()
-			for _, line := range strings.Split(string(out), "\n") {
-				if strings.Contains(line, " SSID:") {
-					ssid := strings.TrimSpace(strings.TrimPrefix(line, " SSID:"))
-					return ResourceResult{Value: ssid, Style: "muted", Available: true}
-				}
-			}
-			return ResourceResult{Available: false}
-		},
-	},
-	{
-		Name: "vpn",
-		CheckFn: func() ResourceResult {
-			out, _ := exec.Command("scutil", "--nc", "list").Output()
-			if strings.Contains(string(out), "(Connected)") {
-				return ResourceResult{Value: "connected", Style: "success", Available: true}
-			}
-			return ResourceResult{Value: "disconnected", Style: "muted", Available: true}
-		},
-	},
-	{
 		Name: "local ip",
 		CheckFn: func() ResourceResult {
 			out, _ := exec.Command("ipconfig", "getifaddr", "en0").Output()
@@ -82,6 +59,50 @@ var NetworkChecks = []ResourceCheck{
 				ip := strings.TrimSpace(string(out))
 				if ip != "" {
 					return ResourceResult{Value: ip, Style: "muted", Available: true}
+				}
+			}
+			return ResourceResult{Available: false}
+		},
+	},
+	{
+		Name: "tailscale",
+		CheckFn: func() ResourceResult {
+			// Check if tailscale is running
+			out, err := exec.Command("tailscale", "status", "--json").Output()
+			if err != nil {
+				return ResourceResult{Available: false}
+			}
+			outStr := string(out)
+			// Check if BackendState is "Running"
+			if strings.Contains(outStr, `"BackendState":"Running"`) {
+				// Get tailscale IP
+				ipOut, _ := exec.Command("tailscale", "ip", "-4").Output()
+				ip := strings.TrimSpace(string(ipOut))
+				if ip != "" {
+					return ResourceResult{Value: ip, Style: "success", Available: true}
+				}
+				return ResourceResult{Value: "connected", Style: "success", Available: true}
+			}
+			return ResourceResult{Value: "disconnected", Style: "muted", Available: true}
+		},
+	},
+	{
+		Name: "vpn",
+		CheckFn: func() ResourceResult {
+			out, _ := exec.Command("scutil", "--nc", "list").Output()
+			lines := strings.Split(string(out), "\n")
+			for _, line := range lines {
+				if strings.Contains(line, "(Connected)") {
+					// Extract VPN name from the line
+					// Format: * (Connected)      XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX IPSec "VPN Name"
+					if idx := strings.LastIndex(line, `"`); idx > 0 {
+						start := strings.LastIndex(line[:idx], `"`)
+						if start >= 0 && start < idx {
+							vpnName := line[start+1 : idx]
+							return ResourceResult{Value: vpnName, Style: "success", Available: true}
+						}
+					}
+					return ResourceResult{Value: "connected", Style: "success", Available: true}
 				}
 			}
 			return ResourceResult{Available: false}
@@ -109,7 +130,7 @@ var NetworkChecks = []ResourceCheck{
 							break
 						}
 					}
-					if !found && len(servers) < 2 {
+					if !found && len(servers) < 3 {
 						servers = append(servers, server)
 					}
 				}
@@ -125,27 +146,56 @@ var NetworkChecks = []ResourceCheck{
 		CheckFn: func() ResourceResult {
 			out, _ := exec.Command("lsof", "-iTCP", "-sTCP:LISTEN", "-P", "-n").Output()
 			lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-			count := 0
-			if len(lines) > 1 {
-				count = len(lines) - 1 // subtract header
+			if len(lines) <= 1 {
+				return ResourceResult{Value: "none", Style: "muted", Available: true}
 			}
-			if count > 0 {
-				return ResourceResult{Value: fmt.Sprintf("%d ports", count), Style: "muted", Available: true}
-			}
-			return ResourceResult{Value: "0 ports", Style: "muted", Available: true}
-		},
-	},
-	{
-		Name: "connections",
-		CheckFn: func() ResourceResult {
-			out, _ := exec.Command("netstat", "-an").Output()
-			count := 0
-			for _, line := range strings.Split(string(out), "\n") {
-				if strings.Contains(line, "ESTABLISHED") {
-					count++
+
+			// Count unique ports and collect common service names
+			ports := make(map[string]string) // port -> command name
+			for i := 1; i < len(lines); i++ {
+				fields := strings.Fields(lines[i])
+				if len(fields) < 9 {
+					continue
+				}
+				cmd := fields[0]
+				addr := fields[8]
+				// Extract port from address like *:8080 or 127.0.0.1:3000
+				if idx := strings.LastIndex(addr, ":"); idx >= 0 {
+					port := addr[idx+1:]
+					if _, exists := ports[port]; !exists {
+						ports[port] = cmd
+					}
 				}
 			}
-			return ResourceResult{Value: fmt.Sprintf("%d active", count), Style: "muted", Available: true}
+
+			// Show top services with their ports
+			var services []string
+			commonPorts := map[string]string{
+				"22": "ssh", "80": "http", "443": "https", "3000": "dev",
+				"5432": "postgres", "3306": "mysql", "6379": "redis", "27017": "mongo",
+				"8080": "http-alt", "9000": "php-fpm", "5000": "flask",
+			}
+
+			for port, cmd := range ports {
+				if len(services) >= 4 {
+					break
+				}
+				label := cmd
+				if name, ok := commonPorts[port]; ok {
+					label = name
+				}
+				services = append(services, fmt.Sprintf("%s:%s", label, port))
+			}
+
+			if len(services) == 0 {
+				return ResourceResult{Value: "none", Style: "muted", Available: true}
+			}
+
+			extra := ""
+			if len(ports) > len(services) {
+				extra = fmt.Sprintf(" +%d", len(ports)-len(services))
+			}
+			return ResourceResult{Value: strings.Join(services, ", ") + extra, Style: "muted", Available: true}
 		},
 	},
 }

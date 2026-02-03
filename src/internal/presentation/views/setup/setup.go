@@ -39,6 +39,17 @@ func BuildItems() []components.Item {
 	}
 	var configuredItems, notConfiguredItems []scriptEntry
 
+	// Calculate max description width for alignment
+	maxDescWidth := 0
+	for _, script := range config.Scripts {
+		if script.CheckFn == nil {
+			continue
+		}
+		if len(script.Description) > maxDescWidth {
+			maxDescWidth = len(script.Description)
+		}
+	}
+
 	for _, script := range config.Scripts {
 		if script.CheckFn == nil {
 			continue
@@ -58,6 +69,7 @@ func BuildItems() []components.Item {
 				Label:       script.Name,
 				Description: script.Description,
 				State:       state,
+				DescWidth:   maxDescWidth,
 			},
 			name: script.Name,
 		}
@@ -78,8 +90,8 @@ func BuildItems() []components.Item {
 		itemNames = append(itemNames, entry.name)
 	}
 
-	// Scripts section - scripts without CheckFn (utilities)
-	items = append(items, components.Item{Kind: components.KindHeader, Label: "Utilities"})
+	// Scripts section - scripts without CheckFn (run-once actions)
+	items = append(items, components.Item{Kind: components.KindHeader, Label: "Scripts"})
 	itemNames = append(itemNames, "")
 
 	for _, script := range config.Scripts {

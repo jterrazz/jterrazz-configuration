@@ -436,11 +436,20 @@ var Tools = []Tool{
 		Category:     CategoryApps,
 		Dependencies: []string{"homebrew"},
 		CheckFn: func() CheckResult {
-			_, appErr := os.Stat("/Applications/Docker.app")
-			if appErr != nil {
+			// Check for OrbStack first, then Docker Desktop
+			_, orbstackErr := os.Stat("/Applications/OrbStack.app")
+			_, dockerErr := os.Stat("/Applications/Docker.app")
+			if orbstackErr != nil && dockerErr != nil {
 				return CheckResult{}
 			}
-			version := tool.VersionFromBrewCask("docker")()
+
+			var version string
+			if orbstackErr == nil {
+				version = tool.VersionFromAppPlist("OrbStack")()
+			} else {
+				version = tool.VersionFromBrewCask("docker")()
+			}
+
 			status := "stopped"
 			if err := exec.Command("docker", "info").Run(); err == nil {
 				status = "running"

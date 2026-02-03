@@ -6,9 +6,7 @@ package theme
 
 const (
 	// Navigation
-	IconSelected   = "›"
-	IconArrowRight = "▶"
-	IconArrowDown  = "▼"
+	IconSelected = "›"
 
 	// Status
 	IconCheck   = "✓"
@@ -24,10 +22,8 @@ const (
 	IconProgressFull  = "█"
 	IconProgressEmpty = "░"
 
-	// Checkboxes
-	IconCheckboxChecked   = "✓"
-	IconCheckboxUnchecked = "○"
-	IconCheckboxLoading   = "◌"
+	// Loading
+	IconLoading = "◌"
 )
 
 // =============================================================================
