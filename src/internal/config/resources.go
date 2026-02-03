@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
@@ -241,29 +242,29 @@ var ProcessChecks = []ProcessCheck{
 	{
 		Name: "top cpu",
 		CheckFn: func() []ProcessInfo {
-			// ps -arcwwwxo pid,%cpu,comm
+			// ps -arcwwwxo pid,%cpu,comm (sorted by CPU descending)
 			out, err := exec.Command("ps", "-arcwwwxo", "pid,%cpu,comm").Output()
 			if err != nil {
 				return nil
 			}
-			return parseProcessOutput(out, true)
+			return parseCPUOutput(out)
 		},
 	},
 	{
 		Name: "top memory",
 		CheckFn: func() []ProcessInfo {
-			// ps -amcwwwxo pid,%mem,comm
-			out, err := exec.Command("ps", "-amcwwwxo", "pid,%mem,comm").Output()
+			// ps -amcwwwxo pid,rss,comm (sorted by memory descending, RSS in KB)
+			out, err := exec.Command("ps", "-amcwwwxo", "pid,rss,comm").Output()
 			if err != nil {
 				return nil
 			}
-			return parseProcessOutput(out, false)
+			return parseMemoryOutput(out)
 		},
 	},
 }
 
-// parseProcessOutput parses ps output into ProcessInfo slice
-func parseProcessOutput(out []byte, isCPU bool) []ProcessInfo {
+// parseCPUOutput parses ps CPU output into ProcessInfo slice
+func parseCPUOutput(out []byte) []ProcessInfo {
 	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
 	var processes []ProcessInfo
 
@@ -274,15 +275,45 @@ func parseProcessOutput(out []byte, isCPU bool) []ProcessInfo {
 			continue
 		}
 		pid := fields[0]
-		value := fields[1]
+		cpuPercent := fields[1]
 		name := strings.Join(fields[2:], " ")
 
-		// Format value
+		processes = append(processes, ProcessInfo{
+			Name:  name,
+			Value: cpuPercent + "%",
+			PID:   pid,
+		})
+	}
+
+	return processes
+}
+
+// parseMemoryOutput parses ps memory output (RSS in KB) into ProcessInfo slice
+func parseMemoryOutput(out []byte) []ProcessInfo {
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	var processes []ProcessInfo
+
+	// Skip header, take top 5
+	for i := 1; i < len(lines) && len(processes) < 5; i++ {
+		fields := strings.Fields(lines[i])
+		if len(fields) < 3 {
+			continue
+		}
+		pid := fields[0]
+		rssKB := fields[1]
+		name := strings.Join(fields[2:], " ")
+
+		// Convert RSS from KB to human readable format
 		var formatted string
-		if isCPU {
-			formatted = value + "%"
+		if kb, err := strconv.ParseInt(rssKB, 10, 64); err == nil {
+			mb := kb / 1024
+			if mb >= 1024 {
+				formatted = fmt.Sprintf("%.1fG", float64(mb)/1024)
+			} else {
+				formatted = fmt.Sprintf("%dM", mb)
+			}
 		} else {
-			formatted = value + "%"
+			formatted = rssKB + "K"
 		}
 
 		processes = append(processes, ProcessInfo{
