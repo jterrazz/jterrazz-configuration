@@ -6,33 +6,33 @@ import (
 	output "github.com/jterrazz/jterrazz-cli/internal/presentation/print"
 )
 
-// PackageManager represents an updatable package manager
+// PackageManager represents an upgradable package manager
 type PackageManager struct {
 	Name        string
 	Flag        string // CLI flag name (e.g., "brew" for --brew)
 	RequiresCmd string // Command that must exist
-	UpdateFn    func() // Function to run updates
+	UpgradeFn   func() // Function to run upgrades
 }
 
-// PackageManagers is the list of all package managers that can be updated
+// PackageManagers is the list of all package managers that can be upgraded
 var PackageManagers = []PackageManager{
 	{
 		Name:        "homebrew",
 		Flag:        "brew",
 		RequiresCmd: "brew",
-		UpdateFn:    updateBrew,
+		UpgradeFn:   upgradeBrew,
 	},
 	{
 		Name:        "npm",
 		Flag:        "npm",
 		RequiresCmd: "npm",
-		UpdateFn:    updateNpm,
+		UpgradeFn:   upgradeNpm,
 	},
 	{
 		Name:        "pnpm",
 		Flag:        "pnpm",
 		RequiresCmd: "pnpm",
-		UpdateFn:    updatePnpm,
+		UpgradeFn:   upgradePnpm,
 	},
 }
 
@@ -46,26 +46,26 @@ func GetPackageManagerByFlag(flag string) *PackageManager {
 	return nil
 }
 
-// UpdateAll updates all available package managers
-func UpdateAll() {
+// UpgradeAll upgrades all available package managers
+func UpgradeAll() {
 	for _, pm := range PackageManagers {
 		if CommandExists(pm.RequiresCmd) {
-			pm.UpdateFn()
+			pm.UpgradeFn()
 		}
 	}
 }
 
-// UpdatePackageManager updates a specific package manager
-func UpdatePackageManager(pm PackageManager) {
+// UpgradePackageManager upgrades a specific package manager
+func UpgradePackageManager(pm PackageManager) {
 	if !CommandExists(pm.RequiresCmd) {
 		fmt.Printf("%s %s not found, skipping\n", output.Yellow("Warning:"), pm.RequiresCmd)
 		return
 	}
-	pm.UpdateFn()
+	pm.UpgradeFn()
 }
 
-// UpdatePackageByName updates a specific package by name
-func UpdatePackageByName(name string) error {
+// UpgradePackageByName upgrades a specific package by name
+func UpgradePackageByName(name string) error {
 	// Find package in our tools list
 	pkg := GetToolByName(name)
 	if pkg != nil {
@@ -74,34 +74,34 @@ func UpdatePackageByName(name string) error {
 			if !CommandExists("brew") {
 				return fmt.Errorf("Homebrew not found")
 			}
-			fmt.Printf("  📥 Updating %s...\n", name)
+			fmt.Printf("  📥 Upgrading %s...\n", name)
 			ExecCommand("brew", "upgrade", pkg.Formula)
-			fmt.Printf("  %s %s updated\n", output.Green("✓"), name)
+			fmt.Printf("  %s %s upgraded\n", output.Green("✓"), name)
 			return nil
 		case InstallBrewCask:
 			if !CommandExists("brew") {
 				return fmt.Errorf("Homebrew not found")
 			}
-			fmt.Printf("  📥 Updating %s...\n", name)
+			fmt.Printf("  📥 Upgrading %s...\n", name)
 			ExecCommand("brew", "upgrade", "--cask", pkg.Formula)
-			fmt.Printf("  %s %s updated\n", output.Green("✓"), name)
+			fmt.Printf("  %s %s upgraded\n", output.Green("✓"), name)
 			return nil
 		case InstallNpm:
 			if !CommandExists("npm") {
 				return fmt.Errorf("npm not found")
 			}
-			fmt.Printf("  📥 Updating %s...\n", name)
+			fmt.Printf("  📥 Upgrading %s...\n", name)
 			ExecCommand("npm", "update", "-g", pkg.Formula)
-			fmt.Printf("  %s %s updated\n", output.Green("✓"), name)
+			fmt.Printf("  %s %s upgraded\n", output.Green("✓"), name)
 			return nil
 		}
 	}
 
 	// Try as a direct brew package name
 	if CommandExists("brew") {
-		fmt.Printf("  📥 Updating %s...\n", name)
+		fmt.Printf("  📥 Upgrading %s...\n", name)
 		ExecCommand("brew", "upgrade", name)
-		fmt.Printf("  %s %s updated\n", output.Green("✓"), name)
+		fmt.Printf("  %s %s upgraded\n", output.Green("✓"), name)
 		return nil
 	}
 
@@ -109,24 +109,24 @@ func UpdatePackageByName(name string) error {
 }
 
 // =============================================================================
-// Update Functions
+// Upgrade Functions
 // =============================================================================
 
-func updateBrew() {
-	fmt.Println(output.Cyan("🍺 Updating Homebrew packages..."))
+func upgradeBrew() {
+	fmt.Println(output.Cyan("🍺 Upgrading Homebrew packages..."))
 	ExecCommand("brew", "update")
 	ExecCommand("brew", "upgrade")
-	fmt.Println(output.Green("  ✅ Homebrew update completed"))
+	fmt.Println(output.Green("  ✅ Homebrew upgrade completed"))
 }
 
-func updateNpm() {
-	fmt.Println(output.Cyan("📦 Updating npm global packages..."))
+func upgradeNpm() {
+	fmt.Println(output.Cyan("📦 Upgrading npm global packages..."))
 	ExecCommand("npm", "update", "-g")
-	fmt.Println(output.Green("  ✅ npm update completed"))
+	fmt.Println(output.Green("  ✅ npm upgrade completed"))
 }
 
-func updatePnpm() {
-	fmt.Println(output.Cyan("📦 Updating pnpm global packages..."))
+func upgradePnpm() {
+	fmt.Println(output.Cyan("📦 Upgrading pnpm global packages..."))
 	ExecCommand("pnpm", "update", "-g")
-	fmt.Println(output.Green("  ✅ pnpm update completed"))
+	fmt.Println(output.Green("  ✅ pnpm upgrade completed"))
 }

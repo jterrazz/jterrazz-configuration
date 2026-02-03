@@ -74,14 +74,14 @@ func TestCleanCommand(t *testing.T) {
 	}
 }
 
-func TestUpdateCommand(t *testing.T) {
-	cmd := exec.Command(binaryPath, "update", "--help")
+func TestUpgradeCommand(t *testing.T) {
+	cmd := exec.Command(binaryPath, "upgrade", "--help")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("update --help failed: %v\n%s", err, output)
+		t.Fatalf("upgrade --help failed: %v\n%s", err, output)
 	}
-	if !strings.Contains(string(output), "update") {
-		t.Error("expected 'update' in help output")
+	if !strings.Contains(string(output), "upgrade") {
+		t.Error("expected 'upgrade' in help output")
 	}
 }
 
