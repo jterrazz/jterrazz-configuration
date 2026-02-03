@@ -57,7 +57,7 @@ var Scripts = []Script{
 		RunFn: runHushlogin,
 	},
 	{
-		Name:         "ghostty-config",
+		Name:         "ghostty",
 		Description:  "Install Ghostty terminal config",
 		Category:     ScriptCategoryTerminal,
 		RequiresTool: "ghostty",
@@ -75,7 +75,7 @@ var Scripts = []Script{
 	// Security Scripts
 	// ==========================================================================
 	{
-		Name:         "gpg-setup",
+		Name:         "gpg",
 		Description:  "Configure GPG for commit signing",
 		Category:     ScriptCategorySecurity,
 		RequiresTool: "gpg",
@@ -106,7 +106,7 @@ var Scripts = []Script{
 	// Editor Scripts
 	// ==========================================================================
 	{
-		Name:         "zed-config",
+		Name:         "zed",
 		Description:  "Install Zed editor config",
 		Category:     ScriptCategoryEditor,
 		RequiresTool: "zed",
@@ -124,7 +124,7 @@ var Scripts = []Script{
 	// System Scripts
 	// ==========================================================================
 	{
-		Name:         "java-symlink",
+		Name:         "java",
 		Description:  "Configure Java runtime symlink for macOS",
 		Category:     ScriptCategorySystem,
 		RequiresTool: "openjdk",

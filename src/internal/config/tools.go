@@ -259,7 +259,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategoryLanguages,
 		Dependencies: []string{"homebrew"},
-		Scripts:      []string{"java-symlink"},
+		Scripts:      []string{"java"},
 		CheckFn: func() CheckResult {
 			brewJava := "/opt/homebrew/opt/openjdk/bin/java"
 			if _, err := os.Stat(brewJava); err == nil {
@@ -454,7 +454,7 @@ var Tools = []Tool{
 		Method:       InstallBrewCask,
 		Category:     CategoryApps,
 		Dependencies: []string{"homebrew"},
-		Scripts:      []string{"ghostty-config"},
+		Scripts:      []string{"ghostty"},
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Ghostty.app"); err != nil {
 				return CheckResult{}
@@ -471,7 +471,7 @@ var Tools = []Tool{
 		Method:       InstallBrewFormula,
 		Category:     CategorySystemTools,
 		Dependencies: []string{"homebrew"},
-		Scripts:      []string{"gpg-setup"},
+		Scripts:      []string{"gpg"},
 		VersionFn:    tool.VersionFromBrewFormula("gnupg"),
 	},
 	{
@@ -509,7 +509,7 @@ var Tools = []Tool{
 		Method:       InstallBrewCask,
 		Category:     CategoryApps,
 		Dependencies: []string{"homebrew"},
-		Scripts:      []string{"zed-config"},
+		Scripts:      []string{"zed"},
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Zed.app"); err != nil {
 				return CheckResult{}
