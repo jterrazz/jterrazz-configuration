@@ -19,7 +19,7 @@ func NewSpinner() Spinner {
 	s := spinner.New()
 	s.Spinner = spinner.Spinner{
 		Frames: theme.BrailleSpinner,
-		FPS:    80 * time.Millisecond,
+		FPS:    120 * time.Millisecond,
 	}
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.ColorSpinner))
 	return Spinner{Model: s}
@@ -30,7 +30,7 @@ func NewSpinnerWithStyle(color string) Spinner {
 	s := spinner.New()
 	s.Spinner = spinner.Spinner{
 		Frames: theme.BrailleSpinner,
-		FPS:    80 * time.Millisecond,
+		FPS:    120 * time.Millisecond,
 	}
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
 	return Spinner{Model: s}
