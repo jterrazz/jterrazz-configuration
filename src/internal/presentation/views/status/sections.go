@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/jterrazz/jterrazz-cli/internal/domain/status"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/components"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/theme"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
 // renderContent renders all sections

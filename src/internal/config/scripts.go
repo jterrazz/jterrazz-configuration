@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
-	out "github.com/jterrazz/jterrazz-cli/internal/ui/print"
+	out "github.com/jterrazz/jterrazz-cli/internal/presentation/print"
 )
 
 // ScriptCategory groups scripts by their purpose

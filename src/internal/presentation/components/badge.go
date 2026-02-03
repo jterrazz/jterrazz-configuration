@@ -1,6 +1,6 @@
 package components
 
-import "github.com/jterrazz/jterrazz-cli/internal/ui/theme"
+import "github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 
 // Badge renders status badges
 

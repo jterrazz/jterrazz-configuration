@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jterrazz/jterrazz-cli/internal/domain/status"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/theme"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
 func (m Model) renderTableRow(item status.Item, colWidths ColumnWidths) string {

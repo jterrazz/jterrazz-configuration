@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/print"
 	"github.com/spf13/cobra"
 )
 

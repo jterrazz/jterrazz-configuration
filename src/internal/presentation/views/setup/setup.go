@@ -3,7 +3,7 @@ package setup
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/components/tui"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/components/tui"
 )
 
 // Action represents navigation/action items in setup

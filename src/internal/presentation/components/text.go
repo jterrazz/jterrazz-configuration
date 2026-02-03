@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/ui/theme"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
 // =============================================================================

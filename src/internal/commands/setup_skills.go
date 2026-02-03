@@ -2,9 +2,9 @@ package commands
 
 import (
 	"github.com/jterrazz/jterrazz-cli/internal/domain/skill"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/components/tui"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
-	setupview "github.com/jterrazz/jterrazz-cli/internal/ui/views/setup"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/components/tui"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/print"
+	setupview "github.com/jterrazz/jterrazz-cli/internal/presentation/views/setup"
 )
 
 func runSkillsUI() {

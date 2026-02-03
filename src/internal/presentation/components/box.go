@@ -3,7 +3,7 @@ package components
 import (
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/ui/theme"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
 // BoxStyle defines the border style for a box

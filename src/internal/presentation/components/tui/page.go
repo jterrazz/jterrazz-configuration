@@ -3,8 +3,8 @@ package tui
 import (
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/ui/components"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/theme"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
 // Page represents a full-screen TUI page layout

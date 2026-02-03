@@ -2,8 +2,8 @@ package commands
 
 import (
 	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/ui/print"
-	setupview "github.com/jterrazz/jterrazz-cli/internal/ui/views/setup"
+	"github.com/jterrazz/jterrazz-cli/internal/presentation/print"
+	setupview "github.com/jterrazz/jterrazz-cli/internal/presentation/views/setup"
 	"github.com/spf13/cobra"
 )
 
