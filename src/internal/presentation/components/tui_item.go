@@ -73,13 +73,15 @@ func renderSection(title string) string {
 
 func (i Item) renderAction(selected bool) string {
 	indent := i.indentPrefix()
+
+	icon := theme.IconArrowRight
 	prefix := indent + "  "
 
 	if selected {
 		prefix = indent + theme.IconSelected + " "
-		return theme.Selected.Render(prefix + i.Label)
+		return theme.Selected.Render(prefix + icon + " " + i.Label)
 	}
-	return theme.Action.Render(prefix + i.Label)
+	return prefix + theme.Action.Render(icon) + " " + theme.Normal.Render(i.Label)
 }
 
 func (i Item) renderToggle(selected bool, labelWidth int) string {
