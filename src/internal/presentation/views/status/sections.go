@@ -18,14 +18,18 @@ func (m Model) renderContent() string {
 		boxWidth = 40
 	}
 
+	isFirst := true
 	for _, section := range []string{"Setup", "System", "Tools", "Resources"} {
 		subsections, ok := sections[section]
 		if !ok {
 			continue
 		}
 
-		// Section header with decorative line
-		b.WriteString("\n")
+		// Section header with decorative line (no leading newline for first section)
+		if !isFirst {
+			b.WriteString("\n")
+		}
+		isFirst = false
 		sectionHeader := components.SectionHeader(section, boxWidth)
 		b.WriteString(sectionHeader)
 		b.WriteString("\n")

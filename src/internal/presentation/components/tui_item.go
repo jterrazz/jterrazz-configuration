@@ -78,25 +78,25 @@ func renderSection(title string, width int) string {
 
 func (i Item) renderNavigation(selected bool, labelWidth int) string {
 	prefix := i.buildPrefix(selected)
-	style := theme.Normal
-	if selected {
-		style = theme.Selected
-	}
 
 	paddedLabel := i.Label
 	if labelWidth > 0 {
 		paddedLabel = fmt.Sprintf("%-*s", labelWidth, i.Label)
 	}
 
-	return style.Render(fmt.Sprintf("%s%s", prefix, paddedLabel)) + RenderDescription(i.Description)
+	if selected {
+		return theme.Selected.Render(fmt.Sprintf("%s%s", prefix, paddedLabel)) + RenderDescription(i.Description)
+	}
+	return prefix + theme.Action.Render(paddedLabel) + RenderDescription(i.Description)
 }
 
 func (i Item) renderAction(selected bool) string {
 	prefix := i.buildPrefix(selected)
+	style := theme.Normal
 	if selected {
-		return theme.Selected.Render(prefix + i.Label)
+		style = theme.Selected
 	}
-	return prefix + theme.Action.Render(i.Label)
+	return style.Render(prefix + i.Label)
 }
 
 func (i Item) renderToggle(selected bool, labelWidth int, spinnerFrame string) string {

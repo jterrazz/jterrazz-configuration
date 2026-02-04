@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
 )
 
@@ -122,7 +123,7 @@ const ColumnSeparator = "  "
 const RowPrefix = " "
 
 // PageIndent is the prefix for page-level headers and titles
-const PageIndent = "  "
+const PageIndent = " "
 
 // RenderDescription renders a description in muted style with column separator
 func RenderDescription(text string) string {
@@ -164,4 +165,31 @@ func Breadcrumb(parts ...string) string {
 func SectionLine(title string) string {
 	line := "───"
 	return theme.Section.Render(line + " " + title + " " + line)
+}
+
+// =============================================================================
+// Page Header
+// =============================================================================
+
+// PageHeaderHeight returns the number of lines used by the page header
+// Top padding (1) + title (1) + bottom padding (1) + newline (1) = 4 lines
+// With subtitle: Top padding (1) + title (1) + subtitle (1) + bottom padding (1) + newline (1) = 5 lines
+func PageHeaderHeight(hasSubtitle bool) int {
+	if hasSubtitle {
+		return 5
+	}
+	return 4
+}
+
+// PageHeader renders a page header with title and optional subtitle
+// Includes 1 line top padding and 1 line bottom padding
+func PageHeader(title string, subtitle string) string {
+	var lines []string
+	lines = append(lines, "") // Top padding
+	lines = append(lines, PageIndent+theme.SectionTitle.Render(strings.ToUpper(title)))
+	if subtitle != "" {
+		lines = append(lines, PageIndent+theme.Muted.Render(subtitle))
+	}
+	lines = append(lines, "") // Bottom padding
+	return lipgloss.JoinVertical(lipgloss.Left, lines...) + "\n"
 }

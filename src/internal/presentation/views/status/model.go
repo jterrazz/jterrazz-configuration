@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/jterrazz/jterrazz-cli/internal/config"
 	"github.com/jterrazz/jterrazz-cli/internal/domain/status"
 	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
@@ -107,7 +106,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		headerHeight := 5 // blank + title + sysinfo + blank + newline
+		headerHeight := components.PageHeaderHeight(true) // title + subtitle
 		footerHeight := 1
 
 		if !m.ready {
@@ -195,25 +194,16 @@ func (m Model) View() string {
 
 	var b strings.Builder
 
-	// Header
-	title := theme.SectionTitle.Render("STATUS")
-
-	// System info
-	sysInfo := ""
+	// System info subtitle
+	subtitle := ""
 	if sysinfo, ok := m.items["sysinfo"]; ok && sysinfo.Loaded {
-		sysInfo = theme.Muted.Render(sysinfo.Detail)
+		subtitle = sysinfo.Detail
 	} else {
-		sysInfo = m.spinner.View() + " Loading..."
+		subtitle = m.spinner.View() + " Loading..."
 	}
 
-	header := lipgloss.JoinVertical(lipgloss.Left,
-		"",
-		components.PageIndent+title,
-		components.PageIndent+sysInfo,
-		"",
-	)
-	b.WriteString(header)
-	b.WriteString("\n")
+	// Header
+	b.WriteString(components.PageHeader("STATUS", subtitle))
 
 	// Content
 	b.WriteString(m.viewport.View())

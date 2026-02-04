@@ -34,9 +34,9 @@ func (p *Page) SetSize(width, height int) {
 }
 
 // ContentHeight returns the available height for content
-// Subtracts space for: title (1) + blank line (1) + help (1) + message (1) = 4 lines
+// Subtracts space for: header (3) + help (1) + message (1) = 5 lines
 func (p *Page) ContentHeight() int {
-	h := p.Height - 4
+	h := p.Height - PageHeaderHeight(false) - 2 // header + help + message
 	if h < 1 {
 		h = 1
 	}
@@ -47,12 +47,12 @@ func (p *Page) ContentHeight() int {
 func (p *Page) Render() string {
 	var b strings.Builder
 
-	// Header: simple title like status view
+	// Header
+	title := p.Title
 	if len(p.Breadcrumbs) > 0 {
-		b.WriteString(PageIndent + theme.SectionTitle.Render(strings.ToUpper(p.Breadcrumbs[len(p.Breadcrumbs)-1])) + "\n\n")
-	} else if p.Title != "" {
-		b.WriteString(PageIndent + theme.SectionTitle.Render(strings.ToUpper(p.Title)) + "\n\n")
+		title = p.Breadcrumbs[len(p.Breadcrumbs)-1]
 	}
+	b.WriteString(PageHeader(title, ""))
 
 	// Main content
 	if p.Content != "" {
