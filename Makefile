@@ -3,7 +3,7 @@
 # Configuration
 BINARY_NAME := j
 INSTALL_PATH := /usr/local/bin/$(BINARY_NAME)
-ZSHRC_SOURCE := configuration/binaries/zsh/zshrc.sh
+ZSHRC_SOURCE := dotfiles/shell/zsh/zshrc.sh
 ZSHRC_LINE := source $(PWD)/$(ZSHRC_SOURCE)
 
 help: ## Show this help message

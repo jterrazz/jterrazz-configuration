@@ -539,6 +539,16 @@ var Tools = []Tool{
 		VersionFn: tool.VersionFromCmd("git", []string{"--version"}, tool.ParseGitVersion),
 	},
 	{
+		Name:         "copier",
+		Description:  "Project template engine with update support",
+		Command:      "copier",
+		Formula:      "copier",
+		Method:       InstallBrewFormula,
+		Category:     CategorySystemTools,
+		Dependencies: []string{"homebrew"},
+		VersionFn:    tool.VersionFromCmd("copier", []string{"--version"}, tool.TrimVersion),
+	},
+	{
 		Name:         "mole",
 		Command:      "mo",
 		Formula:      "tw93/tap/mole",

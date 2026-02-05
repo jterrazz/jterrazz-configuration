@@ -1,0 +1,38 @@
+{% if language == 'typescript' %}FROM node:22-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:22-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY --from=builder /app/dist ./dist
+USER node
+CMD ["node", "dist/index.js"]
+{% elif language == 'go' %}FROM golang:1.24-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -o /bin/app ./cmd/...
+
+FROM alpine:3.21
+RUN apk --no-cache add ca-certificates
+COPY --from=builder /bin/app /bin/app
+USER nobody
+ENTRYPOINT ["/bin/app"]
+{% elif language == 'python' %}FROM python:3.13-slim
+WORKDIR /app
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir .
+COPY . .
+USER nobody
+CMD ["python", "-m", "{{ project_name }}"]
+{% else %}FROM alpine:3.21
+WORKDIR /app
+COPY . .
+CMD ["sh"]
+{% endif %}

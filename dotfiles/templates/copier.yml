@@ -1,0 +1,88 @@
+_min_copier_version: "9.0.0"
+_subdirectory: template
+_answers_file: .copier-answers.yml
+
+# Exclude language-specific files when not selected
+_exclude:
+  - "{% if language != 'typescript' %}tsconfig.json{% endif %}"
+  - "{% if language != 'typescript' %}.npmrc{% endif %}"
+  - "{% if language != 'typescript' %}.nvmrc{% endif %}"
+  - "{% if language != 'go' %}Makefile{% endif %}"
+  - "{% if language != 'go' %}.golangci.yml{% endif %}"
+  - "{% if not ci %}.github{% endif %}"
+  - "{% if not docker %}Dockerfile{% endif %}"
+  - "{% if not docker %}.dockerignore{% endif %}"
+  - "{% if license == 'none' %}LICENSE{% endif %}"
+  - "copier.yml"
+
+# =============================================================================
+# Project metadata
+# =============================================================================
+
+project_name:
+  type: str
+  help: "Project name"
+  default: "{{ _copier_conf.dst_path | basename }}"
+
+author_name:
+  type: str
+  help: "Author name"
+  default: "Jean-Baptiste Terrazzoni"
+
+author_email:
+  type: str
+  help: "Author email"
+  default: "admin@jterrazz.com"
+
+github_username:
+  type: str
+  help: "GitHub username"
+  default: "jterrazz"
+
+# =============================================================================
+# Project type
+# =============================================================================
+
+language:
+  type: str
+  help: "Primary language"
+  choices:
+    typescript: "TypeScript"
+    go: "Go"
+    python: "Python"
+    none: "None (config files only)"
+  default: none
+
+project_type:
+  type: str
+  help: "Project type"
+  choices:
+    api: "API / Backend service"
+    cli: "CLI tool"
+    library: "Library / Package"
+    web: "Web application"
+    none: "None"
+  default: none
+
+# =============================================================================
+# Optional features
+# =============================================================================
+
+license:
+  type: str
+  help: "License type"
+  choices:
+    MIT: "MIT"
+    Apache-2.0: "Apache 2.0"
+    none: "None"
+  default: MIT
+
+ci:
+  type: bool
+  help: "Include GitHub Actions CI workflow?"
+  default: true
+
+docker:
+  type: bool
+  help: "Include Dockerfile?"
+  default: false

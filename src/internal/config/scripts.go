@@ -185,7 +185,7 @@ func runGhosttyConfig() error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	repoConfig, err := GetRepoConfigPath("configuration/applications/ghostty/config")
+	repoConfig, err := GetRepoConfigPath("dotfiles/applications/ghostty/config")
 	if err != nil {
 		return fmt.Errorf("failed to find repo config: %w", err)
 	}
@@ -375,7 +375,7 @@ func runZedConfig() error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	repoConfig, err := GetRepoConfigPath("configuration/applications/zed/settings.json")
+	repoConfig, err := GetRepoConfigPath("dotfiles/applications/zed/settings.json")
 	if err != nil {
 		return fmt.Errorf("failed to find repo config: %w", err)
 	}

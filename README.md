@@ -19,7 +19,7 @@ Requires Go 1.21+. Install Go via `brew install go` if needed. The binary is ins
 ```bash
 j help              # Show all commands
 j status            # Show system status
-j update            # Update Homebrew + npm packages
+j upgrade           # Update Homebrew + npm packages
 j clean             # Clean caches, Docker, Multipass, trash
 ```
 
@@ -27,20 +27,32 @@ j clean             # Clean caches, Docker, Multipass, trash
 
 ```bash
 j install                  # List available packages
-j install --all            # Install all packages
 j install brew             # Install Homebrew
 j install go python node   # Install specific packages
+j install copier           # Install copier template engine
 ```
 
 ### Setup (Configurations)
 
 ```bash
-j setup ohmyzsh      # Configure Oh My Zsh
-j setup git-ssh      # Setup Git SSH keys
-j setup dock-spacer  # Add spacer to dock
-j setup dock-reset   # Reset dock to defaults
-j setup all          # Setup all configurations
+j setup              # Interactive TUI for system configuration
 ```
+
+### Sync (Project Templates)
+
+Sync configuration files (.gitignore, tsconfig, LICENSE, etc.) across repositories using [Copier](https://github.com/copier-org/copier) templates stored in `dotfiles/templates/`.
+
+```bash
+j sync init          # Initialize project from template (auto-detects language)
+j sync               # Update project from its template
+j sync status        # Show template link status
+j sync diff          # Preview changes before updating
+j sync --all         # Update all projects in ~/Developer
+```
+
+**How it works:** Running `j sync init` asks a few questions (language, license, CI, etc.) and generates config files. A `.copier-answers.yml` file is created in the project to track the template version and your answers — commit this file. When templates are updated and tagged, run `j sync` in any linked project to pull the latest changes.
+
+**Included templates:** .editorconfig, .gitattributes, .gitignore, LICENSE, plus conditional files for TypeScript (tsconfig, .npmrc, .nvmrc), Go (Makefile, .golangci.yml), CI (GitHub Actions), and Docker.
 
 ### Run Commands
 
@@ -74,18 +86,25 @@ make clean    # Remove build artifacts
 ```
 .
 ├── src/
-│   ├── cmd/j/main.go       # Entry point
-│   ├── internal/commands/  # Command implementations
-│   │   ├── root.go
-│   │   ├── status.go
-│   │   ├── update.go
-│   │   ├── clean.go
-│   │   ├── setup.go
-│   │   ├── git.go
-│   │   └── docker.go
+│   ├── cmd/j/main.go          # Entry point
+│   ├── internal/
+│   │   ├── commands/           # CLI commands (Cobra)
+│   │   │   ├── root.go
+│   │   │   ├── status.go
+│   │   │   ├── install.go
+│   │   │   ├── upgrade.go
+│   │   │   ├── clean.go
+│   │   │   ├── setup.go
+│   │   │   ├── run.go
+│   │   │   └── sync.go
+│   │   ├── config/             # Tool/script/command registry
+│   │   ├── domain/             # Business logic
+│   │   └── presentation/       # TUI components and views
 │   └── go.mod
-├── configuration/
-│   ├── applications/       # App configs (Cursor, etc.)
-│   └── binaries/zsh/       # Shell config sourced by ~/.zshrc
+├── dotfiles/
+│   ├── applications/           # App configs (Cursor, Ghostty, Zed)
+│   ├── shell/zsh/              # Shell config sourced by ~/.zshrc
+│   └── templates/              # Copier project templates
+├── tests/e2e/                  # End-to-end CLI tests
 └── Makefile
 ```
