@@ -2,8 +2,8 @@ package setup
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/src/internal/config"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/components"
 )
 
 // Action represents navigation/action items in setup

@@ -4,3 +4,4 @@
 .ansible/
 j
 .claude
+tests/e2e/j_test_bin

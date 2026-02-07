@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
-	out "github.com/jterrazz/jterrazz-cli/internal/presentation/print"
+	"github.com/jterrazz/jterrazz-cli/src/internal/domain/tool"
+	out "github.com/jterrazz/jterrazz-cli/src/internal/presentation/print"
 )
 
 // ScriptCategory groups scripts by their purpose

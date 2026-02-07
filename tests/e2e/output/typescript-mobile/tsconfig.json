@@ -1,0 +1,9 @@
+{
+  "extends": "@jterrazz/typescript/tsconfig/expo",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+

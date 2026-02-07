@@ -8,10 +8,10 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/domain/status"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
+	"github.com/jterrazz/jterrazz-cli/src/internal/config"
+	"github.com/jterrazz/jterrazz-cli/src/internal/domain/status"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/theme"
 )
 
 // ProcessRefreshMsg triggers a refresh of process data

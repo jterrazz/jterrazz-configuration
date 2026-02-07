@@ -4,9 +4,9 @@ import (
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/domain/skill"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/src/internal/config"
+	"github.com/jterrazz/jterrazz-cli/src/internal/domain/skill"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/components"
 )
 
 // skillAction represents action items in skills UI

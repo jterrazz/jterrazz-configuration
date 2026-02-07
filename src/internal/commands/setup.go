@@ -1,11 +1,11 @@
 package commands
 
 import (
-	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/domain/skill"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/print"
-	setupview "github.com/jterrazz/jterrazz-cli/internal/presentation/views/setup"
+	"github.com/jterrazz/jterrazz-cli/src/internal/config"
+	"github.com/jterrazz/jterrazz-cli/src/internal/domain/skill"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/print"
+	setupview "github.com/jterrazz/jterrazz-cli/src/internal/presentation/views/setup"
 	"github.com/spf13/cobra"
 )
 

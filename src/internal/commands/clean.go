@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/print"
+	"github.com/jterrazz/jterrazz-cli/src/internal/config"
+	"github.com/jterrazz/jterrazz-cli/src/internal/domain/tool"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/print"
 	"github.com/spf13/cobra"
 )
 

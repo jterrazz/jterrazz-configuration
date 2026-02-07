@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/domain/tool"
+	"github.com/jterrazz/jterrazz-cli/src/internal/domain/tool"
 )
 
 // ResourceCheck represents a system resource check (network, disk, cache)

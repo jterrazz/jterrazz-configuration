@@ -2,17 +2,33 @@ _min_copier_version: "9.0.0"
 _subdirectory: template
 _answers_file: .copier-answers.yml
 
-# Exclude language-specific files when not selected
 _exclude:
+  # Language-specific: TypeScript
   - "{% if language != 'typescript' %}tsconfig.json{% endif %}"
-  - "{% if language != 'typescript' %}.npmrc{% endif %}"
   - "{% if language != 'typescript' %}.nvmrc{% endif %}"
+  - "{% if language != 'typescript' %}package.json{% endif %}"
+  - "{% if language != 'typescript' %}vitest.config.ts{% endif %}"
+  # TypeScript but not mobile (Expo manages its own)
+  - "{% if project_type == 'mobile' %}package.json{% endif %}"
+  - "{% if project_type == 'mobile' %}vitest.config.ts{% endif %}"
+  # Language-specific: Go
+  - "{% if language != 'go' %}go.mod{% endif %}"
   - "{% if language != 'go' %}Makefile{% endif %}"
   - "{% if language != 'go' %}.golangci.yml{% endif %}"
-  - "{% if not ci %}.github{% endif %}"
+  # Docker
   - "{% if not docker %}Dockerfile{% endif %}"
   - "{% if not docker %}.dockerignore{% endif %}"
-  - "{% if license == 'none' %}LICENSE{% endif %}"
+  # CI: entire .github directory
+  - "{% if not ci %}.github{% endif %}"
+  # CI: ci workflow (libraries and apps with a language)
+  - "{% if language == 'none' or not ci %}.github/workflows/ci.yml{% endif %}"
+  # CI: library-only workflow
+  - "{% if project_type != 'library' or not ci %}.github/workflows/release.yml{% endif %}"
+  # CI: deploy workflow
+  - "{% if deploy != 'kubernetes' %}.github/workflows/deploy.yml{% endif %}"
+  # Skills: structuring-code excluded for "none" project type
+  - "{% if project_type == 'none' %}.claude/skills/structuring-code{% endif %}"
+  # Internal
   - "copier.yml"
 
 # =============================================================================
@@ -47,22 +63,22 @@ language:
   type: str
   help: "Primary language"
   choices:
-    typescript: "TypeScript"
-    go: "Go"
-    python: "Python"
-    none: "None (config files only)"
-  default: none
+    TypeScript: typescript
+    Go: go
+    None (config files only): "none"
+  default: "none"
 
 project_type:
   type: str
   help: "Project type"
   choices:
-    api: "API / Backend service"
-    cli: "CLI tool"
-    library: "Library / Package"
-    web: "Web application"
-    none: "None"
-  default: none
+    API / Backend service: api
+    CLI tool: cli
+    Library / Package: library
+    Web application: web
+    Mobile application: mobile
+    None: "none"
+  default: "none"
 
 # =============================================================================
 # Optional features
@@ -72,9 +88,8 @@ license:
   type: str
   help: "License type"
   choices:
-    MIT: "MIT"
-    Apache-2.0: "Apache 2.0"
-    none: "None"
+    MIT License: MIT
+    Proprietary (All Rights Reserved): proprietary
   default: MIT
 
 ci:
@@ -86,3 +101,11 @@ docker:
   type: bool
   help: "Include Dockerfile?"
   default: false
+
+deploy:
+  type: str
+  help: "Deployment target"
+  choices:
+    None: "none"
+    Kubernetes: kubernetes
+  default: "none"

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/config"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/print"
+	"github.com/jterrazz/jterrazz-cli/src/internal/config"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/print"
 	"github.com/spf13/cobra"
 )
 
@@ -94,12 +94,6 @@ func detectLanguage() string {
 	}
 	if _, err := os.Stat("package.json"); err == nil {
 		return "typescript"
-	}
-	if _, err := os.Stat("pyproject.toml"); err == nil {
-		return "python"
-	}
-	if _, err := os.Stat("setup.py"); err == nil {
-		return "python"
 	}
 	return ""
 }

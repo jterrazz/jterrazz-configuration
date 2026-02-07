@@ -1,9 +1,9 @@
 package status
 
 import (
-	"github.com/jterrazz/jterrazz-cli/internal/domain/status"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
+	"github.com/jterrazz/jterrazz-cli/src/internal/domain/status"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/theme"
 )
 
 func (m Model) renderTableRow(item status.Item, colWidths ColumnWidths) string {

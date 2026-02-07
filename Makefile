@@ -14,7 +14,7 @@ help: ## Show this help message
 
 build: ## Build the j binary
 	@echo "Building $(BINARY_NAME)..."
-	@cd src && go build -o ../$(BINARY_NAME) ./cmd/j
+	@go build -o $(BINARY_NAME) ./src/cmd/j
 	@echo "✅ Built ./$(BINARY_NAME)"
 
 install: build ## Build and install j to /usr/local/bin
@@ -54,7 +54,7 @@ check: ## Check if j is installed
 	fi
 
 test: ## Run tests
-	@cd src && go test ./...
+	@go test ./src/...
 
 clean: ## Remove build artifacts
 	@rm -f $(BINARY_NAME)

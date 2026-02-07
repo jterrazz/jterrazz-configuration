@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/theme"
 )
 
 // =============================================================================

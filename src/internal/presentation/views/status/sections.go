@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jterrazz/jterrazz-cli/internal/domain/status"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/src/internal/domain/status"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/components"
 )
 
 // renderContent renders all sections

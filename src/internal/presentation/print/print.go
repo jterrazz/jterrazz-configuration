@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/components"
-	"github.com/jterrazz/jterrazz-cli/internal/presentation/theme"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/components"
+	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/theme"
 )
 
 // =============================================================================
