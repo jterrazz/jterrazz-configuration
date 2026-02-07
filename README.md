@@ -2,7 +2,7 @@
 
 A unified CLI tool (`j`) for development workflow automation, plus dotfiles and machine setup.
 
-*Hey there – I'm Jean-Baptiste, just another developer doing weird things with code. All my projects live on [jterrazz.com](https://jterrazz.com) – complete with backstories and lessons learned. Feel free to poke around – you might just find something useful!*
+_Hey there – I'm Jean-Baptiste, just another developer doing weird things with code. All my projects live on [jterrazz.com](https://jterrazz.com) – complete with backstories and lessons learned. Feel free to poke around – you might just find something useful!_
 
 ## Installation
 
@@ -40,7 +40,7 @@ j setup              # Interactive TUI for system configuration
 
 ### Sync (Project Templates)
 
-Sync configuration files (.gitignore, tsconfig, LICENSE, etc.) across repositories using [Copier](https://github.com/copier-org/copier) templates stored in `dotfiles/templates/`.
+Sync configuration files (.gitignore, tsconfig, LICENSE, etc.) across repositories using [Copier](https://github.com/copier-org/copier) templates stored in `dotfiles/blueprints/`.
 
 ```bash
 j sync init          # Initialize project from template (auto-detects language)
@@ -102,9 +102,8 @@ make clean    # Remove build artifacts
 │   │   └── presentation/       # TUI components and views
 │   └── go.mod
 ├── dotfiles/
-│   ├── applications/           # App configs (Cursor, Ghostty, Zed)
-│   ├── shell/zsh/              # Shell config sourced by ~/.zshrc
-│   └── templates/              # Copier project templates
+│   ├── applications/           # App configs (Cursor, Ghostty, Zed, Zsh)
+│   └── blueprints/             # Copier project templates
 ├── tests/e2e/                  # End-to-end CLI tests
 └── Makefile
 ```

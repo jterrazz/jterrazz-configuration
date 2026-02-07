@@ -69,7 +69,7 @@ func init() {
 
 // getTemplatePath returns the local path to the copier templates directory
 func getTemplatePath() (string, error) {
-	return config.GetRepoConfigPath("dotfiles/templates")
+	return config.GetRepoConfigPath("dotfiles/blueprints")
 }
 
 // hasCopierAnswers checks if the current directory has a .copier-answers.yml file
