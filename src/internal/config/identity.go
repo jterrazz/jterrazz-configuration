@@ -58,6 +58,29 @@ var IdentityChecks = []IdentityCheck{
 		GoodWhen: true,
 	},
 	{
+		Name:        "github",
+		Description: "GitHub CLI authentication",
+		CheckFn: func() CheckResult {
+			if _, err := exec.LookPath("gh"); err != nil {
+				return NotInstalled()
+			}
+			out, err := exec.Command("gh", "auth", "status").CombinedOutput()
+			if err != nil {
+				return NotInstalled()
+			}
+			// Parse "Logged in to github.com account username (...)"
+			text := string(out)
+			if idx := strings.Index(text, "account "); idx >= 0 {
+				rest := text[idx+len("account "):]
+				if sp := strings.IndexByte(rest, ' '); sp > 0 {
+					return InstalledWithDetail(rest[:sp])
+				}
+			}
+			return Installed()
+		},
+		GoodWhen: true,
+	},
+	{
 		Name:        "ssh-key",
 		Description: "SSH key for authentication",
 		CheckFn: func() CheckResult {

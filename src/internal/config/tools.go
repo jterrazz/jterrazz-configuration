@@ -458,6 +458,20 @@ var Tools = []Tool{
 		},
 	},
 	{
+		Name:         "conductor",
+		Formula:      "conductor",
+		Method:       InstallBrewCask,
+		Category:     CategoryApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Conductor.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromBrewCask("conductor")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
 		Name:         "ghostty",
 		Formula:      "ghostty",
 		Method:       InstallBrewCask,
@@ -512,6 +526,20 @@ var Tools = []Tool{
 		},
 	},
 	{
+		Name:         "lens",
+		Formula:      "lens",
+		Method:       InstallBrewCask,
+		Category:     CategoryApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Lens.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromBrewCask("lens")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
 		Name:         "zed",
 		Description:  "Zed code editor",
 		Formula:      "zed",
@@ -537,6 +565,17 @@ var Tools = []Tool{
 		Method:    InstallXcode,
 		Category:  CategorySystemTools,
 		VersionFn: tool.VersionFromCmd("git", []string{"--version"}, tool.ParseGitVersion),
+	},
+	{
+		Name:         "gh",
+		Description:  "GitHub CLI for repository management",
+		Command:      "gh",
+		Formula:      "gh",
+		Method:       InstallBrewFormula,
+		Category:     CategorySystemTools,
+		Dependencies: []string{"homebrew"},
+		Scripts:      []string{"gh"},
+		VersionFn:    tool.VersionFromCmd("gh", []string{"--version"}, tool.ParseGhVersion),
 	},
 	{
 		Name:         "copier",

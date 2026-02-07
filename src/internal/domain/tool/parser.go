@@ -40,6 +40,11 @@ func parseFirstLineField(s string, fieldIndex int, stripV bool) string {
 	return ""
 }
 
+// ParseGhVersion parses "gh version 2.67.0 (2025-01-01)\n..." -> "2.67.0"
+func ParseGhVersion(s string) string {
+	return parseFirstLineField(s, 2, false)
+}
+
 // ParseBrewVersion parses "Homebrew 4.2.0\n..." -> "4.2.0"
 func ParseBrewVersion(s string) string {
 	return parseFirstLineField(s, 1, false)

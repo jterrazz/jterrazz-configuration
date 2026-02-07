@@ -34,6 +34,10 @@ type Script struct {
 	// Run - execute the script
 	RunFn func() error
 
+	// ExecArgs - when set, the script runs via tea.ExecProcess (suspends TUI)
+	// Use for interactive commands that need full terminal control
+	ExecArgs []string
+
 	// Dependencies
 	RequiresTool string // Tool that must be installed first (e.g., "openjdk")
 }
@@ -100,6 +104,20 @@ var Scripts = []Script{
 			return CheckResult{}
 		},
 		RunFn: runSSHSetup,
+	},
+
+	{
+		Name:         "gh",
+		Description:  "Authenticate GitHub CLI",
+		Category:     ScriptCategorySecurity,
+		RequiresTool: "gh",
+		CheckFn: func() CheckResult {
+			if err := exec.Command("gh", "auth", "status").Run(); err != nil {
+				return CheckResult{}
+			}
+			return InstalledWithDetail("authenticated")
+		},
+		ExecArgs: []string{"gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "ssh", "--web", "--skip-ssh-key"},
 	},
 
 	// ==========================================================================

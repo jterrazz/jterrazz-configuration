@@ -1,6 +1,8 @@
 package setup
 
 import (
+	"os/exec"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/src/internal/config"
 	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/components"
@@ -127,6 +129,14 @@ func HandleSelect(index int, item components.Item, runScript func(string)) tea.C
 		}
 
 	default:
+		// Check if script uses ExecArgs (needs full terminal control)
+		if script := config.GetScriptByName(name); script != nil && len(script.ExecArgs) > 0 {
+			c := exec.Command(script.ExecArgs[0], script.ExecArgs[1:]...)
+			return tea.ExecProcess(c, func(err error) tea.Msg {
+				return components.ActionDoneMsg{Message: "Completed " + name}
+			})
+		}
+
 		loadingScript = name
 		return func() tea.Msg {
 			runScript(name)
