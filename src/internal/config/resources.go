@@ -244,6 +244,7 @@ var CacheChecks = []DiskCheck{
 	},
 	{Name: "npm cache", Path: "~/.npm", Style: "muted"},
 	{Name: "pnpm cache", Path: "~/Library/pnpm", Style: "muted"},
+	{Name: "bun cache", Path: "~/.bun/install/cache", Style: "muted"},
 	{Name: "yarn cache", Path: "~/Library/Caches/Yarn", Style: "muted"},
 	{Name: "go modules", Path: "~/go/pkg/mod", Style: "muted"},
 	{Name: "gradle cache", Path: "~/.gradle/caches", Style: "muted"},

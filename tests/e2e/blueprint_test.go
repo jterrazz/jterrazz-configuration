@@ -56,8 +56,6 @@ var (
 		".editorconfig",
 		".gitignore",
 		"LICENSE",
-		".claude/skills/coding-conventions/SKILL.md",
-		".claude/skills/writing-tests/SKILL.md",
 	}
 
 	tsFiles = []string{
@@ -80,8 +78,6 @@ var (
 		"Dockerfile",
 		".dockerignore",
 	}
-
-	structuringCodeSkill = ".claude/skills/structuring-code/SKILL.md"
 
 	ciWorkflow      = ".github/workflows/ci.yml"
 	releaseWorkflow = ".github/workflows/release.yml"
@@ -106,7 +102,7 @@ func TestBlueprintNoneMit(t *testing.T) {
 		},
 		wantFiles: commonFiles,
 		excludedFiles: MergeFiles(tsFiles, tsWithPkg, goFiles, dockerFiles, []string{
-			structuringCodeSkill, ciWorkflow, releaseWorkflow, deployWorkflow,
+ciWorkflow, releaseWorkflow, deployWorkflow,
 		}),
 	})
 }
@@ -125,7 +121,7 @@ func TestBlueprintNoneProprietary(t *testing.T) {
 		},
 		wantFiles: commonFiles,
 		excludedFiles: MergeFiles(tsFiles, tsWithPkg, goFiles, dockerFiles, []string{
-			structuringCodeSkill, ciWorkflow, releaseWorkflow, deployWorkflow,
+ciWorkflow, releaseWorkflow, deployWorkflow,
 		}),
 	})
 }
@@ -148,7 +144,7 @@ func TestBlueprintTypescriptNone(t *testing.T) {
 		},
 		wantFiles: MergeFiles(commonFiles, tsFiles, tsWithPkg),
 		excludedFiles: MergeFiles(goFiles, dockerFiles, []string{
-			structuringCodeSkill, ciWorkflow, releaseWorkflow, deployWorkflow,
+ciWorkflow, releaseWorkflow, deployWorkflow,
 		}),
 	})
 }
@@ -166,7 +162,7 @@ func TestBlueprintTypescriptLibrary(t *testing.T) {
 			"deploy":       "none",
 		},
 		wantFiles: MergeFiles(commonFiles, tsFiles, tsWithPkg, []string{
-			structuringCodeSkill, ciWorkflow, releaseWorkflow,
+ciWorkflow, releaseWorkflow,
 		}),
 		excludedFiles: MergeFiles(goFiles, dockerFiles, []string{deployWorkflow}),
 	})
@@ -185,7 +181,7 @@ func TestBlueprintTypescriptApi(t *testing.T) {
 			"deploy":       "none",
 		},
 		wantFiles: MergeFiles(commonFiles, tsFiles, tsWithPkg, dockerFiles, []string{
-			structuringCodeSkill, ciWorkflow,
+ciWorkflow,
 		}),
 		excludedFiles: MergeFiles(goFiles, []string{releaseWorkflow, deployWorkflow}),
 	})
@@ -204,7 +200,7 @@ func TestBlueprintTypescriptWeb(t *testing.T) {
 			"deploy":       "none",
 		},
 		wantFiles: MergeFiles(commonFiles, tsFiles, tsWithPkg, []string{
-			structuringCodeSkill, ciWorkflow,
+ciWorkflow,
 		}),
 		excludedFiles: MergeFiles(goFiles, dockerFiles, []string{releaseWorkflow, deployWorkflow}),
 	})
@@ -223,7 +219,7 @@ func TestBlueprintTypescriptMobile(t *testing.T) {
 			"deploy":       "none",
 		},
 		wantFiles: MergeFiles(commonFiles, tsFiles, []string{
-			structuringCodeSkill, ciWorkflow,
+ciWorkflow,
 		}),
 		excludedFiles: MergeFiles(goFiles, dockerFiles, tsWithPkg, []string{releaseWorkflow, deployWorkflow}),
 	})
@@ -242,7 +238,7 @@ func TestBlueprintTypescriptApiDeploy(t *testing.T) {
 			"deploy":       "kubernetes",
 		},
 		wantFiles: MergeFiles(commonFiles, tsFiles, tsWithPkg, dockerFiles, []string{
-			structuringCodeSkill, ciWorkflow, deployWorkflow,
+ciWorkflow, deployWorkflow,
 		}),
 		excludedFiles: MergeFiles(goFiles, []string{releaseWorkflow}),
 	})
@@ -266,7 +262,7 @@ func TestBlueprintGoNone(t *testing.T) {
 		},
 		wantFiles: MergeFiles(commonFiles, goFiles),
 		excludedFiles: MergeFiles(tsFiles, tsWithPkg, dockerFiles, []string{
-			structuringCodeSkill, ciWorkflow, releaseWorkflow, deployWorkflow,
+ciWorkflow, releaseWorkflow, deployWorkflow,
 		}),
 	})
 }
@@ -284,7 +280,7 @@ func TestBlueprintGoCli(t *testing.T) {
 			"deploy":       "none",
 		},
 		wantFiles: MergeFiles(commonFiles, goFiles, []string{
-			structuringCodeSkill, ciWorkflow,
+ciWorkflow,
 		}),
 		excludedFiles: MergeFiles(tsFiles, tsWithPkg, dockerFiles, []string{releaseWorkflow, deployWorkflow}),
 	})
@@ -303,7 +299,7 @@ func TestBlueprintGoApi(t *testing.T) {
 			"deploy":       "none",
 		},
 		wantFiles: MergeFiles(commonFiles, goFiles, dockerFiles, []string{
-			structuringCodeSkill, ciWorkflow,
+ciWorkflow,
 		}),
 		excludedFiles: MergeFiles(tsFiles, tsWithPkg, []string{releaseWorkflow, deployWorkflow}),
 	})
