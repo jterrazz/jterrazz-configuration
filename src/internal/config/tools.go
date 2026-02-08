@@ -63,6 +63,7 @@ const (
 	InstallBrewFormula InstallMethod = "brew"
 	InstallBrewCask    InstallMethod = "cask"
 	InstallNpm         InstallMethod = "npm"
+	InstallBun         InstallMethod = "bun"
 	InstallNvm         InstallMethod = "nvm"
 	InstallXcode       InstallMethod = "xcode"
 	InstallManual      InstallMethod = "manual"
@@ -75,6 +76,8 @@ func (m InstallMethod) String() string {
 		return "brew"
 	case InstallNpm:
 		return "npm"
+	case InstallBun:
+		return "bun"
 	case InstallNvm:
 		return "nvm"
 	case InstallXcode:
@@ -298,6 +301,15 @@ var Tools = []Tool{
 	},
 
 	{
+		Name:         "eas-cli",
+		Command:      "eas",
+		Formula:      "eas-cli",
+		Method:       InstallBun,
+		Category:     CategoryInfrastructure,
+		Dependencies: []string{"bun"},
+		VersionFn:    tool.VersionFromCmd("eas", []string{"--version"}, tool.TrimVersion),
+	},
+	{
 		Name:         "multipass",
 		Command:      "multipass",
 		Formula:      "multipass",
@@ -379,9 +391,9 @@ var Tools = []Tool{
 		Name:         "happy-coder",
 		Command:      "happy",
 		Formula:      "happy-coder",
-		Method:       InstallNpm,
+		Method:       InstallBun,
 		Category:     CategoryAI,
-		Dependencies: []string{"npm"},
+		Dependencies: []string{"bun"},
 		VersionFn:    tool.VersionFromCmd("happy", []string{"--version"}, tool.ParseHappyCoderVersion),
 	},
 	{
@@ -396,32 +408,19 @@ var Tools = []Tool{
 	{
 		Name:         "qmd",
 		Command:      "qmd",
-		Method:       InstallManual,
+		Formula:      "https://github.com/tobi/qmd",
+		Method:       InstallBun,
 		Category:     CategoryAI,
 		Dependencies: []string{"bun"},
 		VersionFn:    tool.VersionFromCmd("qmd", []string{"--version"}, tool.TrimVersion),
-		CheckFn: func() CheckResult {
-			if _, err := exec.LookPath("qmd"); err != nil {
-				return CheckResult{}
-			}
-			version := tool.VersionFromCmd("qmd", []string{"--version"}, tool.TrimVersion)()
-			return CheckResult{Installed: true, Version: version}
-		},
-		InstallFn: func() error {
-			cmd := exec.Command("bun", "install", "-g", "https://github.com/tobi/qmd")
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			cmd.Stdin = os.Stdin
-			return cmd.Run()
-		},
 	},
 	{
 		Name:         "skills",
 		Command:      "skills",
 		Formula:      "skills",
-		Method:       InstallNpm,
+		Method:       InstallBun,
 		Category:     CategoryAI,
-		Dependencies: []string{"npm"},
+		Dependencies: []string{"bun"},
 		VersionFn:    tool.VersionFromCmd("skills", []string{"--version"}, tool.TrimVersion),
 	},
 
@@ -622,7 +621,7 @@ func GetToolsByCategory(category ToolCategory) []Tool {
 func GetInstallableTools() []Tool {
 	var result []Tool
 	for _, tool := range Tools {
-		if tool.Method == InstallBrewFormula || tool.Method == InstallBrewCask || tool.Method == InstallNpm || tool.InstallFn != nil {
+		if tool.Method == InstallBrewFormula || tool.Method == InstallBrewCask || tool.Method == InstallNpm || tool.Method == InstallBun || tool.InstallFn != nil {
 			result = append(result, tool)
 		}
 	}
@@ -719,6 +718,8 @@ func (t Tool) Install() error {
 		return RunBrewCommand("install", "--cask", t.Formula)
 	case InstallNpm:
 		return ExecCommand("npm", "install", "-g", t.Formula)
+	case InstallBun:
+		return ExecCommand("bun", "install", "-g", t.Formula)
 	default:
 		return fmt.Errorf("cannot auto-install %s (method: %s)", t.Name, t.Method)
 	}

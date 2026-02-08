@@ -29,10 +29,10 @@ var PackageManagers = []PackageManager{
 		UpgradeFn:   upgradeNpm,
 	},
 	{
-		Name:        "pnpm",
-		Flag:        "pnpm",
-		RequiresCmd: "pnpm",
-		UpgradeFn:   upgradePnpm,
+		Name:        "bun",
+		Flag:        "bun",
+		RequiresCmd: "bun",
+		UpgradeFn:   upgradeBun,
 	},
 }
 
@@ -94,6 +94,14 @@ func UpgradePackageByName(name string) error {
 			ExecCommand("npm", "update", "-g", pkg.Formula)
 			fmt.Printf("  %s %s upgraded\n", output.Green("✓"), name)
 			return nil
+		case InstallBun:
+			if !CommandExists("bun") {
+				return fmt.Errorf("bun not found")
+			}
+			fmt.Printf("  📥 Upgrading %s...\n", name)
+			ExecCommand("bun", "update", "-g", pkg.Formula)
+			fmt.Printf("  %s %s upgraded\n", output.Green("✓"), name)
+			return nil
 		}
 	}
 
@@ -125,8 +133,8 @@ func upgradeNpm() {
 	fmt.Println(output.Green("  ✅ npm upgrade completed"))
 }
 
-func upgradePnpm() {
-	fmt.Println(output.Cyan("📦 Upgrading pnpm global packages..."))
-	ExecCommand("pnpm", "update", "-g")
-	fmt.Println(output.Green("  ✅ pnpm upgrade completed"))
+func upgradeBun() {
+	fmt.Println(output.Cyan("📦 Upgrading bun global packages..."))
+	ExecCommand("bun", "update", "-g")
+	fmt.Println(output.Green("  ✅ bun upgrade completed"))
 }

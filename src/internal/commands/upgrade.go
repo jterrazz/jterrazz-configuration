@@ -11,14 +11,14 @@ var upgradeFlags = make(map[string]*bool)
 
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade [package...]",
-	Short: "Upgrade system packages (Homebrew + npm global)",
+	Short: "Upgrade system packages",
 	Long: `Upgrade system packages.
 
 Examples:
   j upgrade --all             Upgrade all package managers
   j upgrade --brew            Upgrade Homebrew packages only
   j upgrade --npm             Upgrade npm global packages only
-  j upgrade --pnpm            Upgrade pnpm global packages only
+  j upgrade --bun             Upgrade bun global packages only
   j upgrade node              Upgrade specific brew package
   j upgrade claude opencode   Upgrade specific packages
   j upgrade                   List available options`,
@@ -96,7 +96,7 @@ func listUpgradeOptions() {
 	print.Empty()
 	print.Usage(
 		"Usage: j upgrade <package> [package...]",
-		"       j upgrade --brew --npm",
+		"       j upgrade --brew --bun",
 		"       j upgrade --all",
 	)
 }
