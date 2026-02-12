@@ -136,7 +136,13 @@ var NetworkChecks = []ResourceCheck{
 				}
 			}
 			if len(servers) > 0 {
-				return ResourceResult{Value: strings.Join(servers, ", "), Style: "muted", Available: true}
+				value := strings.Join(servers, ", ")
+				style := "muted"
+				if IsDNSProfileInstalled() {
+					value += " (Quad9 encrypted)"
+					style = "success"
+				}
+				return ResourceResult{Value: value, Style: style, Available: true}
 			}
 			return ResourceResult{Available: false}
 		},

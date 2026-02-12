@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/jterrazz/jterrazz-cli/src/internal/domain/tool"
 	out "github.com/jterrazz/jterrazz-cli/src/internal/presentation/print"
 )
+
+const dnsProfileIdentifier = "com.jterrazz.dns.quad9"
 
 // ScriptCategory groups scripts by their purpose
 type ScriptCategory string
@@ -118,6 +122,18 @@ var Scripts = []Script{
 			return InstalledWithDetail("authenticated")
 		},
 		ExecArgs: []string{"gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "ssh", "--web", "--skip-ssh-key"},
+	},
+	{
+		Name:        "dns",
+		Description: "Encrypted DNS via Quad9 (DoH)",
+		Category:    ScriptCategorySecurity,
+		CheckFn: func() CheckResult {
+			if IsDNSProfileInstalled() {
+				return InstalledWithDetail("Quad9 DoH")
+			}
+			return CheckResult{}
+		},
+		RunFn: runDNSEncrypt,
 	},
 
 	// ==========================================================================
@@ -454,6 +470,95 @@ func runDockSpacer() error {
 	ExecCommand("killall", "Dock")
 	fmt.Println(out.Green("Done - Dock spacer added"))
 	return nil
+}
+
+func IsDNSProfileInstalled() bool {
+	out, _ := exec.Command("profiles", "-C", "-v").Output()
+	return strings.Contains(string(out), dnsProfileIdentifier)
+}
+
+func dnsProfilePath() string {
+	return filepath.Join(os.Getenv("HOME"), ".config", "jterrazz", "quad9-dns.mobileconfig")
+}
+
+func runDNSEncrypt() error {
+	if IsDNSProfileInstalled() {
+		exec.Command("open", "x-apple.systempreferences:com.apple.Profiles-Settings.extension").Run()
+		return nil
+	}
+
+	profilePath := dnsProfilePath()
+	if err := os.MkdirAll(filepath.Dir(profilePath), 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	if err := os.WriteFile(profilePath, []byte(generateDNSProfile()), 0644); err != nil {
+		return fmt.Errorf("failed to write profile: %w", err)
+	}
+
+	exec.Command("open", profilePath).Run()
+
+	// Give macOS time to read the file before the TUI resumes
+	time.Sleep(2 * time.Second)
+	return nil
+}
+
+func generateDNSProfile() string {
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>DNSSettings</key>
+			<dict>
+				<key>DNSProtocol</key>
+				<string>HTTPS</string>
+				<key>ServerAddresses</key>
+				<array>
+					<string>2620:fe::fe</string>
+					<string>2620:fe::9</string>
+					<string>9.9.9.9</string>
+					<string>149.112.112.112</string>
+				</array>
+				<key>ServerURL</key>
+				<string>https://dns.quad9.net/dns-query</string>
+			</dict>
+			<key>PayloadDescription</key>
+			<string>Configures device to use Quad9 Encrypted DNS over HTTPS</string>
+			<key>PayloadDisplayName</key>
+			<string>Quad9 DNS over HTTPS</string>
+			<key>PayloadIdentifier</key>
+			<string>` + dnsProfileIdentifier + `.doh</string>
+			<key>PayloadType</key>
+			<string>com.apple.dnsSettings.managed</string>
+			<key>PayloadUUID</key>
+			<string>B9C4F3A2-5E6D-7F8A-9B0C-1D2E3F4A5B6C</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>ProhibitDisablement</key>
+			<false/>
+		</dict>
+	</array>
+	<key>PayloadDescription</key>
+	<string>Configures encrypted DNS over HTTPS using Quad9 (9.9.9.9)</string>
+	<key>PayloadDisplayName</key>
+	<string>Quad9 Encrypted DNS</string>
+	<key>PayloadIdentifier</key>
+	<string>` + dnsProfileIdentifier + `</string>
+	<key>PayloadRemovalDisallowed</key>
+	<false/>
+	<key>PayloadScope</key>
+	<string>System</string>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>A8B3E2F1-4D5C-6E7F-8A9B-0C1D2E3F4A5B</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>`
 }
 
 // =============================================================================

@@ -162,6 +162,21 @@ func ParsePulumiVersion(s string) string {
 	return strings.TrimPrefix(strings.TrimSpace(s), "v")
 }
 
+// ParseEasVersion parses "eas-cli/16.32.0 darwin-arm64 node-v24.11.1" -> "16.32.0"
+// Handles multi-line output with upgrade notices
+func ParseEasVersion(s string) string {
+	s = StripAnsi(s)
+	for _, line := range strings.Split(s, "\n") {
+		if strings.HasPrefix(line, "eas-cli/") {
+			parts := strings.Fields(line)
+			if len(parts) >= 1 {
+				return strings.TrimPrefix(parts[0], "eas-cli/")
+			}
+		}
+	}
+	return ""
+}
+
 // ParseHappyCoderVersion parses "happy version: 0.13.0\n..." -> "0.13.0"
 func ParseHappyCoderVersion(s string) string {
 	s = StripAnsi(s)

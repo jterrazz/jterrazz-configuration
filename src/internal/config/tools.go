@@ -301,13 +301,13 @@ var Tools = []Tool{
 	},
 
 	{
-		Name:         "eas-cli",
+		Name:         "eas",
 		Command:      "eas",
 		Formula:      "eas-cli",
 		Method:       InstallBun,
 		Category:     CategoryInfrastructure,
 		Dependencies: []string{"bun"},
-		VersionFn:    tool.VersionFromCmd("eas", []string{"--version"}, tool.TrimVersion),
+		VersionFn:    tool.VersionFromCmd("eas", []string{"--version"}, tool.ParseEasVersion),
 	},
 	{
 		Name:         "multipass",

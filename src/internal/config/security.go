@@ -61,4 +61,12 @@ var SecurityChecks = []SecurityCheck{
 		},
 		GoodWhen: true,
 	},
+	{
+		Name:        "encrypted-dns",
+		Description: "DNS over HTTPS/TLS",
+		CheckFn: func() CheckResult {
+			return CheckResult{Installed: IsDNSProfileInstalled()}
+		},
+		GoodWhen: true,
+	},
 }
