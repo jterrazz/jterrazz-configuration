@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"sync"
+
 	"github.com/jterrazz/jterrazz-cli/src/internal/config"
 	"github.com/jterrazz/jterrazz-cli/src/internal/domain/tool"
 	"github.com/jterrazz/jterrazz-cli/src/internal/presentation/print"
@@ -46,15 +48,48 @@ func listAvailableTools() {
 	print.Info("Available tools:")
 	print.Empty()
 
+	// Check all tools in parallel
+	results := make(map[string]config.CheckResult, len(config.Tools))
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	for i := range config.Tools {
+		wg.Add(1)
+		go func(t *config.Tool) {
+			defer wg.Done()
+			result := t.Check()
+			mu.Lock()
+			results[t.Name] = result
+			mu.Unlock()
+		}(&config.Tools[i])
+	}
+	wg.Wait()
+
+	knownCategories := make(map[config.ToolCategory]bool, len(config.ToolCategories))
+	for _, category := range config.ToolCategories {
+		knownCategories[category] = true
+		tools := config.GetToolsByCategory(category)
+		if len(tools) == 0 {
+			continue
+		}
+
+		print.Category(string(category))
+		for _, t := range tools {
+			print.Row(results[t.Name].Installed, t.Name, t.Method.String())
+		}
+	}
+
+	// Fallback: show any tools using categories not listed in ToolCategories.
 	currentCategory := config.ToolCategory("")
 	for _, t := range config.Tools {
+		if knownCategories[t.Category] {
+			continue
+		}
 		if t.Category != currentCategory {
 			currentCategory = t.Category
 			print.Category(string(currentCategory))
 		}
-
-		result := t.Check()
-		print.Row(result.Installed, t.Name, t.Method.String())
+		print.Row(results[t.Name].Installed, t.Name, t.Method.String())
 	}
 
 	print.Empty()
