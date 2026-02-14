@@ -54,6 +54,7 @@ const (
 	CategoryAI             ToolCategory = "AI"
 	CategoryTerminalGit    ToolCategory = "Terminal & Git"
 	CategoryGUIApps        ToolCategory = "GUI Apps"
+	CategoryMacAppStore    ToolCategory = "Mac App Store"
 )
 
 // InstallMethod defines how a tool is installed
@@ -67,6 +68,7 @@ const (
 	InstallNvm         InstallMethod = "nvm"
 	InstallXcode       InstallMethod = "xcode"
 	InstallManual      InstallMethod = "manual"
+	InstallMAS         InstallMethod = "mas"
 )
 
 // String returns a display string for the install method
@@ -84,6 +86,8 @@ func (m InstallMethod) String() string {
 		return "xcode"
 	case InstallManual:
 		return "sh"
+	case InstallMAS:
+		return "mas"
 	default:
 		return "-"
 	}
@@ -397,7 +401,7 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:         "happy-coder",
+		Name:         "happy",
 		Command:      "happy",
 		Formula:      "happy-coder",
 		Method:       InstallBun,
@@ -437,27 +441,17 @@ var Tools = []Tool{
 	// GUI Apps + desktop tooling
 	// ==========================================================================
 	{
-		Name:         "docker",
-		Command:      "docker",
-		Formula:      "docker",
+		Name:         "orbstack",
+		Description:  "OrbStack container runtime (provides docker CLI)",
+		Formula:      "orbstack",
 		Method:       InstallBrewCask,
 		Category:     CategoryDevOps,
 		Dependencies: []string{"homebrew"},
 		CheckFn: func() CheckResult {
-			// Check for OrbStack first, then Docker Desktop
-			_, orbstackErr := os.Stat("/Applications/OrbStack.app")
-			_, dockerErr := os.Stat("/Applications/Docker.app")
-			if orbstackErr != nil && dockerErr != nil {
+			if _, err := os.Stat("/Applications/OrbStack.app"); err != nil {
 				return CheckResult{}
 			}
-
-			var version string
-			if orbstackErr == nil {
-				version = tool.VersionFromAppPlist("OrbStack")()
-			} else {
-				version = tool.VersionFromBrewCask("docker")()
-			}
-
+			version := tool.VersionFromAppPlist("OrbStack")()
 			status := "stopped"
 			if err := exec.Command("docker", "info").Run(); err == nil {
 				status = "running"
@@ -564,6 +558,202 @@ var Tools = []Tool{
 		},
 	},
 
+	{
+		Name:         "android-studio",
+		Description:  "Android development IDE",
+		Formula:      "android-studio",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Android Studio.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Android Studio")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "bitwarden",
+		Description:  "Password manager",
+		Formula:      "bitwarden",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Bitwarden.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Bitwarden")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "brave",
+		Description:  "Privacy-focused web browser",
+		Formula:      "brave-browser",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Brave Browser.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Brave Browser")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "chatgpt",
+		Description:  "OpenAI ChatGPT desktop app",
+		Formula:      "chatgpt",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/ChatGPT.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("ChatGPT")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "claude-desktop",
+		Description:  "Anthropic Claude desktop app",
+		Formula:      "claude",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Claude.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Claude")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "cursor",
+		Description:  "AI-powered code editor",
+		Formula:      "cursor",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Cursor.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Cursor")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "discord",
+		Description:  "Voice and text chat",
+		Formula:      "discord",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Discord.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Discord")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "linear",
+		Description:  "Project management tool",
+		Formula:      "linear-linear",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Linear.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Linear")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "notion",
+		Description:  "Workspace for notes and docs",
+		Formula:      "notion",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Notion.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Notion")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "obsidian",
+		Description:  "Knowledge base and note-taking",
+		Formula:      "obsidian",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Obsidian.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Obsidian")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "slack",
+		Description:  "Team communication",
+		Formula:      "slack",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Slack.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Slack")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "tailscale",
+		Description:  "Mesh VPN built on WireGuard",
+		Formula:      "tailscale",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Tailscale.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Tailscale")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:         "whatsapp",
+		Description:  "Messaging app",
+		Formula:      "whatsapp",
+		Method:       InstallBrewCask,
+		Category:     CategoryGUIApps,
+		Dependencies: []string{"homebrew"},
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/WhatsApp.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("WhatsApp")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+
 	// ==========================================================================
 	// Terminal & Git
 	// ==========================================================================
@@ -603,6 +793,204 @@ var Tools = []Tool{
 		Category:     CategoryTerminalGit,
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("mo", []string{"--version"}, tool.ParseMoleVersion),
+	},
+
+	// ==========================================================================
+	// Mac App Store (check-only, not auto-installable)
+	// ==========================================================================
+	{
+		Name:     "adguard",
+		Description: "Ad blocker for Safari",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/AdGuard for Safari.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("AdGuard for Safari")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "broadcasts",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Broadcasts.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Broadcasts")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "compressor",
+		Description: "Apple video compression tool",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Compressor.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Compressor")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "dia",
+		Description: "AI assistant by Apple",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Dia.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Dia")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "final-cut-pro",
+		Description: "Professional video editor",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Final Cut Pro.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Final Cut Pro")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "lightroom",
+		Description: "Adobe photo editor",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Adobe Lightroom.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Adobe Lightroom")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "logic-pro",
+		Description: "Professional music production",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Logic Pro.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Logic Pro")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "messenger",
+		Description: "Facebook Messenger",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Messenger.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Messenger")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "pages",
+		Description: "Apple word processor",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Pages.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Pages")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "passepartout",
+		Description: "VPN client",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Passepartout.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Passepartout")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "pipifier",
+		Description: "Picture-in-Picture for Safari",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/PiPifier.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("PiPifier")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "raindrop",
+		Description: "Bookmark manager",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Save to Raindrop.io.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Save to Raindrop.io")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "snippety",
+		Description: "Code snippet manager",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Snippety.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Snippety")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "speedtest",
+		Description: "Internet speed test",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Speedtest.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Speedtest")()
+			return CheckResult{Installed: true, Version: version}
+		},
+	},
+	{
+		Name:     "xcode",
+		Description: "Apple development IDE",
+		Method:   InstallMAS,
+		Category: CategoryMacAppStore,
+		CheckFn: func() CheckResult {
+			if _, err := os.Stat("/Applications/Xcode.app"); err != nil {
+				return CheckResult{}
+			}
+			version := tool.VersionFromAppPlist("Xcode")()
+			return CheckResult{Installed: true, Version: version}
+		},
 	},
 }
 

@@ -24,6 +24,7 @@ var StatusSections = []StatusSection{
 	{Title: "Tools", SubTitle: "AI", RenderFn: nil},
 	{Title: "Tools", SubTitle: "Terminal & Git", RenderFn: nil},
 	{Title: "Tools", SubTitle: "GUI Apps", RenderFn: nil},
+	{Title: "Tools", SubTitle: "Mac App Store", RenderFn: nil},
 
 	// Resources section with subsections
 	{Title: "Resources", SubTitle: "Top Processes", RenderFn: nil},      // Uses ProcessChecks
@@ -39,4 +40,5 @@ var ToolCategories = []ToolCategory{
 	CategoryAI,
 	CategoryTerminalGit,
 	CategoryGUIApps,
+	CategoryMacAppStore,
 }
