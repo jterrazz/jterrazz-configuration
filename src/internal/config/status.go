@@ -19,11 +19,11 @@ var StatusSections = []StatusSection{
 
 	// Tools section - one subsection per category
 	{Title: "Tools", SubTitle: "Package Managers", RenderFn: nil},
-	{Title: "Tools", SubTitle: "Languages", RenderFn: nil},
-	{Title: "Tools", SubTitle: "Infrastructure", RenderFn: nil},
+	{Title: "Tools", SubTitle: "Runtimes", RenderFn: nil},
+	{Title: "Tools", SubTitle: "DevOps", RenderFn: nil},
 	{Title: "Tools", SubTitle: "AI", RenderFn: nil},
-	{Title: "Tools", SubTitle: "Apps", RenderFn: nil},
-	{Title: "Tools", SubTitle: "System Tools", RenderFn: nil},
+	{Title: "Tools", SubTitle: "Terminal & Git", RenderFn: nil},
+	{Title: "Tools", SubTitle: "GUI Apps", RenderFn: nil},
 
 	// Resources section with subsections
 	{Title: "Resources", SubTitle: "Top Processes", RenderFn: nil},      // Uses ProcessChecks
@@ -34,9 +34,9 @@ var StatusSections = []StatusSection{
 // ToolCategories defines the order of tool categories in status display
 var ToolCategories = []ToolCategory{
 	CategoryPackageManager,
-	CategoryLanguages,
-	CategoryInfrastructure,
+	CategoryRuntimes,
+	CategoryDevOps,
 	CategoryAI,
-	CategoryApps,
-	CategorySystemTools,
+	CategoryTerminalGit,
+	CategoryGUIApps,
 }

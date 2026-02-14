@@ -30,6 +30,9 @@ func TestVersionParsers(t *testing.T) {
 		{"ParsePythonVersion basic", ParsePythonVersion, "Python 3.12.0", "3.12.0"},
 		{"ParsePythonVersion with newline", ParsePythonVersion, "Python 3.11.5\n", "3.11.5"},
 
+		// ParseRustVersion
+		{"ParseRustVersion", ParseRustVersion, "rustc 1.84.0 (9fc6b4312 2025-01-07)", "1.84.0"},
+
 		// ParseTerraformVersion
 		{"ParseTerraformVersion", ParseTerraformVersion, "Terraform v1.5.7\non darwin_arm64", "1.5.7"},
 

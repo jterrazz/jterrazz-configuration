@@ -91,6 +91,11 @@ func ParsePythonVersion(s string) string {
 	return strings.TrimPrefix(strings.TrimSpace(s), "Python ")
 }
 
+// ParseRustVersion parses "rustc 1.80.1 (....)" -> "1.80.1"
+func ParseRustVersion(s string) string {
+	return parseFirstLineField(s, 1, false)
+}
+
 // ParseTerraformVersion parses "Terraform v1.5.7\n..." -> "1.5.7"
 func ParseTerraformVersion(s string) string {
 	return parseFirstLineField(s, 1, true)

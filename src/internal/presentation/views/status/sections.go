@@ -122,7 +122,7 @@ func getSubsectionOrder(section string) []string {
 	case "System":
 		return []string{"Security", "Identity"}
 	case "Tools":
-		return []string{"Package Managers", "Languages", "Infrastructure", "AI", "Apps", "System Tools"}
+		return []string{"Package Managers", "Runtimes", "DevOps", "AI", "Terminal & Git", "GUI Apps"}
 	case "Resources":
 		return []string{"Top Processes", "Network", "Caches & Cleanable"}
 	}

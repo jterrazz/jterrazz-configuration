@@ -49,11 +49,11 @@ type ToolCategory string
 
 const (
 	CategoryPackageManager ToolCategory = "Package Managers"
-	CategoryLanguages      ToolCategory = "Languages"
-	CategoryInfrastructure ToolCategory = "Infrastructure"
+	CategoryRuntimes       ToolCategory = "Runtimes"
+	CategoryDevOps         ToolCategory = "DevOps"
 	CategoryAI             ToolCategory = "AI"
-	CategoryApps           ToolCategory = "Apps"
-	CategorySystemTools    ToolCategory = "System Tools"
+	CategoryTerminalGit    ToolCategory = "Terminal & Git"
+	CategoryGUIApps        ToolCategory = "GUI Apps"
 )
 
 // InstallMethod defines how a tool is installed
@@ -236,14 +236,14 @@ var Tools = []Tool{
 	},
 
 	// ==========================================================================
-	// Languages
+	// Runtimes
 	// ==========================================================================
 	{
 		Name:         "go",
 		Command:      "go",
 		Formula:      "go",
 		Method:       InstallBrewFormula,
-		Category:     CategoryLanguages,
+		Category:     CategoryRuntimes,
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("go", []string{"version"}, tool.ParseGoVersion),
 	},
@@ -251,7 +251,7 @@ var Tools = []Tool{
 		Name:         "node",
 		Command:      "node",
 		Method:       InstallNvm,
-		Category:     CategoryLanguages,
+		Category:     CategoryRuntimes,
 		Dependencies: []string{"nvm"},
 		VersionFn:    tool.VersionFromCmd("node", []string{"--version"}, tool.TrimVersion),
 	},
@@ -260,7 +260,7 @@ var Tools = []Tool{
 		Command:      "java",
 		Formula:      "openjdk",
 		Method:       InstallBrewFormula,
-		Category:     CategoryLanguages,
+		Category:     CategoryRuntimes,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"java"},
 		CheckFn: func() CheckResult {
@@ -282,20 +282,29 @@ var Tools = []Tool{
 		Command:      "python3",
 		Formula:      "python",
 		Method:       InstallBrewFormula,
-		Category:     CategoryLanguages,
+		Category:     CategoryRuntimes,
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("python3", []string{"--version"}, tool.ParsePythonVersion),
 	},
+	{
+		Name:         "rust",
+		Command:      "rustc",
+		Formula:      "rust",
+		Method:       InstallBrewFormula,
+		Category:     CategoryRuntimes,
+		Dependencies: []string{"homebrew"},
+		VersionFn:    tool.VersionFromCmd("rustc", []string{"--version"}, tool.ParseRustVersion),
+	},
 
 	// ==========================================================================
-	// Infrastructure
+	// DevOps
 	// ==========================================================================
 	{
 		Name:         "ansible",
 		Command:      "ansible",
 		Formula:      "ansible",
 		Method:       InstallBrewFormula,
-		Category:     CategoryInfrastructure,
+		Category:     CategoryDevOps,
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("ansible", []string{"--version"}, tool.ParseAnsibleVersion),
 	},
@@ -305,7 +314,7 @@ var Tools = []Tool{
 		Command:      "eas",
 		Formula:      "eas-cli",
 		Method:       InstallBun,
-		Category:     CategoryInfrastructure,
+		Category:     CategoryDevOps,
 		Dependencies: []string{"bun"},
 		VersionFn:    tool.VersionFromCmd("eas", []string{"--version"}, tool.ParseEasVersion),
 	},
@@ -314,7 +323,7 @@ var Tools = []Tool{
 		Command:      "multipass",
 		Formula:      "multipass",
 		Method:       InstallBrewFormula,
-		Category:     CategoryInfrastructure,
+		Category:     CategoryDevOps,
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("multipass", []string{"--version"}, tool.ParseMultipassVersion),
 	},
@@ -323,7 +332,7 @@ var Tools = []Tool{
 		Command:      "pulumi",
 		Formula:      "pulumi/tap/pulumi",
 		Method:       InstallBrewFormula,
-		Category:     CategoryInfrastructure,
+		Category:     CategoryDevOps,
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("pulumi", []string{"version"}, tool.ParsePulumiVersion),
 	},
@@ -332,7 +341,7 @@ var Tools = []Tool{
 		Command:      "terraform",
 		Formula:      "terraform",
 		Method:       InstallBrewFormula,
-		Category:     CategoryInfrastructure,
+		Category:     CategoryDevOps,
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("terraform", []string{"--version"}, tool.ParseTerraformVersion),
 	},
@@ -425,14 +434,14 @@ var Tools = []Tool{
 	},
 
 	// ==========================================================================
-	// Apps
+	// GUI Apps + desktop tooling
 	// ==========================================================================
 	{
 		Name:         "docker",
 		Command:      "docker",
 		Formula:      "docker",
 		Method:       InstallBrewCask,
-		Category:     CategoryApps,
+		Category:     CategoryDevOps,
 		Dependencies: []string{"homebrew"},
 		CheckFn: func() CheckResult {
 			// Check for OrbStack first, then Docker Desktop
@@ -460,7 +469,7 @@ var Tools = []Tool{
 		Name:         "conductor",
 		Formula:      "conductor",
 		Method:       InstallBrewCask,
-		Category:     CategoryApps,
+		Category:     CategoryGUIApps,
 		Dependencies: []string{"homebrew"},
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Conductor.app"); err != nil {
@@ -474,7 +483,7 @@ var Tools = []Tool{
 		Name:         "ghostty",
 		Formula:      "ghostty",
 		Method:       InstallBrewCask,
-		Category:     CategoryApps,
+		Category:     CategoryGUIApps,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"ghostty"},
 		CheckFn: func() CheckResult {
@@ -491,7 +500,7 @@ var Tools = []Tool{
 		Command:      "gpg",
 		Formula:      "gnupg",
 		Method:       InstallBrewFormula,
-		Category:     CategorySystemTools,
+		Category:     CategoryTerminalGit,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"gpg"},
 		VersionFn:    tool.VersionFromBrewFormula("gnupg"),
@@ -501,7 +510,7 @@ var Tools = []Tool{
 		Description: "Oh My Zsh shell framework",
 		Command:     "",
 		Method:      InstallManual,
-		Category:    CategorySystemTools,
+		Category:    CategoryTerminalGit,
 		CheckFn: func() CheckResult {
 			omzPath := os.Getenv("HOME") + "/.oh-my-zsh"
 			if _, err := os.Stat(omzPath); err != nil {
@@ -528,7 +537,7 @@ var Tools = []Tool{
 		Name:         "lens",
 		Formula:      "lens",
 		Method:       InstallBrewCask,
-		Category:     CategoryApps,
+		Category:     CategoryGUIApps,
 		Dependencies: []string{"homebrew"},
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Lens.app"); err != nil {
@@ -543,7 +552,7 @@ var Tools = []Tool{
 		Description:  "Zed code editor",
 		Formula:      "zed",
 		Method:       InstallBrewCask,
-		Category:     CategoryApps,
+		Category:     CategoryGUIApps,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"zed"},
 		CheckFn: func() CheckResult {
@@ -556,13 +565,13 @@ var Tools = []Tool{
 	},
 
 	// ==========================================================================
-	// System Tools
+	// Terminal & Git
 	// ==========================================================================
 	{
 		Name:      "git",
 		Command:   "git",
 		Method:    InstallXcode,
-		Category:  CategorySystemTools,
+		Category:  CategoryTerminalGit,
 		VersionFn: tool.VersionFromCmd("git", []string{"--version"}, tool.ParseGitVersion),
 	},
 	{
@@ -571,7 +580,7 @@ var Tools = []Tool{
 		Command:      "gh",
 		Formula:      "gh",
 		Method:       InstallBrewFormula,
-		Category:     CategorySystemTools,
+		Category:     CategoryTerminalGit,
 		Dependencies: []string{"homebrew"},
 		Scripts:      []string{"gh"},
 		VersionFn:    tool.VersionFromCmd("gh", []string{"--version"}, tool.ParseGhVersion),
@@ -582,7 +591,7 @@ var Tools = []Tool{
 		Command:      "copier",
 		Formula:      "copier",
 		Method:       InstallBrewFormula,
-		Category:     CategorySystemTools,
+		Category:     CategoryTerminalGit,
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("copier", []string{"--version"}, tool.TrimVersion),
 	},
@@ -591,7 +600,7 @@ var Tools = []Tool{
 		Command:      "mo",
 		Formula:      "tw93/tap/mole",
 		Method:       InstallBrewFormula,
-		Category:     CategorySystemTools,
+		Category:     CategoryTerminalGit,
 		Dependencies: []string{"homebrew"},
 		VersionFn:    tool.VersionFromCmd("mo", []string{"--version"}, tool.ParseMoleVersion),
 	},
