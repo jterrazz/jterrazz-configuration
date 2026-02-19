@@ -49,95 +49,7 @@ type Script struct {
 // Scripts is the single source of truth for all setup/configuration scripts
 var Scripts = []Script{
 	// ==========================================================================
-	// Terminal Scripts
-	// ==========================================================================
-	{
-		Name:        "hushlogin",
-		Description: "Silence terminal login message",
-		Category:    ScriptCategoryTerminal,
-		CheckFn: func() CheckResult {
-			hushPath := os.Getenv("HOME") + "/.hushlogin"
-			if _, err := os.Stat(hushPath); err == nil {
-				return CheckResult{Installed: true, Detail: "~/.hushlogin"}
-			}
-			return CheckResult{}
-		},
-		RunFn: runHushlogin,
-	},
-	{
-		Name:         "ghostty",
-		Description:  "Install Ghostty terminal config",
-		Category:     ScriptCategoryTerminal,
-		RequiresTool: "ghostty",
-		CheckFn: func() CheckResult {
-			configPath := os.Getenv("HOME") + "/.config/ghostty/config"
-			if _, err := os.Stat(configPath); err == nil {
-				return CheckResult{Installed: true, Detail: "~/.config/ghostty/config"}
-			}
-			return CheckResult{}
-		},
-		RunFn: runGhosttyConfig,
-	},
-
-	// ==========================================================================
-	// Security Scripts
-	// ==========================================================================
-	{
-		Name:         "gpg",
-		Description:  "Configure GPG for commit signing",
-		Category:     ScriptCategorySecurity,
-		RequiresTool: "gpg",
-		CheckFn: func() CheckResult {
-			out, _ := exec.Command("git", "config", "--global", "commit.gpgsign").Output()
-			if strings.TrimSpace(string(out)) == "true" {
-				return CheckResult{Installed: true, Detail: "commit.gpgsign=true"}
-			}
-			return CheckResult{}
-		},
-		RunFn: runGPGSetup,
-	},
-	{
-		Name:        "ssh",
-		Description: "Generate SSH key with Keychain integration",
-		Category:    ScriptCategorySecurity,
-		CheckFn: func() CheckResult {
-			sshKey := os.Getenv("HOME") + "/.ssh/id_ed25519"
-			if _, err := os.Stat(sshKey); err == nil {
-				return CheckResult{Installed: true, Detail: "~/.ssh/id_ed25519"}
-			}
-			return CheckResult{}
-		},
-		RunFn: runSSHSetup,
-	},
-
-	{
-		Name:         "gh",
-		Description:  "Authenticate GitHub CLI",
-		Category:     ScriptCategorySecurity,
-		RequiresTool: "gh",
-		CheckFn: func() CheckResult {
-			if err := exec.Command("gh", "auth", "status").Run(); err != nil {
-				return CheckResult{}
-			}
-			return InstalledWithDetail("authenticated")
-		},
-		ExecArgs: []string{"gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "ssh", "--web", "--skip-ssh-key"},
-	},
-	{
-		Name:        "dns",
-		Description: "Encrypted DNS via Quad9 (DoH)",
-		Category:    ScriptCategorySecurity,
-		CheckFn: func() CheckResult {
-			if IsDNSProfileInstalled() {
-				return InstalledWithDetail("Quad9 DoH")
-			}
-			return CheckResult{}
-		},
-		RunFn: runDNSEncrypt,
-	},
-
-	// ==========================================================================
-	// Editor Scripts
+	// Editor Scripts (A-Z)
 	// ==========================================================================
 	{
 		Name:         "zed",
@@ -155,21 +67,77 @@ var Scripts = []Script{
 	},
 
 	// ==========================================================================
-	// System Scripts
+	// Security Scripts (A-Z)
 	// ==========================================================================
 	{
-		Name:         "java",
-		Description:  "Configure Java runtime symlink for macOS",
-		Category:     ScriptCategorySystem,
-		RequiresTool: "openjdk",
+		Name:        "dns",
+		Description: "Encrypted DNS via Quad9 (DoH)",
+		Category:    ScriptCategorySecurity,
 		CheckFn: func() CheckResult {
-			if _, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk"); err == nil {
-				return CheckResult{Installed: true, Detail: "/Library/Java/JavaVirtualMachines/openjdk.jdk"}
+			if IsDNSProfileInstalled() {
+				return InstalledWithDetail("Quad9 DoH")
 			}
 			return CheckResult{}
 		},
-		RunFn: runJavaSymlink,
+		RunFn: runDNSEncrypt,
 	},
+	{
+		Name:         "gh",
+		Description:  "Authenticate GitHub CLI",
+		Category:     ScriptCategorySecurity,
+		RequiresTool: "gh",
+		CheckFn: func() CheckResult {
+			if err := exec.Command("gh", "auth", "status").Run(); err != nil {
+				return CheckResult{}
+			}
+			return InstalledWithDetail("authenticated")
+		},
+		ExecArgs: []string{"gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "ssh", "--web", "--skip-ssh-key"},
+	},
+	{
+		Name:         "gpg",
+		Description:  "Configure GPG for commit signing",
+		Category:     ScriptCategorySecurity,
+		RequiresTool: "gpg",
+		CheckFn: func() CheckResult {
+			out, _ := exec.Command("git", "config", "--global", "commit.gpgsign").Output()
+			if strings.TrimSpace(string(out)) == "true" {
+				return CheckResult{Installed: true, Detail: "commit.gpgsign=true"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runGPGSetup,
+	},
+	{
+		Name:        "spotlight-exclude",
+		Description: "Exclude ~/Developer from Spotlight indexing",
+		Category:    ScriptCategorySecurity,
+		CheckFn: func() CheckResult {
+			marker := os.Getenv("HOME") + "/Developer/.metadata_never_index"
+			if _, err := os.Stat(marker); err == nil {
+				return InstalledWithDetail("~/Developer excluded")
+			}
+			return CheckResult{}
+		},
+		RunFn: runSpotlightExclude,
+	},
+	{
+		Name:        "ssh",
+		Description: "Generate SSH key with Keychain integration",
+		Category:    ScriptCategorySecurity,
+		CheckFn: func() CheckResult {
+			sshKey := os.Getenv("HOME") + "/.ssh/id_ed25519"
+			if _, err := os.Stat(sshKey); err == nil {
+				return CheckResult{Installed: true, Detail: "~/.ssh/id_ed25519"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runSSHSetup,
+	},
+
+	// ==========================================================================
+	// System Scripts (A-Z)
+	// ==========================================================================
 	{
 		Name:        "dock-reset",
 		Description: "Reset dock to system defaults",
@@ -183,6 +151,50 @@ var Scripts = []Script{
 		Category:    ScriptCategorySystem,
 		RunFn:       runDockSpacer,
 		// No CheckFn - can be run multiple times
+	},
+	{
+		Name:         "java",
+		Description:  "Configure Java runtime symlink for macOS",
+		Category:     ScriptCategorySystem,
+		RequiresTool: "openjdk",
+		CheckFn: func() CheckResult {
+			if _, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk"); err == nil {
+				return CheckResult{Installed: true, Detail: "/Library/Java/JavaVirtualMachines/openjdk.jdk"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runJavaSymlink,
+	},
+
+	// ==========================================================================
+	// Terminal Scripts (A-Z)
+	// ==========================================================================
+	{
+		Name:         "ghostty",
+		Description:  "Install Ghostty terminal config",
+		Category:     ScriptCategoryTerminal,
+		RequiresTool: "ghostty",
+		CheckFn: func() CheckResult {
+			configPath := os.Getenv("HOME") + "/.config/ghostty/config"
+			if _, err := os.Stat(configPath); err == nil {
+				return CheckResult{Installed: true, Detail: "~/.config/ghostty/config"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runGhosttyConfig,
+	},
+	{
+		Name:        "hushlogin",
+		Description: "Silence terminal login message",
+		Category:    ScriptCategoryTerminal,
+		CheckFn: func() CheckResult {
+			hushPath := os.Getenv("HOME") + "/.hushlogin"
+			if _, err := os.Stat(hushPath); err == nil {
+				return CheckResult{Installed: true, Detail: "~/.hushlogin"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runHushlogin,
 	},
 }
 
@@ -396,6 +408,32 @@ Host *
 	fmt.Println("Add at: https://github.com/settings/ssh/new")
 
 	fmt.Println(out.Green("SSH setup completed"))
+	return nil
+}
+
+func runSpotlightExclude() error {
+	fmt.Println(out.Cyan("Excluding ~/Developer from Spotlight indexing..."))
+
+	devDir := os.Getenv("HOME") + "/Developer"
+	marker := devDir + "/.metadata_never_index"
+
+	if _, err := os.Stat(devDir); err != nil {
+		return fmt.Errorf("~/Developer directory does not exist")
+	}
+
+	if _, err := os.Stat(marker); err == nil {
+		fmt.Println(out.Green("Done - already excluded"))
+		return nil
+	}
+
+	f, err := os.Create(marker)
+	if err != nil {
+		return fmt.Errorf("failed to create .metadata_never_index: %w", err)
+	}
+	f.Close()
+
+	fmt.Println(out.Green("Done - ~/Developer excluded from Spotlight"))
+	fmt.Println(out.Dimmed("Spotlight will stop indexing this directory"))
 	return nil
 }
 
