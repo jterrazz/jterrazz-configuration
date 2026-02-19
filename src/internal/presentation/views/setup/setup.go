@@ -2,6 +2,7 @@ package setup
 
 import (
 	"os/exec"
+	"sort"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jterrazz/jterrazz-cli/src/internal/config"
@@ -83,6 +84,13 @@ func BuildItems() []components.Item {
 		}
 	}
 
+	sort.Slice(notConfiguredItems, func(i, j int) bool {
+		return notConfiguredItems[i].name < notConfiguredItems[j].name
+	})
+	sort.Slice(configuredItems, func(i, j int) bool {
+		return configuredItems[i].name < configuredItems[j].name
+	})
+
 	for _, entry := range notConfiguredItems {
 		items = append(items, entry.item)
 		itemNames = append(itemNames, entry.name)
@@ -96,17 +104,27 @@ func BuildItems() []components.Item {
 	items = append(items, components.Item{Kind: components.KindHeader, Label: "Scripts"})
 	itemNames = append(itemNames, "")
 
+	var runOnceItems []scriptEntry
 	for _, script := range config.Scripts {
 		if script.CheckFn != nil {
 			continue
 		}
 
-		items = append(items, components.Item{
-			Kind:        components.KindAction,
-			Label:       script.Name,
-			Description: script.Description,
+		runOnceItems = append(runOnceItems, scriptEntry{
+			item: components.Item{
+				Kind:        components.KindAction,
+				Label:       script.Name,
+				Description: script.Description,
+			},
+			name: script.Name,
 		})
-		itemNames = append(itemNames, script.Name)
+	}
+	sort.Slice(runOnceItems, func(i, j int) bool {
+		return runOnceItems[i].name < runOnceItems[j].name
+	})
+	for _, entry := range runOnceItems {
+		items = append(items, entry.item)
+		itemNames = append(itemNames, entry.name)
 	}
 
 	return items

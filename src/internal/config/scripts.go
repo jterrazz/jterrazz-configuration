@@ -47,45 +47,22 @@ type Script struct {
 }
 
 // Scripts is the single source of truth for all setup/configuration scripts.
-// Sorted A-Z by name. The TUI displays them in this order within each section
-// (Setup = scripts with CheckFn, Scripts = run-once without CheckFn).
 var Scripts = []Script{
+	// ==========================================================================
+	// Terminal
+	// ==========================================================================
 	{
-		Name:        "dns",
-		Description: "Encrypted DNS via Quad9 (DoH)",
-		Category:    ScriptCategorySecurity,
+		Name:        "hushlogin",
+		Description: "Silence terminal login message",
+		Category:    ScriptCategoryTerminal,
 		CheckFn: func() CheckResult {
-			if IsDNSProfileInstalled() {
-				return InstalledWithDetail("Quad9 DoH")
+			hushPath := os.Getenv("HOME") + "/.hushlogin"
+			if _, err := os.Stat(hushPath); err == nil {
+				return CheckResult{Installed: true, Detail: "~/.hushlogin"}
 			}
 			return CheckResult{}
 		},
-		RunFn: runDNSEncrypt,
-	},
-	{
-		Name:        "dock-reset",
-		Description: "Reset dock to system defaults",
-		Category:    ScriptCategorySystem,
-		RunFn:       runDockReset,
-	},
-	{
-		Name:        "dock-spacer",
-		Description: "Add a small spacer tile to the dock",
-		Category:    ScriptCategorySystem,
-		RunFn:       runDockSpacer,
-	},
-	{
-		Name:         "gh",
-		Description:  "Authenticate GitHub CLI",
-		Category:     ScriptCategorySecurity,
-		RequiresTool: "gh",
-		CheckFn: func() CheckResult {
-			if err := exec.Command("gh", "auth", "status").Run(); err != nil {
-				return CheckResult{}
-			}
-			return InstalledWithDetail("authenticated")
-		},
-		ExecArgs: []string{"gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "ssh", "--web", "--skip-ssh-key"},
+		RunFn: runHushlogin,
 	},
 	{
 		Name:         "ghostty",
@@ -101,6 +78,10 @@ var Scripts = []Script{
 		},
 		RunFn: runGhosttyConfig,
 	},
+
+	// ==========================================================================
+	// Security
+	// ==========================================================================
 	{
 		Name:         "gpg",
 		Description:  "Configure GPG for commit signing",
@@ -116,30 +97,30 @@ var Scripts = []Script{
 		RunFn: runGPGSetup,
 	},
 	{
-		Name:        "hushlogin",
-		Description: "Silence terminal login message",
-		Category:    ScriptCategoryTerminal,
+		Name:        "ssh",
+		Description: "Generate SSH key with Keychain integration",
+		Category:    ScriptCategorySecurity,
 		CheckFn: func() CheckResult {
-			hushPath := os.Getenv("HOME") + "/.hushlogin"
-			if _, err := os.Stat(hushPath); err == nil {
-				return CheckResult{Installed: true, Detail: "~/.hushlogin"}
+			sshKey := os.Getenv("HOME") + "/.ssh/id_ed25519"
+			if _, err := os.Stat(sshKey); err == nil {
+				return CheckResult{Installed: true, Detail: "~/.ssh/id_ed25519"}
 			}
 			return CheckResult{}
 		},
-		RunFn: runHushlogin,
+		RunFn: runSSHSetup,
 	},
 	{
-		Name:         "java",
-		Description:  "Configure Java runtime symlink for macOS",
-		Category:     ScriptCategorySystem,
-		RequiresTool: "openjdk",
+		Name:         "gh",
+		Description:  "Authenticate GitHub CLI",
+		Category:     ScriptCategorySecurity,
+		RequiresTool: "gh",
 		CheckFn: func() CheckResult {
-			if _, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk"); err == nil {
-				return CheckResult{Installed: true, Detail: "/Library/Java/JavaVirtualMachines/openjdk.jdk"}
+			if err := exec.Command("gh", "auth", "status").Run(); err != nil {
+				return CheckResult{}
 			}
-			return CheckResult{}
+			return InstalledWithDetail("authenticated")
 		},
-		RunFn: runJavaSymlink,
+		ExecArgs: []string{"gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "ssh", "--web", "--skip-ssh-key"},
 	},
 	{
 		Name:        "spotlight-exclude",
@@ -155,18 +136,21 @@ var Scripts = []Script{
 		RunFn: runSpotlightExclude,
 	},
 	{
-		Name:        "ssh",
-		Description: "Generate SSH key with Keychain integration",
+		Name:        "dns",
+		Description: "Encrypted DNS via Quad9 (DoH)",
 		Category:    ScriptCategorySecurity,
 		CheckFn: func() CheckResult {
-			sshKey := os.Getenv("HOME") + "/.ssh/id_ed25519"
-			if _, err := os.Stat(sshKey); err == nil {
-				return CheckResult{Installed: true, Detail: "~/.ssh/id_ed25519"}
+			if IsDNSProfileInstalled() {
+				return InstalledWithDetail("Quad9 DoH")
 			}
 			return CheckResult{}
 		},
-		RunFn: runSSHSetup,
+		RunFn: runDNSEncrypt,
 	},
+
+	// ==========================================================================
+	// Editor
+	// ==========================================================================
 	{
 		Name:         "zed",
 		Description:  "Install Zed editor config",
@@ -180,6 +164,35 @@ var Scripts = []Script{
 			return CheckResult{}
 		},
 		RunFn: runZedConfig,
+	},
+
+	// ==========================================================================
+	// System
+	// ==========================================================================
+	{
+		Name:         "java",
+		Description:  "Configure Java runtime symlink for macOS",
+		Category:     ScriptCategorySystem,
+		RequiresTool: "openjdk",
+		CheckFn: func() CheckResult {
+			if _, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk"); err == nil {
+				return CheckResult{Installed: true, Detail: "/Library/Java/JavaVirtualMachines/openjdk.jdk"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runJavaSymlink,
+	},
+	{
+		Name:        "dock-reset",
+		Description: "Reset dock to system defaults",
+		Category:    ScriptCategorySystem,
+		RunFn:       runDockReset,
+	},
+	{
+		Name:        "dock-spacer",
+		Description: "Add a small spacer tile to the dock",
+		Category:    ScriptCategorySystem,
+		RunFn:       runDockSpacer,
 	},
 }
 
