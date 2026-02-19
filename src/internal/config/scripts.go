@@ -46,29 +46,10 @@ type Script struct {
 	RequiresTool string // Tool that must be installed first (e.g., "openjdk")
 }
 
-// Scripts is the single source of truth for all setup/configuration scripts
+// Scripts is the single source of truth for all setup/configuration scripts.
+// Sorted A-Z by name. The TUI displays them in this order within each section
+// (Setup = scripts with CheckFn, Scripts = run-once without CheckFn).
 var Scripts = []Script{
-	// ==========================================================================
-	// Editor Scripts (A-Z)
-	// ==========================================================================
-	{
-		Name:         "zed",
-		Description:  "Install Zed editor config",
-		Category:     ScriptCategoryEditor,
-		RequiresTool: "zed",
-		CheckFn: func() CheckResult {
-			configPath := os.Getenv("HOME") + "/.config/zed/settings.json"
-			if _, err := os.Stat(configPath); err == nil {
-				return CheckResult{Installed: true, Detail: "~/.config/zed/settings.json"}
-			}
-			return CheckResult{}
-		},
-		RunFn: runZedConfig,
-	},
-
-	// ==========================================================================
-	// Security Scripts (A-Z)
-	// ==========================================================================
 	{
 		Name:        "dns",
 		Description: "Encrypted DNS via Quad9 (DoH)",
@@ -80,6 +61,18 @@ var Scripts = []Script{
 			return CheckResult{}
 		},
 		RunFn: runDNSEncrypt,
+	},
+	{
+		Name:        "dock-reset",
+		Description: "Reset dock to system defaults",
+		Category:    ScriptCategorySystem,
+		RunFn:       runDockReset,
+	},
+	{
+		Name:        "dock-spacer",
+		Description: "Add a small spacer tile to the dock",
+		Category:    ScriptCategorySystem,
+		RunFn:       runDockSpacer,
 	},
 	{
 		Name:         "gh",
@@ -95,6 +88,20 @@ var Scripts = []Script{
 		ExecArgs: []string{"gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "ssh", "--web", "--skip-ssh-key"},
 	},
 	{
+		Name:         "ghostty",
+		Description:  "Install Ghostty terminal config",
+		Category:     ScriptCategoryTerminal,
+		RequiresTool: "ghostty",
+		CheckFn: func() CheckResult {
+			configPath := os.Getenv("HOME") + "/.config/ghostty/config"
+			if _, err := os.Stat(configPath); err == nil {
+				return CheckResult{Installed: true, Detail: "~/.config/ghostty/config"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runGhosttyConfig,
+	},
+	{
 		Name:         "gpg",
 		Description:  "Configure GPG for commit signing",
 		Category:     ScriptCategorySecurity,
@@ -107,6 +114,32 @@ var Scripts = []Script{
 			return CheckResult{}
 		},
 		RunFn: runGPGSetup,
+	},
+	{
+		Name:        "hushlogin",
+		Description: "Silence terminal login message",
+		Category:    ScriptCategoryTerminal,
+		CheckFn: func() CheckResult {
+			hushPath := os.Getenv("HOME") + "/.hushlogin"
+			if _, err := os.Stat(hushPath); err == nil {
+				return CheckResult{Installed: true, Detail: "~/.hushlogin"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runHushlogin,
+	},
+	{
+		Name:         "java",
+		Description:  "Configure Java runtime symlink for macOS",
+		Category:     ScriptCategorySystem,
+		RequiresTool: "openjdk",
+		CheckFn: func() CheckResult {
+			if _, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk"); err == nil {
+				return CheckResult{Installed: true, Detail: "/Library/Java/JavaVirtualMachines/openjdk.jdk"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runJavaSymlink,
 	},
 	{
 		Name:        "spotlight-exclude",
@@ -134,67 +167,19 @@ var Scripts = []Script{
 		},
 		RunFn: runSSHSetup,
 	},
-
-	// ==========================================================================
-	// System Scripts (A-Z)
-	// ==========================================================================
 	{
-		Name:        "dock-reset",
-		Description: "Reset dock to system defaults",
-		Category:    ScriptCategorySystem,
-		RunFn:       runDockReset,
-		// No CheckFn - this is a run-once action with no state
-	},
-	{
-		Name:        "dock-spacer",
-		Description: "Add a small spacer tile to the dock",
-		Category:    ScriptCategorySystem,
-		RunFn:       runDockSpacer,
-		// No CheckFn - can be run multiple times
-	},
-	{
-		Name:         "java",
-		Description:  "Configure Java runtime symlink for macOS",
-		Category:     ScriptCategorySystem,
-		RequiresTool: "openjdk",
+		Name:         "zed",
+		Description:  "Install Zed editor config",
+		Category:     ScriptCategoryEditor,
+		RequiresTool: "zed",
 		CheckFn: func() CheckResult {
-			if _, err := os.Lstat("/Library/Java/JavaVirtualMachines/openjdk.jdk"); err == nil {
-				return CheckResult{Installed: true, Detail: "/Library/Java/JavaVirtualMachines/openjdk.jdk"}
-			}
-			return CheckResult{}
-		},
-		RunFn: runJavaSymlink,
-	},
-
-	// ==========================================================================
-	// Terminal Scripts (A-Z)
-	// ==========================================================================
-	{
-		Name:         "ghostty",
-		Description:  "Install Ghostty terminal config",
-		Category:     ScriptCategoryTerminal,
-		RequiresTool: "ghostty",
-		CheckFn: func() CheckResult {
-			configPath := os.Getenv("HOME") + "/.config/ghostty/config"
+			configPath := os.Getenv("HOME") + "/.config/zed/settings.json"
 			if _, err := os.Stat(configPath); err == nil {
-				return CheckResult{Installed: true, Detail: "~/.config/ghostty/config"}
+				return CheckResult{Installed: true, Detail: "~/.config/zed/settings.json"}
 			}
 			return CheckResult{}
 		},
-		RunFn: runGhosttyConfig,
-	},
-	{
-		Name:        "hushlogin",
-		Description: "Silence terminal login message",
-		Category:    ScriptCategoryTerminal,
-		CheckFn: func() CheckResult {
-			hushPath := os.Getenv("HOME") + "/.hushlogin"
-			if _, err := os.Stat(hushPath); err == nil {
-				return CheckResult{Installed: true, Detail: "~/.hushlogin"}
-			}
-			return CheckResult{}
-		},
-		RunFn: runHushlogin,
+		RunFn: runZedConfig,
 	},
 }
 
