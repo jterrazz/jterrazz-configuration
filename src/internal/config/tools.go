@@ -366,10 +366,10 @@ var Tools = []Tool{
 		Name:         "codex",
 		Command:      "codex",
 		Formula:      "codex",
-		Method:       InstallBrewCask,
+		Method:       InstallBun,
 		Category:     CategoryAI,
-		Dependencies: []string{"homebrew"},
-		VersionFn:    tool.VersionFromCmd("codex", []string{"--version"}, tool.ParseBrewVersion),
+		Dependencies: []string{"bun"},
+		VersionFn:    tool.VersionFromCmd("codex", []string{"--version"}, tool.ParseCodexVersion),
 	},
 	{
 		Name:         "gemini",
