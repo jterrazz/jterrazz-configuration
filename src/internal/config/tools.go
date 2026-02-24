@@ -765,6 +765,16 @@ var Tools = []Tool{
 		VersionFn: tool.VersionFromCmd("git", []string{"--version"}, tool.ParseGitVersion),
 	},
 	{
+		Name:         "tmux",
+		Command:      "tmux",
+		Formula:      "tmux",
+		Method:       InstallBrewFormula,
+		Category:     CategoryTerminalGit,
+		Dependencies: []string{"homebrew"},
+		Scripts:      []string{"tmux"},
+		VersionFn:    tool.VersionFromCmd("tmux", []string{"-V"}, tool.ParseTmuxVersion),
+	},
+	{
 		Name:         "gh",
 		Description:  "GitHub CLI for repository management",
 		Command:      "gh",
@@ -799,10 +809,10 @@ var Tools = []Tool{
 	// Mac App Store (check-only, not auto-installable)
 	// ==========================================================================
 	{
-		Name:     "adguard",
+		Name:        "adguard",
 		Description: "Ad blocker for Safari",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/AdGuard for Safari.app"); err != nil {
 				return CheckResult{}
@@ -824,10 +834,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "compressor",
+		Name:        "compressor",
 		Description: "Apple video compression tool",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Compressor.app"); err != nil {
 				return CheckResult{}
@@ -837,10 +847,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "dia",
+		Name:        "dia",
 		Description: "AI assistant by Apple",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Dia.app"); err != nil {
 				return CheckResult{}
@@ -850,10 +860,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "final-cut-pro",
+		Name:        "final-cut-pro",
 		Description: "Professional video editor",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Final Cut Pro.app"); err != nil {
 				return CheckResult{}
@@ -863,10 +873,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "lightroom",
+		Name:        "lightroom",
 		Description: "Adobe photo editor",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Adobe Lightroom.app"); err != nil {
 				return CheckResult{}
@@ -876,10 +886,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "logic-pro",
+		Name:        "logic-pro",
 		Description: "Professional music production",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Logic Pro.app"); err != nil {
 				return CheckResult{}
@@ -889,10 +899,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "messenger",
+		Name:        "messenger",
 		Description: "Facebook Messenger",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Messenger.app"); err != nil {
 				return CheckResult{}
@@ -902,10 +912,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "pages",
+		Name:        "pages",
 		Description: "Apple word processor",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Pages.app"); err != nil {
 				return CheckResult{}
@@ -915,10 +925,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "passepartout",
+		Name:        "passepartout",
 		Description: "VPN client",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Passepartout.app"); err != nil {
 				return CheckResult{}
@@ -928,10 +938,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "pipifier",
+		Name:        "pipifier",
 		Description: "Picture-in-Picture for Safari",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/PiPifier.app"); err != nil {
 				return CheckResult{}
@@ -941,10 +951,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "raindrop",
+		Name:        "raindrop",
 		Description: "Bookmark manager",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Save to Raindrop.io.app"); err != nil {
 				return CheckResult{}
@@ -954,10 +964,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "snippety",
+		Name:        "snippety",
 		Description: "Code snippet manager",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Snippety.app"); err != nil {
 				return CheckResult{}
@@ -967,10 +977,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "speedtest",
+		Name:        "speedtest",
 		Description: "Internet speed test",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Speedtest.app"); err != nil {
 				return CheckResult{}
@@ -980,10 +990,10 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:     "xcode",
+		Name:        "xcode",
 		Description: "Apple development IDE",
-		Method:   InstallMAS,
-		Category: CategoryMacAppStore,
+		Method:      InstallMAS,
+		Category:    CategoryMacAppStore,
 		CheckFn: func() CheckResult {
 			if _, err := os.Stat("/Applications/Xcode.app"); err != nil {
 				return CheckResult{}

@@ -56,4 +56,4 @@ _jt_tool() {
 
 jc() { _jt_tool "claude" "claude"; }
 jo() { _jt_tool "codex" "codex"; }
-tg() { _jt_tool "gemini" "gemini"; }
+jg() { _jt_tool "gemini" "gemini"; }

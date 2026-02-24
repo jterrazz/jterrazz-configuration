@@ -78,6 +78,20 @@ var Scripts = []Script{
 		},
 		RunFn: runGhosttyConfig,
 	},
+	{
+		Name:         "tmux",
+		Description:  "Install tmux config",
+		Category:     ScriptCategoryTerminal,
+		RequiresTool: "tmux",
+		CheckFn: func() CheckResult {
+			configPath := os.Getenv("HOME") + "/.tmux.conf"
+			if _, err := os.Stat(configPath); err == nil {
+				return CheckResult{Installed: true, Detail: "~/.tmux.conf"}
+			}
+			return CheckResult{}
+		},
+		RunFn: runTmuxConfig,
+	},
 
 	// ==========================================================================
 	// Security
@@ -244,6 +258,35 @@ func runGhosttyConfig() error {
 	}
 
 	fmt.Println(out.Green("Done - Ghostty config installed"))
+	return nil
+}
+
+func runTmuxConfig() error {
+	fmt.Println(out.Cyan("Setting up tmux config..."))
+
+	configPath := os.Getenv("HOME") + "/.tmux.conf"
+
+	repoConfig, err := GetRepoConfigPath("dotfiles/applications/tmux/tmux.conf")
+	if err != nil {
+		return fmt.Errorf("failed to find repo config: %w", err)
+	}
+
+	configContent, err := os.ReadFile(repoConfig)
+	if err != nil {
+		return fmt.Errorf("failed to read config file %s: %w", repoConfig, err)
+	}
+
+	if err := os.WriteFile(configPath, configContent, 0644); err != nil {
+		return fmt.Errorf("failed to write config file %s: %w", configPath, err)
+	}
+
+	// Reload tmux config if a server is running.
+	if err := exec.Command("tmux", "source-file", configPath).Run(); err == nil {
+		fmt.Println(out.Green("Done - tmux config installed and reloaded"))
+		return nil
+	}
+
+	fmt.Println(out.Green("Done - tmux config installed"))
 	return nil
 }
 

@@ -60,6 +60,11 @@ func ParseGitVersion(s string) string {
 	return v
 }
 
+// ParseTmuxVersion parses "tmux 3.6a" -> "3.6a"
+func ParseTmuxVersion(s string) string {
+	return parseFirstLineField(s, 1, false)
+}
+
 // ParseGoVersion parses "go version go1.23.4 darwin/arm64" -> "1.23.4"
 func ParseGoVersion(s string) string {
 	s = StripAnsi(s)
