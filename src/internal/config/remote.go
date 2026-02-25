@@ -1,0 +1,616 @@
+package config
+
+import (
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+)
+
+// RemoteMode controls how the local tailscale client is run.
+type RemoteMode string
+
+const (
+	RemoteModeAuto      RemoteMode = "auto"
+	RemoteModeUserspace RemoteMode = "userspace"
+)
+
+// RemoteAuthMethod controls how `tailscale up` authenticates the node.
+type RemoteAuthMethod string
+
+const (
+	RemoteAuthOAuth   RemoteAuthMethod = "oauth"
+	RemoteAuthAuthKey RemoteAuthMethod = "authkey"
+)
+
+const (
+	remoteModeSystemLegacy  RemoteMode       = "system"
+	remoteAuthNoneLegacy    RemoteAuthMethod = "none"
+	defaultRemoteMode       RemoteMode       = RemoteModeUserspace
+	defaultRemoteAuthMethod RemoteAuthMethod = RemoteAuthOAuth
+)
+
+// RemoteSettings is the persisted remote access config.
+type RemoteSettings struct {
+	Mode       RemoteMode       `json:"mode"`
+	AuthMethod RemoteAuthMethod `json:"auth_method"`
+	Secret     string           `json:"secret,omitempty"`
+	Hostname   string           `json:"hostname,omitempty"`
+}
+
+// JRCConfig is the user runtime config persisted in ~/.config/jterrazz/jrc.json.
+type JRCConfig struct {
+	Remote RemoteSettings `json:"remote"`
+}
+
+// RemoteStatus summarizes current remote connectivity.
+type RemoteStatus struct {
+	Mode         RemoteMode
+	BackendState string
+	Hostname     string
+	IP           string
+	Connected    bool
+}
+
+type tailscaleStatus struct {
+	BackendState string `json:"BackendState"`
+	Self         *struct {
+		HostName    string   `json:"HostName"`
+		DNSName     string   `json:"DNSName"`
+		TailscaleIP []string `json:"TailscaleIPs"`
+	} `json:"Self"`
+}
+
+func defaultRemoteSettings() RemoteSettings {
+	return RemoteSettings{
+		Mode:       defaultRemoteMode,
+		AuthMethod: defaultRemoteAuthMethod,
+	}
+}
+
+func normalizeRemoteSettings(s RemoteSettings) RemoteSettings {
+	if s.Mode == "" || s.Mode == remoteModeSystemLegacy {
+		s.Mode = defaultRemoteMode
+	}
+	if s.AuthMethod == "" || s.AuthMethod == remoteAuthNoneLegacy {
+		s.AuthMethod = defaultRemoteAuthMethod
+	}
+	return s
+}
+
+func jrcPath() string {
+	return filepath.Join(os.Getenv("HOME"), ".config", "jterrazz", "jrc.json")
+}
+
+func userspaceDir() string {
+	return filepath.Join(os.Getenv("HOME"), ".config", "jterrazz", "tailscale")
+}
+
+func userspaceSocketPath() string {
+	return filepath.Join(userspaceDir(), "tailscaled.sock")
+}
+
+func userspaceStatePath() string {
+	return filepath.Join(userspaceDir(), "tailscaled.state")
+}
+
+func userspaceLogPath() string {
+	return filepath.Join(userspaceDir(), "tailscaled.log")
+}
+
+func userspacePIDPath() string {
+	return filepath.Join(userspaceDir(), "tailscaled.pid")
+}
+
+// LoadJRC loads ~/.config/jterrazz/jrc.json. Missing file returns defaults.
+func LoadJRC() (JRCConfig, error) {
+	cfg := JRCConfig{Remote: defaultRemoteSettings()}
+
+	data, err := os.ReadFile(jrcPath())
+	if err != nil {
+		if os.IsNotExist(err) {
+			return cfg, nil
+		}
+		return cfg, fmt.Errorf("failed to read jrc.json: %w", err)
+	}
+
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return cfg, fmt.Errorf("failed to parse jrc.json: %w", err)
+	}
+	cfg.Remote = normalizeRemoteSettings(cfg.Remote)
+	return cfg, nil
+}
+
+// SaveJRC writes ~/.config/jterrazz/jrc.json with strict file permissions.
+func SaveJRC(cfg JRCConfig) error {
+	cfg.Remote = normalizeRemoteSettings(cfg.Remote)
+	if err := ValidateRemoteSettings(cfg.Remote); err != nil {
+		return err
+	}
+
+	dir := filepath.Dir(jrcPath())
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	out, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to encode jrc.json: %w", err)
+	}
+	out = append(out, '\n')
+
+	tmpPath := jrcPath() + ".tmp"
+	if err := os.WriteFile(tmpPath, out, 0600); err != nil {
+		return fmt.Errorf("failed to write temp jrc.json: %w", err)
+	}
+	if err := os.Rename(tmpPath, jrcPath()); err != nil {
+		return fmt.Errorf("failed to save jrc.json: %w", err)
+	}
+	return nil
+}
+
+// LoadRemoteSettings loads current remote settings from jrc.json.
+func LoadRemoteSettings() (RemoteSettings, error) {
+	cfg, err := LoadJRC()
+	if err != nil {
+		return defaultRemoteSettings(), err
+	}
+	return cfg.Remote, nil
+}
+
+// SaveRemoteSettings saves remote settings into jrc.json.
+func SaveRemoteSettings(s RemoteSettings) error {
+	cfg, err := LoadJRC()
+	if err != nil {
+		return err
+	}
+	cfg.Remote = s
+	return SaveJRC(cfg)
+}
+
+// HasRemoteSettings returns true when jrc.json exists and contains valid remote config.
+func HasRemoteSettings() bool {
+	if _, err := os.Stat(jrcPath()); err != nil {
+		return false
+	}
+	s, err := LoadRemoteSettings()
+	if err != nil {
+		return false
+	}
+	return ValidateRemoteSettings(s) == nil
+}
+
+// ValidateRemoteSettings validates remote settings semantics.
+func ValidateRemoteSettings(s RemoteSettings) error {
+	s = normalizeRemoteSettings(s)
+
+	switch s.Mode {
+	case RemoteModeAuto, RemoteModeUserspace:
+	default:
+		return fmt.Errorf("invalid remote mode: %s", s.Mode)
+	}
+
+	switch s.AuthMethod {
+	case RemoteAuthOAuth, RemoteAuthAuthKey:
+	default:
+		return fmt.Errorf("invalid auth_method: %s", s.AuthMethod)
+	}
+
+	if s.AuthMethod == RemoteAuthAuthKey && strings.TrimSpace(s.Secret) == "" {
+		return fmt.Errorf("secret is required when auth_method is %s", s.AuthMethod)
+	}
+
+	return nil
+}
+
+// ConfigureRemoteInteractive prompts for remote settings and persists them in jrc.json.
+func ConfigureRemoteInteractive() error {
+	current, err := LoadRemoteSettings()
+	if err != nil {
+		return err
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("Remote access setup (writes ~/.config/jterrazz/jrc.json)")
+	fmt.Println()
+
+	current = normalizeRemoteSettings(current)
+	fmt.Printf("Mode [auto/userspace] (%s): ", current.Mode)
+	modeInput, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read mode: %w", err)
+	}
+	modeInput = strings.TrimSpace(strings.ToLower(modeInput))
+	if modeInput != "" {
+		current.Mode = RemoteMode(modeInput)
+	}
+
+	fmt.Printf("Auth method [oauth/authkey] (%s): ", current.AuthMethod)
+	authInput, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read auth method: %w", err)
+	}
+	authInput = strings.TrimSpace(strings.ToLower(authInput))
+	if authInput != "" {
+		current.AuthMethod = RemoteAuthMethod(authInput)
+	}
+
+	if current.AuthMethod == RemoteAuthAuthKey {
+		if current.Secret == "" {
+			fmt.Print("Auth key: ")
+		} else {
+			fmt.Print("Auth key (leave empty to keep current): ")
+		}
+		secretInput, err := reader.ReadString('\n')
+		if err != nil {
+			return fmt.Errorf("failed to read secret: %w", err)
+		}
+		secretInput = strings.TrimSpace(secretInput)
+		if secretInput != "" {
+			current.Secret = secretInput
+		}
+	} else {
+		current.Secret = ""
+	}
+
+	fmt.Printf("Hostname (optional, current: %s): ", current.Hostname)
+	hostInput, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read hostname: %w", err)
+	}
+	hostInput = strings.TrimSpace(hostInput)
+	if hostInput != "" {
+		current.Hostname = hostInput
+	}
+
+	if err := ValidateRemoteSettings(current); err != nil {
+		return err
+	}
+
+	if err := SaveRemoteSettings(current); err != nil {
+		return err
+	}
+	return nil
+}
+
+func tailscaleArgsForMode(mode RemoteMode, args ...string) []string {
+	if mode == RemoteModeUserspace {
+		return append([]string{"--socket", userspaceSocketPath()}, args...)
+	}
+	return args
+}
+
+func runTailscale(mode RemoteMode, args ...string) (string, error) {
+	allArgs := tailscaleArgsForMode(mode, args...)
+	cmd := exec.Command("tailscale", allArgs...)
+	var output bytes.Buffer
+	cmd.Stdout = io.MultiWriter(os.Stdout, &output)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &output)
+	cmd.Stdin = os.Stdin
+	err := cmd.Run()
+	return output.String(), err
+}
+
+func formatCommandError(err error, output string) error {
+	if err == nil {
+		return nil
+	}
+	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "Error:") {
+			return fmt.Errorf("%s", strings.TrimSpace(strings.TrimPrefix(trimmed, "Error:")))
+		}
+	}
+	return err
+}
+
+var nonDefaultFlagsError = regexp.MustCompile(`requires mentioning all\s+non-default flags`)
+
+func shouldRetryWithSuggestedFlags(output string) bool {
+	return nonDefaultFlagsError.MatchString(strings.ToLower(output))
+}
+
+func parseSuggestedUpFlags(output string) []string {
+	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "tailscale up ") {
+			fields := strings.Fields(trimmed)
+			if len(fields) > 2 {
+				return fields[2:]
+			}
+		}
+	}
+	return nil
+}
+
+type cliFlag struct {
+	Key    string
+	Tokens []string
+}
+
+func parseCLIFLags(tokens []string) []cliFlag {
+	var flags []cliFlag
+	for i := 0; i < len(tokens); i++ {
+		t := tokens[i]
+		if !strings.HasPrefix(t, "--") {
+			continue
+		}
+		if eq := strings.Index(t, "="); eq > 0 {
+			flags = append(flags, cliFlag{
+				Key:    t[:eq],
+				Tokens: []string{t},
+			})
+			continue
+		}
+		if i+1 < len(tokens) && !strings.HasPrefix(tokens[i+1], "--") {
+			flags = append(flags, cliFlag{
+				Key:    t,
+				Tokens: []string{t, tokens[i+1]},
+			})
+			i++
+			continue
+		}
+		flags = append(flags, cliFlag{
+			Key:    t,
+			Tokens: []string{t},
+		})
+	}
+	return flags
+}
+
+func mergeUpArgsWithSuggestedFlags(desiredUpArgs []string, suggestedFlags []string) []string {
+	desiredFlags := desiredUpArgs
+	if len(desiredFlags) > 0 && desiredFlags[0] == "up" {
+		desiredFlags = desiredFlags[1:]
+	}
+
+	desired := parseCLIFLags(desiredFlags)
+	suggested := parseCLIFLags(suggestedFlags)
+
+	desiredByKey := make(map[string]cliFlag, len(desired))
+	for _, f := range desired {
+		desiredByKey[f.Key] = f
+	}
+
+	suggestedKeys := make(map[string]bool, len(suggested))
+	usedDesired := make(map[string]bool, len(desired))
+
+	var merged []string
+	for _, f := range suggested {
+		suggestedKeys[f.Key] = true
+		if d, ok := desiredByKey[f.Key]; ok {
+			merged = append(merged, d.Tokens...)
+			usedDesired[d.Key] = true
+			continue
+		}
+		merged = append(merged, f.Tokens...)
+	}
+
+	for _, f := range desired {
+		if usedDesired[f.Key] {
+			continue
+		}
+		if suggestedKeys[f.Key] {
+			continue
+		}
+		merged = append(merged, f.Tokens...)
+	}
+
+	return append([]string{"up"}, merged...)
+}
+
+func getTailscaleStatus(mode RemoteMode) (tailscaleStatus, error) {
+	var st tailscaleStatus
+	cmd := exec.Command("tailscale", tailscaleArgsForMode(mode, "status", "--json")...)
+	out, err := cmd.Output()
+	if err != nil {
+		return st, err
+	}
+	if err := json.Unmarshal(out, &st); err != nil {
+		return st, fmt.Errorf("failed to parse tailscale status output: %w", err)
+	}
+	return st, nil
+}
+
+func ensureUserspaceDaemon() error {
+	if _, err := getTailscaleStatus(RemoteModeUserspace); err == nil {
+		return nil
+	}
+
+	if !CommandExists("tailscaled") {
+		return fmt.Errorf("tailscaled is required for userspace mode")
+	}
+
+	if err := os.MkdirAll(userspaceDir(), 0700); err != nil {
+		return fmt.Errorf("failed to create userspace directory: %w", err)
+	}
+
+	logFile, err := os.OpenFile(userspaceLogPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open tailscaled log file: %w", err)
+	}
+	defer logFile.Close()
+
+	cmd := exec.Command(
+		"tailscaled",
+		"--tun=userspace-networking",
+		"--state="+userspaceStatePath(),
+		"--socket="+userspaceSocketPath(),
+	)
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start userspace tailscaled: %w", err)
+	}
+
+	_ = os.WriteFile(userspacePIDPath(), []byte(strconv.Itoa(cmd.Process.Pid)), 0600)
+	_ = cmd.Process.Release()
+
+	deadline := time.Now().Add(4 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, err := getTailscaleStatus(RemoteModeUserspace); err == nil {
+			return nil
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+
+	return fmt.Errorf("userspace tailscaled did not become ready (check %s)", userspaceLogPath())
+}
+
+func stopUserspaceDaemon() {
+	data, err := os.ReadFile(userspacePIDPath())
+	if err != nil {
+		return
+	}
+
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil || pid <= 0 {
+		return
+	}
+
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return
+	}
+	_ = process.Signal(syscall.SIGTERM)
+	_ = os.Remove(userspacePIDPath())
+}
+
+func buildUpArgs(settings RemoteSettings) []string {
+	args := []string{"up", "--ssh"}
+	if settings.Hostname != "" {
+		args = append(args, "--hostname", settings.Hostname)
+	}
+	if settings.AuthMethod == RemoteAuthAuthKey {
+		args = append(args, "--auth-key", settings.Secret)
+	}
+	return args
+}
+
+func remoteUpWithMode(mode RemoteMode, settings RemoteSettings) error {
+	if !CommandExists("tailscale") {
+		return fmt.Errorf("tailscale CLI not found")
+	}
+
+	if mode == RemoteModeUserspace {
+		if err := ensureUserspaceDaemon(); err != nil {
+			return err
+		}
+	}
+
+	upArgs := buildUpArgs(settings)
+	output, err := runTailscale(mode, upArgs...)
+	if err == nil {
+		return nil
+	}
+
+	// Keep existing non-default preferences by retrying with the flags suggested by tailscale.
+	if shouldRetryWithSuggestedFlags(output) {
+		if suggested := parseSuggestedUpFlags(output); len(suggested) > 0 {
+			retryArgs := mergeUpArgsWithSuggestedFlags(upArgs, suggested)
+			retryOutput, retryErr := runTailscale(mode, retryArgs...)
+			if retryErr == nil {
+				return nil
+			}
+			return formatCommandError(retryErr, retryOutput)
+		}
+	}
+
+	return formatCommandError(err, output)
+}
+
+func detectActiveMode() RemoteMode {
+	if _, err := getTailscaleStatus(RemoteModeUserspace); err == nil {
+		return RemoteModeUserspace
+	}
+	return RemoteModeUserspace
+}
+
+// RemoteUp connects remote access using configured settings.
+// Returns the mode that was actually used.
+func RemoteUp(settings RemoteSettings) (RemoteMode, error) {
+	settings = normalizeRemoteSettings(settings)
+	if err := ValidateRemoteSettings(settings); err != nil {
+		return "", err
+	}
+
+	switch settings.Mode {
+	case RemoteModeUserspace:
+		if err := remoteUpWithMode(RemoteModeUserspace, settings); err != nil {
+			return "", err
+		}
+		return RemoteModeUserspace, nil
+	case RemoteModeAuto:
+		if err := remoteUpWithMode(RemoteModeUserspace, settings); err == nil {
+			return RemoteModeUserspace, nil
+		} else {
+			return "", err
+		}
+	default:
+		return "", fmt.Errorf("unsupported mode: %s", settings.Mode)
+	}
+}
+
+// RemoteDown disconnects remote access.
+// Returns the mode that was actually used.
+func RemoteDown(settings RemoteSettings) (RemoteMode, error) {
+	settings = normalizeRemoteSettings(settings)
+	mode := settings.Mode
+	if mode == RemoteModeAuto {
+		mode = detectActiveMode()
+	}
+
+	if mode == RemoteModeUserspace {
+		downOutput, downErr := runTailscale(RemoteModeUserspace, "down")
+		stopUserspaceDaemon()
+		if downErr != nil {
+			return mode, formatCommandError(downErr, downOutput)
+		}
+		return mode, nil
+	}
+
+	return mode, fmt.Errorf("unsupported mode: %s", mode)
+}
+
+// RemoteStatusInfo returns current remote access state.
+func RemoteStatusInfo(settings RemoteSettings) (RemoteStatus, error) {
+	settings = normalizeRemoteSettings(settings)
+	mode := settings.Mode
+	if mode == RemoteModeAuto {
+		mode = detectActiveMode()
+	}
+
+	st, err := getTailscaleStatus(mode)
+	if err != nil {
+		return RemoteStatus{Mode: mode, Connected: false}, err
+	}
+
+	result := RemoteStatus{
+		Mode:         mode,
+		BackendState: st.BackendState,
+		Connected:    st.BackendState == "Running",
+	}
+
+	if st.Self != nil {
+		result.Hostname = st.Self.HostName
+		if result.Hostname == "" {
+			result.Hostname = st.Self.DNSName
+		}
+		if len(st.Self.TailscaleIP) > 0 {
+			result.IP = st.Self.TailscaleIP[0]
+		}
+	}
+
+	return result, nil
+}

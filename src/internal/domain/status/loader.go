@@ -1,6 +1,7 @@
 package status
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -122,6 +123,14 @@ func (l *Loader) buildItems() {
 			Description: script.Description,
 		})
 	}
+	l.addItem(Item{
+		ID:          "setup-remote",
+		Kind:        KindSetup,
+		Section:     "Setup",
+		SubSection:  "Setup",
+		Name:        "remote",
+		Description: "Configure remote SSH access",
+	})
 
 	// Security section
 	l.addItem(Item{ID: "header-security", Kind: KindHeader, Section: "System", SubSection: "Security", Loaded: true})
@@ -251,6 +260,45 @@ func (l *Loader) Start() {
 			l.updates <- UpdateMsg{ID: item.ID, Item: item}
 		}(script)
 	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		item := Item{
+			ID:          "setup-remote",
+			Kind:        KindSetup,
+			Name:        "remote",
+			Description: "Configure remote SSH access",
+			Loaded:      true,
+		}
+
+		settings, err := config.LoadRemoteSettings()
+		if err == nil && config.ValidateRemoteSettings(settings) == nil {
+			item.Installed = true
+			detail := fmt.Sprintf("%s/%s", settings.Mode, settings.AuthMethod)
+			if settings.Hostname != "" {
+				detail += " " + settings.Hostname
+			}
+
+			if st, statusErr := config.RemoteStatusInfo(settings); statusErr == nil {
+				if st.Connected {
+					state := "connected"
+					if st.Mode != "" {
+						state += " " + string(st.Mode)
+					}
+					if st.IP != "" {
+						state += " " + st.IP
+					}
+					detail += " • " + state
+				} else if st.BackendState != "" {
+					detail += " • " + strings.ToLower(st.BackendState)
+				}
+			}
+
+			item.Detail = detail
+		}
+
+		l.updates <- UpdateMsg{ID: item.ID, Item: item}
+	}()
 
 	// Security checks
 	for _, check := range config.SecurityChecks {

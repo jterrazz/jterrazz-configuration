@@ -65,6 +65,11 @@ func ParseTmuxVersion(s string) string {
 	return parseFirstLineField(s, 1, false)
 }
 
+// ParseTailscaleVersion parses "1.86.2\ntailscale commit: ..." -> "1.86.2"
+func ParseTailscaleVersion(s string) string {
+	return parseFirstLineField(s, 0, false)
+}
+
 // ParseGoVersion parses "go version go1.23.4 darwin/arm64" -> "1.23.4"
 func ParseGoVersion(s string) string {
 	s = StripAnsi(s)

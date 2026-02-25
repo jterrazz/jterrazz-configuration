@@ -14,6 +14,7 @@ type Action string
 
 const (
 	ActionSkills Action = "skills"
+	ActionRemote Action = "remote"
 )
 
 // itemNames maps list indices to script/action names
@@ -31,6 +32,9 @@ func BuildItems() []components.Item {
 
 	items = append(items, components.Item{Kind: components.KindNavigation, Label: "skills", Description: "Manage AI agent skills"})
 	itemNames = append(itemNames, string(ActionSkills))
+
+	items = append(items, components.Item{Kind: components.KindNavigation, Label: "remote", Description: "Configure remote SSH access"})
+	itemNames = append(itemNames, string(ActionRemote))
 
 	// Configuration section - from config.Scripts with CheckFn
 	items = append(items, components.Item{Kind: components.KindHeader, Label: "Setup"})
@@ -143,6 +147,13 @@ func HandleSelect(index int, item components.Item, runScript func(string)) tea.C
 			return components.NavigateMsg{
 				InitFunc: InitSkillsState,
 				Config:   SkillsConfig(),
+			}
+		}
+	case ActionRemote:
+		return func() tea.Msg {
+			return components.NavigateMsg{
+				InitFunc: InitRemoteState,
+				Config:   RemoteConfig(),
 			}
 		}
 

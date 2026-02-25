@@ -67,6 +67,28 @@ var NetworkChecks = []ResourceCheck{
 	{
 		Name: "tailscale",
 		CheckFn: func() ResourceResult {
+			if settings, err := LoadRemoteSettings(); err == nil && ValidateRemoteSettings(settings) == nil {
+				if st, err := RemoteStatusInfo(settings); err == nil {
+					modeLabel := ""
+					if st.Mode != "" {
+						modeLabel = " (" + string(st.Mode) + ")"
+					}
+
+					if st.Connected {
+						if st.IP != "" {
+							return ResourceResult{Value: st.IP + modeLabel, Style: "success", Available: true}
+						}
+						return ResourceResult{Value: "connected" + modeLabel, Style: "success", Available: true}
+					}
+
+					if st.BackendState != "" {
+						return ResourceResult{Value: strings.ToLower(st.BackendState) + modeLabel, Style: "muted", Available: true}
+					}
+
+					return ResourceResult{Value: "disconnected" + modeLabel, Style: "muted", Available: true}
+				}
+			}
+
 			// Check if tailscale is running
 			out, err := exec.Command("tailscale", "status", "--json").Output()
 			if err != nil {

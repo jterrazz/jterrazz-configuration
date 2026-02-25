@@ -726,16 +726,28 @@ var Tools = []Tool{
 	{
 		Name:         "tailscale",
 		Description:  "Mesh VPN built on WireGuard",
+		Command:      "tailscale",
 		Formula:      "tailscale",
-		Method:       InstallBrewCask,
+		Method:       InstallBrewFormula,
 		Category:     CategoryGUIApps,
 		Dependencies: []string{"homebrew"},
 		CheckFn: func() CheckResult {
-			if _, err := os.Stat("/Applications/Tailscale.app"); err != nil {
-				return CheckResult{}
+			if _, err := exec.LookPath("tailscale"); err == nil {
+				version := tool.VersionFromCmd("tailscale", []string{"version"}, tool.ParseTailscaleVersion)()
+				status := "installed"
+				if out, err := exec.Command("tailscale", "status", "--json").Output(); err == nil {
+					if strings.Contains(string(out), `"BackendState":"Running"`) {
+						status = "running"
+					}
+				}
+				return CheckResult{Installed: true, Version: version, Status: status}
 			}
-			version := tool.VersionFromAppPlist("Tailscale")()
-			return CheckResult{Installed: true, Version: version}
+			if _, err := os.Stat("/Applications/Tailscale.app"); err == nil {
+				version := tool.VersionFromAppPlist("Tailscale")()
+				// App exists but CLI is not on PATH; keep installable to provide `tailscale`/`tailscaled`.
+				return CheckResult{Installed: false, Version: version, Status: "app only"}
+			}
+			return CheckResult{}
 		},
 	},
 	{

@@ -26,6 +26,10 @@ func TestVersionParsers(t *testing.T) {
 		{"ParseTmuxVersion basic", ParseTmuxVersion, "tmux 3.6a", "3.6a"},
 		{"ParseTmuxVersion with newline", ParseTmuxVersion, "tmux 3.5a\n", "3.5a"},
 
+		// ParseTailscaleVersion
+		{"ParseTailscaleVersion single line", ParseTailscaleVersion, "1.86.2", "1.86.2"},
+		{"ParseTailscaleVersion multi line", ParseTailscaleVersion, "1.86.2\ntailscale commit: abc", "1.86.2"},
+
 		// ParseGoVersion
 		{"ParseGoVersion darwin", ParseGoVersion, "go version go1.21.0 darwin/arm64", "1.21.0"},
 		{"ParseGoVersion linux", ParseGoVersion, "go version go1.22.5 linux/amd64", "1.22.5"},
