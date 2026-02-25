@@ -4,6 +4,11 @@
 # Bun global binaries
 export PATH="$HOME/.bun/bin:$PATH"
 
+# Start interactive shells in ~/Developer when opened from HOME.
+if [[ -o interactive && "$PWD" == "$HOME" && -d "$HOME/Developer" ]]; then
+    cd "$HOME/Developer"
+fi
+
 # Load j command completions
 if command -v j &> /dev/null; then
     eval "$(j completion zsh)"

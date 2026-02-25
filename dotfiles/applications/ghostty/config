@@ -4,7 +4,7 @@ window-width = 104
 window-height = 24
 confirm-close-surface = false
 
-macos-option-as-alt = true
+macos-option-as-alt = left
 
 # Unbind Alt+arrows so they pass through to tmux for window switching
 keybind = alt+arrow_left=unbind
