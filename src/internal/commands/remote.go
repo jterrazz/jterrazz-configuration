@@ -44,6 +44,11 @@ var remoteUpCmd = &cobra.Command{
 		}
 
 		print.Success(fmt.Sprintf("Remote access connected (%s mode)", mode))
+		if mode == config.RemoteModeUserspace && config.CommandExists("caffeinate") {
+			if st, statusErr := config.RemoteStatusInfo(settings); statusErr == nil && !st.KeepAwake {
+				print.Warning("Connected, but keep-awake is not active")
+			}
+		}
 	},
 }
 
@@ -111,4 +116,7 @@ func runRemoteStatus() {
 		print.Linef("IP: %s", status.IP)
 	}
 	print.Linef("Connected: %t", status.Connected)
+	if status.Mode == config.RemoteModeUserspace {
+		print.Linef("Keep awake: %t", status.KeepAwake)
+	}
 }

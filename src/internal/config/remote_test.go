@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestValidateRemoteSettings(t *testing.T) {
 	tests := []struct {
@@ -144,5 +148,42 @@ func TestNormalizeRemoteSettingsMigratesLegacyValues(t *testing.T) {
 	}
 	if got.AuthMethod != RemoteAuthOAuth {
 		t.Fatalf("auth got=%q want=%q", got.AuthMethod, RemoteAuthOAuth)
+	}
+}
+
+func TestIsKeepAwakeRunningWithCurrentProcessPID(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	if err := os.MkdirAll(userspaceDir(), 0700); err != nil {
+		t.Fatalf("MkdirAll() error = %v", err)
+	}
+	if err := os.WriteFile(keepAwakePIDPath(), []byte("1"), 0600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	// PID 1 is always running on unix systems in our supported environments.
+	if !isKeepAwakeRunning() {
+		t.Fatalf("expected keep-awake to be reported as running")
+	}
+}
+
+func TestIsKeepAwakeRunningRemovesStalePIDFile(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	if err := os.MkdirAll(userspaceDir(), 0700); err != nil {
+		t.Fatalf("MkdirAll() error = %v", err)
+	}
+	if err := os.WriteFile(keepAwakePIDPath(), []byte("99999999"), 0600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	if isKeepAwakeRunning() {
+		t.Fatalf("expected keep-awake to be reported as not running")
+	}
+
+	if _, err := os.Stat(filepath.Clean(keepAwakePIDPath())); !os.IsNotExist(err) {
+		t.Fatalf("expected stale keep-awake pid file to be removed")
 	}
 }

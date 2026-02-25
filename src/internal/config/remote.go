@@ -59,6 +59,7 @@ type RemoteStatus struct {
 	Hostname     string
 	IP           string
 	Connected    bool
+	KeepAwake    bool
 }
 
 type tailscaleStatus struct {
@@ -109,6 +110,10 @@ func userspaceLogPath() string {
 
 func userspacePIDPath() string {
 	return filepath.Join(userspaceDir(), "tailscaled.pid")
+}
+
+func keepAwakePIDPath() string {
+	return filepath.Join(userspaceDir(), "caffeinate.pid")
 }
 
 // LoadJRC loads ~/.config/jterrazz/jrc.json. Missing file returns defaults.
@@ -487,6 +492,81 @@ func stopUserspaceDaemon() {
 	_ = os.Remove(userspacePIDPath())
 }
 
+func pidFromFile(path string) (int, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil || pid <= 0 {
+		return 0, fmt.Errorf("invalid pid in %s", path)
+	}
+	return pid, nil
+}
+
+func processRunning(pid int) bool {
+	err := syscall.Kill(pid, 0)
+	return err == nil || err == syscall.EPERM
+}
+
+func isKeepAwakeRunning() bool {
+	pid, err := pidFromFile(keepAwakePIDPath())
+	if err != nil {
+		return false
+	}
+	if processRunning(pid) {
+		return true
+	}
+	_ = os.Remove(keepAwakePIDPath())
+	return false
+}
+
+func ensureKeepAwake() error {
+	if !CommandExists("caffeinate") {
+		return nil
+	}
+	if isKeepAwakeRunning() {
+		return nil
+	}
+	if err := os.MkdirAll(userspaceDir(), 0700); err != nil {
+		return fmt.Errorf("failed to create userspace directory: %w", err)
+	}
+
+	devNull, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open %s: %w", os.DevNull, err)
+	}
+	defer devNull.Close()
+
+	cmd := exec.Command("caffeinate", "-i")
+	cmd.Stdout = devNull
+	cmd.Stderr = devNull
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start caffeinate: %w", err)
+	}
+
+	if err := os.WriteFile(keepAwakePIDPath(), []byte(strconv.Itoa(cmd.Process.Pid)), 0600); err != nil {
+		_ = cmd.Process.Signal(syscall.SIGTERM)
+		return fmt.Errorf("failed to persist caffeinate pid: %w", err)
+	}
+
+	_ = cmd.Process.Release()
+	return nil
+}
+
+func stopKeepAwake() {
+	pid, err := pidFromFile(keepAwakePIDPath())
+	if err == nil && pid > 0 {
+		if process, findErr := os.FindProcess(pid); findErr == nil {
+			_ = process.Signal(syscall.SIGTERM)
+		}
+	}
+	_ = os.Remove(keepAwakePIDPath())
+}
+
 func buildUpArgs(settings RemoteSettings) []string {
 	args := []string{"up", "--ssh"}
 	if settings.Hostname != "" {
@@ -512,6 +592,9 @@ func remoteUpWithMode(mode RemoteMode, settings RemoteSettings) error {
 	upArgs := buildUpArgs(settings)
 	output, err := runTailscale(mode, upArgs...)
 	if err == nil {
+		if mode == RemoteModeUserspace {
+			_ = ensureKeepAwake()
+		}
 		return nil
 	}
 
@@ -521,6 +604,9 @@ func remoteUpWithMode(mode RemoteMode, settings RemoteSettings) error {
 			retryArgs := mergeUpArgsWithSuggestedFlags(upArgs, suggested)
 			retryOutput, retryErr := runTailscale(mode, retryArgs...)
 			if retryErr == nil {
+				if mode == RemoteModeUserspace {
+					_ = ensureKeepAwake()
+				}
 				return nil
 			}
 			return formatCommandError(retryErr, retryOutput)
@@ -573,6 +659,7 @@ func RemoteDown(settings RemoteSettings) (RemoteMode, error) {
 
 	if mode == RemoteModeUserspace {
 		downOutput, downErr := runTailscale(RemoteModeUserspace, "down")
+		stopKeepAwake()
 		stopUserspaceDaemon()
 		if downErr != nil {
 			return mode, formatCommandError(downErr, downOutput)
@@ -600,6 +687,7 @@ func RemoteStatusInfo(settings RemoteSettings) (RemoteStatus, error) {
 		Mode:         mode,
 		BackendState: st.BackendState,
 		Connected:    st.BackendState == "Running",
+		KeepAwake:    isKeepAwakeRunning(),
 	}
 
 	if st.Self != nil {

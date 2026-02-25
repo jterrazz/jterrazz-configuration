@@ -48,8 +48,8 @@ Setup scripts include terminal (`ghostty`, `tmux`, `hushlogin`), security (`gpg`
 
 ```bash
 j remote setup   # Configure remote access in ~/.config/jterrazz/jrc.json
-j remote up      # Start userspace Tailscale and enable SSH
-j remote status  # Show mode/state/IP
+j remote up      # Start userspace Tailscale, enable SSH, and keep Mac awake
+j remote status  # Show mode/state/IP (+ keep-awake)
 j remote down    # Disconnect and stop userspace daemon
 ```
 

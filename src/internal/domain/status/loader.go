@@ -288,6 +288,9 @@ func (l *Loader) Start() {
 					if st.IP != "" {
 						state += " " + st.IP
 					}
+					if st.KeepAwake {
+						state += " awake"
+					}
 					detail += " • " + state
 				} else if st.BackendState != "" {
 					detail += " • " + strings.ToLower(st.BackendState)
