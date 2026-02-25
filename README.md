@@ -97,16 +97,16 @@ j run docker reset         # Remove all containers and images
 `make install` adds `dotfiles/applications/zsh/zshrc.sh` to your `~/.zshrc`.
 
 ```bash
-jt   # Start/attach tmux session "main"
-jc   # Open Claude in a new tmux window
-jo   # Open Codex in a new tmux window
-jg   # Open Gemini in a new tmux window
+tj   # Join tmux session "main" (creates it if missing)
+tc   # Open Claude in a new tmux window
+to   # Open Codex in a new tmux window
+tg   # Open Gemini in a new tmux window
 ```
 
 Default tmux keymap in this repo:
 - `Alt+a/z/e/r/t/y/u`: select windows `1..7`
 - `Alt+i/p`: previous/next window
-- `Alt+n/d`: new/kill window
+- `Alt+c/d`: new/kill window
 - `Alt+o/l/k/m`: split up/down/left/right
 
 ## Development

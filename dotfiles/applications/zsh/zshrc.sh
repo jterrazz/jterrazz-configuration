@@ -15,20 +15,24 @@ if command -v j &> /dev/null; then
 fi
 
 # Tmux launcher commands
-jt() {
+tj() {
     if ! command -v tmux &>/dev/null; then
         echo "tmux not found"
         return 1
     fi
 
-    if tmux has-session -t main 2>/dev/null; then
-        tmux new-session -t main \; set destroy-unattached on \; new-window
+    if ! tmux has-session -t main 2>/dev/null; then
+        tmux new-session -ds main
+    fi
+
+    if [[ -n "$TMUX" ]]; then
+        tmux switch-client -t main
     else
-        tmux new-session -s main
+        tmux attach-session -t main
     fi
 }
 
-_jt_tool() {
+_tmux_tool() {
     local window_name="$1"
     local tool_cmd="$2"
 
@@ -54,11 +58,12 @@ _jt_tool() {
 
     if tmux has-session -t main 2>/dev/null; then
         tmux new-session -t main \; set destroy-unattached on \; new-window -n "$window_name" "$tool_cmd"
-    else
-        tmux new-session -s main -n "$window_name" "$tool_cmd"
+        return
     fi
+
+    tmux new-session -s main -n "$window_name" "$tool_cmd"
 }
 
-jc() { _jt_tool "claude" "claude"; }
-jo() { _jt_tool "codex" "codex"; }
-jg() { _jt_tool "gemini" "gemini"; }
+tc() { _tmux_tool "claude" "claude"; }
+to() { _tmux_tool "codex" "codex"; }
+tg() { _tmux_tool "gemini" "gemini"; }
