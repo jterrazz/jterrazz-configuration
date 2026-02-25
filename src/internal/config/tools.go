@@ -354,13 +354,18 @@ var Tools = []Tool{
 	// AI
 	// ==========================================================================
 	{
-		Name:         "claude",
-		Command:      "claude",
-		Formula:      "claude-code",
-		Method:       InstallBrewCask,
-		Category:     CategoryAI,
-		Dependencies: []string{"homebrew"},
-		VersionFn:    tool.VersionFromBrewCask("claude-code"),
+		Name:      "claude",
+		Command:   "claude",
+		Method:    InstallManual,
+		Category:  CategoryAI,
+		VersionFn: tool.VersionFromCmd("claude", []string{"--version"}, tool.ParseClaudeVersion),
+		InstallFn: func() error {
+			cmd := exec.Command("bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Stdin = os.Stdin
+			return cmd.Run()
+		},
 	},
 	{
 		Name:         "codex",
