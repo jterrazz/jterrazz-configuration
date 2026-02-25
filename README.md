@@ -17,26 +17,45 @@ Requires Go 1.24+. Install Go via `brew install go` if needed. The binary is ins
 ## Usage
 
 ```bash
-j help              # Show all commands
-j status            # Show system status
-j upgrade           # Update Homebrew + npm packages
-j clean             # Clean caches, Docker, Multipass, trash
+j help                # Show all commands
+j status              # Show system status (setup, tools, security, resources)
+j setup               # Interactive setup UI
+j install             # List/install tools
+j upgrade --all       # Upgrade available package managers
+j clean --all         # Clean all registered clean targets
 ```
 
 ### Install (Packages)
 
 ```bash
-j install                  # List available packages
-j install brew             # Install Homebrew
-j install go python node   # Install specific packages
-j install copier           # Install copier template engine
+j install                         # List tracked tools
+j install brew bun go            # Install package managers + runtime
+j install codex claude gemini    # Install AI CLIs
+j install tmux ghostty tailscale # Install terminal + remote stack
+j install orbstack               # Install container runtime (docker CLI compatible)
+j install gh copier              # Install GitHub CLI + copier
 ```
 
 ### Setup (Configurations)
 
 ```bash
-j setup              # Interactive TUI for system configuration
+j setup  # Interactive TUI (Skills, Remote, and setup scripts)
 ```
+
+Setup scripts include terminal (`ghostty`, `tmux`, `hushlogin`), security (`gpg`, `ssh`, `gh`, `dns`, `spotlight-exclude`), editor (`zed`), and system (`java`, dock reset/spacer).
+
+### Remote (Tailscale SSH)
+
+```bash
+j remote setup   # Configure remote access in ~/.config/jterrazz/jrc.json
+j remote up      # Start userspace Tailscale and enable SSH
+j remote status  # Show mode/state/IP
+j remote down    # Disconnect and stop userspace daemon
+```
+
+`remote setup` supports:
+- `mode`: `auto` or `userspace`
+- `auth method`: `oauth` (login URL flow) or `authkey`
 
 ### Sync (Project Templates)
 
@@ -72,6 +91,23 @@ j run docker rmi           # Remove all images
 j run docker clean         # docker system prune -af
 j run docker reset         # Remove all containers and images
 ```
+
+### Shell Helpers (Installed via `make install`)
+
+`make install` adds `dotfiles/applications/zsh/zshrc.sh` to your `~/.zshrc`.
+
+```bash
+jt   # Start/attach tmux session "main"
+jc   # Open Claude in a new tmux window
+jo   # Open Codex in a new tmux window
+jg   # Open Gemini in a new tmux window
+```
+
+Default tmux keymap in this repo:
+- `Alt+a/z/e/r/t/y/u`: select windows `1..7`
+- `Alt+i/p`: previous/next window
+- `Alt+n/d`: new/kill window
+- `Alt+o/l/k/m`: split up/down/left/right
 
 ## Development
 
@@ -117,7 +153,7 @@ Blueprint tests use committed fixtures in `tests/e2e/output/`. Each fixture isol
 │       ├── domain/             # Business logic
 │       └── presentation/       # TUI components and views
 ├── dotfiles/
-│   ├── applications/           # App configs (Cursor, Ghostty, Zed, Zsh)
+│   ├── applications/           # App configs (Ghostty, tmux, VSCode, Zed, Zsh)
 │   └── blueprints/             # Copier project templates
 │       ├── copier.yml          # Template configuration
 │       └── template/           # Template files
