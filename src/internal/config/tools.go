@@ -406,15 +406,6 @@ var Tools = []Tool{
 		},
 	},
 	{
-		Name:         "happy",
-		Command:      "happy",
-		Formula:      "happy-coder",
-		Method:       InstallBun,
-		Category:     CategoryAI,
-		Dependencies: []string{"bun"},
-		VersionFn:    tool.VersionFromCmd("happy", []string{"--version"}, tool.ParseHappyCoderVersion),
-	},
-	{
 		Name:         "opencode",
 		Command:      "opencode",
 		Formula:      "opencode",

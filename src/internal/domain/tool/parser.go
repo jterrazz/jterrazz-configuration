@@ -192,18 +192,6 @@ func ParseEasVersion(s string) string {
 	return ""
 }
 
-// ParseHappyCoderVersion parses "happy version: 0.13.0\n..." -> "0.13.0"
-func ParseHappyCoderVersion(s string) string {
-	s = StripAnsi(s)
-	lines := strings.Split(s, "\n")
-	if len(lines) > 0 {
-		line := lines[0]
-		if strings.HasPrefix(line, "happy version:") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "happy version:"))
-		}
-	}
-	return ""
-}
 
 // =============================================================================
 // Formatters
