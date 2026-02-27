@@ -15,7 +15,7 @@ if command -v j &> /dev/null; then
 fi
 
 # Tmux launcher commands
-tj() {
+jj() {
     if ! command -v tmux &>/dev/null; then
         echo "tmux not found"
         return 1
@@ -64,6 +64,6 @@ _tmux_tool() {
     tmux new-session -s main -n "$window_name" "$tool_cmd"
 }
 
-tc() { _tmux_tool "claude" "claude"; }
-to() { _tmux_tool "codex" "codex"; }
-tg() { _tmux_tool "gemini" "gemini"; }
+jc() { _tmux_tool "claude" "claude"; }
+jo() { _tmux_tool "codex" "codex"; }
+jg() { _tmux_tool "gemini" "gemini"; }
