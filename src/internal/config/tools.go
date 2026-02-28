@@ -432,6 +432,14 @@ var Tools = []Tool{
 		Dependencies: []string{"bun"},
 		VersionFn:    tool.VersionFromCmd("skills", []string{"--version"}, tool.TrimVersion),
 	},
+	{
+		Name:         "claude-agent-acp",
+		Command:      "claude-agent-acp",
+		Formula:      "@zed-industries/claude-agent-acp",
+		Method:       InstallBun,
+		Category:     CategoryAI,
+		Dependencies: []string{"bun"},
+	},
 
 	// ==========================================================================
 	// GUI Apps + desktop tooling
